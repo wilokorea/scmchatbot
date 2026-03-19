@@ -189,35 +189,26 @@
     }
 
     .faq-list{
-      display:grid;
-      grid-template-columns:repeat(2, 1fr);
+      display:flex;
+      flex-direction:column;
       gap:8px;
     }
 
-    @media (min-width:480px){
-      .faq-list{
-        grid-template-columns:repeat(3, 1fr);
-      }
-    }
-
-    @media (min-width:700px){
-      .faq-list{
-        grid-template-columns:repeat(4, 1fr);
-      }
-    }
-
     .faq-list button{
+      width:100%;
       border:none;
       background:#eef7f5;
       color:#135f53;
-      padding:10px;
+      padding:12px;
       border-radius:12px;
       cursor:pointer;
-      font-size:13px;
+      font-size:14px;
       text-align:left;
-      line-height:1.4;
-      white-space:normal;
-      min-height:72px;
+      line-height:1.5;
+    }
+
+    .faq-list button:hover{
+      background:#dff3ef;
     }
 
     .empty-faq{
@@ -321,6 +312,19 @@
       }).catch(err => console.error("server log error:", err));
     }
 
+    async function loadTopQuestionsFromServer(category) {
+      try {
+        const res = await fetch(
+          `https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/getTopQuestions?category=${encodeURIComponent(category)}`
+        );
+        const data = await res.json();
+        return Array.isArray(data.items) ? data.items : [];
+      } catch (e) {
+        console.error("load top questions failed", e);
+        return [];
+      }
+    }
+
     function getTimeText() {
       const now = new Date();
       return now.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
@@ -375,25 +379,27 @@
         const btn = document.createElement("button");
         btn.className = `category-tab ${selectedCategory === category ? "active" : ""}`;
         btn.textContent = labels[category] || category;
-        btn.onclick = () => {
+        btn.onclick = async () => {
           selectedCategory = category;
           renderCategoryTabs();
-          renderFAQ();
+          await renderFAQ();
         };
         categoryTabs.appendChild(btn);
       });
     }
 
-    function renderFAQ() {
+    async function renderFAQ() {
       const qa = ChatbotStore.getQAByCategory(selectedCategory);
       faqList.innerHTML = "";
 
-      let topQA = qa.filter(item => item.top);
+      let topQA = await loadTopQuestionsFromServer(selectedCategory);
+
+      if (topQA.length === 0) {
+        topQA = qa.filter(item => item.top).slice(0, 4);
+      }
 
       if (topQA.length === 0) {
         topQA = qa.slice(0, 4);
-      } else {
-        topQA = topQA.slice(0, 4);
       }
 
       if (topQA.length === 0) {
@@ -407,12 +413,12 @@
       topQA.forEach(item => {
         const btn = document.createElement("button");
         btn.textContent = item.question;
-        btn.onclick = () => sendMessage(item.question);
+        btn.onclick = () => sendMessage(item.question, true);
         faqList.appendChild(btn);
       });
     }
 
-    function sendMessage(customText = null) {
+    function sendMessage(customText = null, isFaqClick = false) {
       const text = (customText ?? userInput.value).trim();
       if (!text) return;
 
@@ -432,7 +438,7 @@
         matched: !!result,
         category: result ? result.category : selectedCategory,
         createdAt: new Date().toISOString(),
-        source: "user"
+        source: isFaqClick ? "faq-click" : "user"
       });
 
       sendToServer({
@@ -442,7 +448,8 @@
         category: result ? result.category : selectedCategory,
         createdAt: new Date().toISOString(),
         page: location.href,
-        userAgent: navigator.userAgent
+        userAgent: navigator.userAgent,
+        source: isFaqClick ? "faq-click" : "user"
       });
     }
 
