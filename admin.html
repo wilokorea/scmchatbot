@@ -349,17 +349,17 @@
     </div>
   </div>
 
-<script>
-  window.ADMIN_CONFIG = Object.assign({
-    authMode: "dev",
-    devPassword: "wpkscm",
-    loginApiUrl: "",
-    verifyApiUrl: "",
-    logoutApiUrl: "",
-    unmatchedApiUrl: "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/getUnmatched",
-    requestTimeoutMs: 12000
-  }, window.ADMIN_CONFIG || {});
-</script>
+  <script>
+    window.ADMIN_CONFIG = Object.assign({
+      authMode: "dev",
+      loginApiUrl: "",
+      verifyApiUrl: "",
+      logoutApiUrl: "",
+      unmatchedApiUrl: "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/getUnmatched",
+      requestTimeoutMs: 12000,
+      devPassword: "wpkscm"
+    }, window.ADMIN_CONFIG || {});
+  </script>
   <script src="shared.js"></script>
   <script>
     let adminSelectedCategory = "all";
