@@ -1,85 +1,938 @@
-const { app } = require("@azure/functions");
-const { TableClient } = require("@azure/data-tables");
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SCM 업무 도우미 관리자</title>
+  <style>
+    :root{
+      --main:#009C82;
+      --main-dark:#007a66;
+      --bg:#f4f8f7;
+      --line:#d8e5e2;
+      --text:#1f2937;
+      --sub:#6b7280;
+      --danger:#dc2626;
+      --warning:#b45309;
+      --warning-bg:#fff7ed;
+      --ok:#166534;
+      --ok-bg:#f0fdf4;
+    }
 
-function getClient() {
-  const connectionString = process.env.AzureWebJobsStorage;
-  const tableName = process.env.TABLE_NAME || "chatlogs";
-  return TableClient.fromConnectionString(connectionString, tableName);
-}
+    *{box-sizing:border-box}
 
-app.http("getTopQuestions", {
-  methods: ["GET", "OPTIONS"],
-  authLevel: "anonymous",
-  handler: async (request, context) => {
-    const allowOrigin = "https://wilokorea.github.io";
+    body{
+      margin:0;
+      font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif;
+      background:var(--bg);
+      color:var(--text);
+    }
 
-    if (request.method === "OPTIONS") {
+    .login-box{
+      max-width:420px;
+      margin:90px auto;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:20px;
+      padding:24px;
+      box-shadow:0 14px 30px rgba(0,0,0,.06);
+    }
+
+    .login-box h1{
+      margin-top:0;
+      margin-bottom:10px;
+    }
+
+    .container{
+      max-width:1200px;
+      margin:24px auto;
+      padding:0 16px;
+    }
+
+    .card{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:18px;
+      margin-bottom:16px;
+      box-shadow:0 8px 24px rgba(0,0,0,.05);
+    }
+
+    h1,h2{
+      margin-top:0;
+    }
+
+    .muted{
+      color:var(--sub);
+      font-size:13px;
+    }
+
+    .hidden{
+      display:none;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:16px;
+    }
+
+    input, select{
+      width:100%;
+      padding:12px;
+      border:1px solid var(--line);
+      border-radius:10px;
+      margin-top:8px;
+      font-size:14px;
+    }
+
+    button{
+      border:none;
+      background:var(--main);
+      color:#fff;
+      padding:11px 14px;
+      border-radius:10px;
+      cursor:pointer;
+      margin-top:10px;
+      font-size:14px;
+    }
+
+    button:hover{ background:var(--main-dark); }
+    button:disabled{ opacity:.6; cursor:not-allowed; }
+
+    .sub{
+      background:#e8f3f1;
+      color:var(--text);
+    }
+
+    .sub:hover{ background:#dcecea; }
+
+    .danger{
+      background:var(--danger);
+      color:#fff;
+    }
+
+    .danger:hover{ background:#b91c1c; }
+
+    .toolbar{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin:10px 0;
+    }
+
+    .stats{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:12px;
+    }
+
+    .stat{
+      background:#f8fbfb;
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:14px;
+      text-align:center;
+    }
+
+    .stat strong{
+      display:block;
+      font-size:20px;
+      color:var(--main-dark);
+      margin-bottom:4px;
+    }
+
+    .category-tabs{
+      display:flex;
+      gap:8px;
+      overflow-x:auto;
+      padding:6px 0 10px;
+    }
+
+    .category-tab{
+      border:none;
+      background:#e8f7f3;
+      color:#006f5c;
+      padding:9px 13px;
+      border-radius:999px;
+      cursor:pointer;
+      white-space:nowrap;
+      font-size:13px;
+      margin-top:0;
+      flex-shrink:0;
+    }
+
+    .category-tab.active{
+      background:var(--main);
+      color:#fff;
+    }
+
+    .table-wrap{ overflow:auto; }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      font-size:13px;
+      margin-top:10px;
+    }
+
+    th, td{
+      border-bottom:1px solid var(--line);
+      padding:10px;
+      text-align:left;
+      vertical-align:top;
+    }
+
+    th{ background:#f8fbfb; }
+
+    .small-btn{
+      margin:0;
+      padding:7px 10px;
+      font-size:12px;
+      border-radius:8px;
+    }
+
+    .notice{
+      border:1px solid #fed7aa;
+      background:var(--warning-bg);
+      color:var(--warning);
+      padding:12px 14px;
+      border-radius:12px;
+      font-size:13px;
+      margin-top:10px;
+    }
+
+    .status-box{
+      border:1px solid var(--line);
+      background:#f8fbfb;
+      border-radius:12px;
+      padding:10px 12px;
+      margin-top:10px;
+      font-size:13px;
+      color:var(--sub);
+    }
+
+    .status-box.ok{
+      border-color:#bbf7d0;
+      background:var(--ok-bg);
+      color:var(--ok);
+    }
+
+    .status-box.error{
+      border-color:#fecaca;
+      background:#fef2f2;
+      color:var(--danger);
+    }
+
+    code{
+      background:#f3f4f6;
+      padding:1px 5px;
+      border-radius:6px;
+      font-family:Consolas, monospace;
+      font-size:12px;
+    }
+
+    @media (max-width:960px){
+      .grid{ grid-template-columns:1fr; }
+      .stats{ grid-template-columns:1fr 1fr; }
+    }
+
+    @media (max-width:640px){
+      .stats{ grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div id="loginView" class="login-box">
+    <h1>관리자 페이지</h1>
+    <p class="muted">서버 인증 또는 개발용 로컬 비밀번호로 로그인합니다.</p>
+    <input type="password" id="adminPassword" placeholder="비밀번호 입력" />
+    <button id="loginButton" onclick="login()">로그인</button>
+    <div class="notice">
+      운영 환경에서는 HTML 안에 비밀번호를 직접 넣지 말고 서버 인증을 연결하세요.<br>
+      아래 스크립트는 <code>window.ADMIN_CONFIG</code>에 설정된 서버 로그인 API를 우선 사용합니다.
+    </div>
+    <div id="loginStatus" class="status-box">대기 중</div>
+  </div>
+
+  <div id="adminView" class="container hidden">
+    <div class="card">
+      <h1>SCM 업무 도우미 관리자</h1>
+      <p class="muted">CSV 업로드, Q&A 삭제, 질문 이력 조회를 수행합니다.</p>
+      <div class="toolbar">
+        <button class="sub" onclick="logout()">로그아웃</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>현황</h2>
+      <div class="stats">
+        <div class="stat"><strong id="statQA">0</strong><span>Q&A 수</span></div>
+        <div class="stat"><strong id="statHistory">0</strong><span>로컬 이력</span></div>
+        <div class="stat"><strong id="statMatched">0</strong><span>로컬 매칭</span></div>
+        <div class="stat"><strong id="statUnmatched">0</strong><span>서버 미매칭</span></div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>CSV 업로드</h2>
+        <p class="muted">헤더 형식: category, question, keywords, answer, top</p>
+        <input type="file" id="csvFileInput" accept=".csv" />
+        <select id="csvMode">
+          <option value="append">기존 데이터에 추가</option>
+          <option value="replace">기존 데이터 전체 교체</option>
+        </select>
+        <div class="toolbar">
+          <button onclick="importCSV()">CSV 업로드</button>
+          <button class="sub" onclick="downloadCSVTemplate()">CSV 템플릿 다운로드</button>
+        </div>
+        <div id="csvStatus" class="status-box">업로드 대기 중</div>
+      </div>
+
+      <div class="card">
+        <h2>로컬 질문 이력 관리</h2>
+        <p class="muted">이 영역은 현재 브라우저의 localStorage 기준입니다.</p>
+        <div class="toolbar">
+          <button onclick="exportHistory()">질문 이력 다운로드(JSON)</button>
+          <button class="danger" onclick="clearHistory()">질문 이력 초기화</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>저장된 Q&A</h2>
+      <p class="muted">카테고리 탭으로 필터링 후 개별 삭제 또는 전체 삭제가 가능합니다.</p>
+
+      <div class="toolbar">
+        <button class="danger" onclick="clearAllQA()">전체 Q&A 삭제</button>
+      </div>
+
+      <div class="category-tabs" id="adminCategoryTabs"></div>
+      <div id="qaCount" class="muted"></div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="min-width:100px;">카테고리</th>
+              <th style="min-width:220px;">질문</th>
+              <th style="min-width:180px;">키워드</th>
+              <th style="min-width:260px;">답변</th>
+              <th style="min-width:70px;">TOP</th>
+              <th style="min-width:90px;">삭제</th>
+            </tr>
+          </thead>
+          <tbody id="qaTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>서버 미매칭 질문</h2>
+      <div id="historyCount" class="muted"></div>
+      <div id="serverStatus" class="status-box">서버 상태 확인 전</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="min-width:160px;">시간</th>
+              <th style="min-width:220px;">질문</th>
+              <th style="min-width:260px;">답변</th>
+              <th style="min-width:100px;">카테고리</th>
+              <th style="min-width:80px;">매칭</th>
+            </tr>
+          </thead>
+          <tbody id="historyTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.ADMIN_CONFIG = Object.assign({
+      authMode: "server",
+      loginApiUrl: "",
+      verifyApiUrl: "",
+      logoutApiUrl: "",
+      unmatchedApiUrl: "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/getUnmatched",
+      requestTimeoutMs: 12000,
+      devPassword: ""
+    }, window.ADMIN_CONFIG || {});
+  </script>
+  <script src="shared.js"></script>
+  <script>
+    let adminSelectedCategory = "all";
+
+    const CATEGORY_WHITELIST = new Set([
+      "all",
+      "delivery",
+      "documents",
+      "other",
+      "purchase"
+    ]);
+
+    function setStatus(id, message, type = "") {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.className = `status-box${type ? ` ${type}` : ""}`;
+      el.textContent = message;
+    }
+
+    function normalizeCategory(category) {
+      const value = String(category || "").trim().toLowerCase();
+      return CATEGORY_WHITELIST.has(value) && value !== "all" ? value : "other";
+    }
+
+    function normalizeKeywords(value) {
+      if (Array.isArray(value)) {
+        return [...new Set(value.map(v => String(v || "").trim()).filter(Boolean))];
+      }
+      return [...new Set(String(value || "")
+        .split("|")
+        .map(v => v.trim())
+        .filter(Boolean))];
+    }
+
+    function normalizeBoolean(value) {
+      const v = String(value || "").trim().toLowerCase();
+      return ["true", "1", "y", "yes"].includes(v);
+    }
+
+    function createQAId() {
+      return `qa_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+    }
+
+    function normalizeQAItem(item) {
       return {
-        status: 204,
-        headers: {
-          "Access-Control-Allow-Origin": allowOrigin,
-          "Access-Control-Allow-Methods": "GET, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type"
-        }
+        __id: item.__id || createQAId(),
+        category: normalizeCategory(item.category),
+        question: String(item.question || "").trim(),
+        keywords: normalizeKeywords(item.keywords),
+        answer: String(item.answer || "").trim(),
+        top: !!item.top
       };
     }
 
-    try {
-      const client = getClient();
-      const url = new URL(request.url);
-      const category = url.searchParams.get("category") || "all";
+    function getAllQA() {
+      return (ChatbotStore.getQA() || []).map(normalizeQAItem);
+    }
 
-      const counter = new Map();
+    function syncQAIdsIfNeeded() {
+      const current = ChatbotStore.getQA() || [];
+      if (!current.length) return;
+      const normalized = current.map(normalizeQAItem);
+      const changed = normalized.some((item, idx) => {
+        const origin = current[idx] || {};
+        return !origin.__id
+          || origin.category !== item.category
+          || String(origin.question || "").trim() !== item.question
+          || String(origin.answer || "").trim() !== item.answer
+          || JSON.stringify(normalizeKeywords(origin.keywords)) !== JSON.stringify(item.keywords)
+          || !!origin.top !== item.top;
+      });
 
-      for await (const entity of client.listEntities()) {
-        const entityCategory = entity.category || "all";
+      if (changed) {
+        ChatbotStore.importTemplate({ mode: "replace", data: normalized });
+      }
+    }
 
-        if (category !== "all" && entityCategory !== category) {
-          continue;
+    function upsertQAs(data, mode) {
+      const base = mode === "replace" ? [] : getAllQA();
+      const map = new Map();
+
+      base.forEach(item => {
+        const normalized = normalizeQAItem(item);
+        map.set(normalized.question.toLowerCase(), normalized);
+      });
+
+      let inserted = 0;
+      let updated = 0;
+      let skipped = 0;
+
+      data.forEach(item => {
+        const normalized = normalizeQAItem(item);
+        if (!normalized.question || !normalized.answer) {
+          skipped++;
+          return;
         }
 
-        const question = entity.question || "";
-        if (!question) continue;
-
-        const matchedWeight = entity.matched === false ? 1 : 2;
-        const sourceWeight = entity.source === "faq-click" ? 3 : 1;
-        const score = matchedWeight * sourceWeight;
-
-        if (!counter.has(question)) {
-          counter.set(question, {
-            question,
-            category: entityCategory,
-            score: 0
-          });
+        const key = normalized.question.toLowerCase();
+        if (map.has(key)) {
+          const existing = map.get(key);
+          map.set(key, { ...existing, ...normalized, __id: existing.__id || normalized.__id });
+          updated++;
+        } else {
+          map.set(key, normalized);
+          inserted++;
         }
+      });
 
-        counter.get(question).score += score;
+      ChatbotStore.importTemplate({ mode: "replace", data: Array.from(map.values()) });
+      return { inserted, updated, skipped, total: Array.from(map.values()).length };
+    }
+
+    async function fetchWithTimeout(url, options = {}, timeoutMs = window.ADMIN_CONFIG.requestTimeoutMs || 12000) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const res = await fetch(url, { ...options, signal: controller.signal });
+        return res;
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    async function sha256(text) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(text);
+      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+      return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    async function login() {
+      const pw = document.getElementById("adminPassword").value;
+      const btn = document.getElementById("loginButton");
+
+      if (!pw) {
+        setStatus("loginStatus", "비밀번호를 입력해 주세요.", "error");
+        return;
       }
 
-      const items = Array.from(counter.values())
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 4)
-        .map(item => ({
-          question: item.question,
-          category: item.category
-        }));
+      btn.disabled = true;
+      setStatus("loginStatus", "로그인 확인 중...");
 
-      return {
-        status: 200,
-        jsonBody: { items },
-        headers: {
-          "Access-Control-Allow-Origin": allowOrigin
+      try {
+        if (window.ADMIN_CONFIG.authMode === "server" && window.ADMIN_CONFIG.loginApiUrl) {
+          const hashedPassword = await sha256(pw);
+          const res = await fetchWithTimeout(window.ADMIN_CONFIG.loginApiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ password: pw, passwordHash: hashedPassword })
+          });
+
+          if (!res.ok) {
+            let message = `로그인 실패 (${res.status})`;
+            try {
+              const data = await res.json();
+              if (data && data.message) message = data.message;
+            } catch {}
+            throw new Error(message);
+          }
+
+          sessionStorage.setItem("admin_login", "true");
+          setStatus("loginStatus", "서버 인증 성공", "ok");
+          showAdmin();
+          return;
         }
-      };
-    } catch (err) {
-      context.error(err);
-      return {
-        status: 500,
-        jsonBody: { ok: false, message: "top question read failed" },
-        headers: {
-          "Access-Control-Allow-Origin": allowOrigin
+
+        if (window.ADMIN_CONFIG.authMode === "dev" && window.ADMIN_CONFIG.devPassword) {
+          if (pw !== window.ADMIN_CONFIG.devPassword) {
+            throw new Error("비밀번호가 올바르지 않습니다.");
+          }
+          sessionStorage.setItem("admin_login", "true");
+          setStatus("loginStatus", "개발용 로그인 성공", "ok");
+          showAdmin();
+          return;
         }
-      };
+
+        throw new Error("로그인 설정이 없습니다. window.ADMIN_CONFIG를 설정해 주세요.");
+      } catch (error) {
+        console.error(error);
+        sessionStorage.removeItem("admin_login");
+        setStatus("loginStatus", error.message || "로그인 중 오류가 발생했습니다.", "error");
+      } finally {
+        btn.disabled = false;
+      }
     }
-  }
-});
+
+    async function logout() {
+      sessionStorage.removeItem("admin_login");
+      if (window.ADMIN_CONFIG.logoutApiUrl) {
+        try {
+          await fetchWithTimeout(window.ADMIN_CONFIG.logoutApiUrl, { method: "POST", credentials: "include" });
+        } catch (e) {
+          console.warn("logout api failed", e);
+        }
+      }
+      location.reload();
+    }
+
+    function showAdmin() {
+      syncQAIdsIfNeeded();
+      document.getElementById("loginView").classList.add("hidden");
+      document.getElementById("adminView").classList.remove("hidden");
+      renderAll();
+      loadUnmatchedFromServer();
+    }
+
+    async function checkLogin() {
+      if (sessionStorage.getItem("admin_login") !== "true") return;
+
+      if (window.ADMIN_CONFIG.authMode === "server" && window.ADMIN_CONFIG.verifyApiUrl) {
+        try {
+          const res = await fetchWithTimeout(window.ADMIN_CONFIG.verifyApiUrl, {
+            method: "GET",
+            credentials: "include"
+          });
+          if (!res.ok) {
+            sessionStorage.removeItem("admin_login");
+            return;
+          }
+        } catch {
+          sessionStorage.removeItem("admin_login");
+          return;
+        }
+      }
+
+      showAdmin();
+    }
+
+    function renderAll() {
+      renderStats();
+      renderAdminCategoryTabs();
+      renderQA();
+      renderLocalHistoryStats();
+    }
+
+    function renderStats() {
+      const qa = getAllQA();
+      const history = ChatbotStore.getHistory() || [];
+      const matched = history.filter(x => x.matched).length;
+
+      document.getElementById("statQA").textContent = qa.length;
+      document.getElementById("statHistory").textContent = history.length;
+      document.getElementById("statMatched").textContent = matched;
+    }
+
+    function renderLocalHistoryStats() {
+      const history = ChatbotStore.getHistory() || [];
+      document.getElementById("statHistory").textContent = history.length;
+      document.getElementById("statMatched").textContent = history.filter(x => x.matched).length;
+    }
+
+    function renderAdminCategoryTabs() {
+      const categories = ChatbotStore.getCategories() || [];
+      const labels = ChatbotStore.getCategoryLabels() || {};
+      const tabs = document.getElementById("adminCategoryTabs");
+      tabs.innerHTML = "";
+
+      categories.forEach(category => {
+        const btn = document.createElement("button");
+        btn.className = `category-tab ${adminSelectedCategory === category ? "active" : ""}`;
+        btn.textContent = labels[category] || category;
+        btn.onclick = () => {
+          adminSelectedCategory = category;
+          renderAdminCategoryTabs();
+          renderQA();
+        };
+        tabs.appendChild(btn);
+      });
+    }
+
+    function renderQA() {
+      const allQa = getAllQA();
+      const filtered = adminSelectedCategory === "all"
+        ? allQa
+        : allQa.filter(item => item.category === adminSelectedCategory);
+
+      document.getElementById("qaCount").textContent =
+        adminSelectedCategory === "all"
+          ? `총 ${allQa.length}건`
+          : `${(ChatbotStore.getCategoryLabels() || {})[adminSelectedCategory] || adminSelectedCategory} 카테고리 ${filtered.length}건`;
+
+      const tbody = document.getElementById("qaTable");
+      tbody.innerHTML = "";
+
+      filtered.forEach(item => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td><button class="danger small-btn">삭제</button></td>
+        `;
+        tr.children[0].textContent = item.category || "";
+        tr.children[1].textContent = item.question || "";
+        tr.children[2].textContent = (item.keywords || []).join(" | ");
+        tr.children[3].textContent = item.answer || "";
+        tr.children[4].textContent = item.top ? "Y" : "-";
+        tr.querySelector("button").onclick = () => deleteQAById(item.__id);
+        tbody.appendChild(tr);
+      });
+    }
+
+    function deleteQAById(id) {
+      const allQa = getAllQA();
+      const index = allQa.findIndex(item => item.__id === id);
+
+      if (index < 0) {
+        alert("삭제 대상을 찾지 못했습니다.");
+        return;
+      }
+      if (!confirm("이 Q&A를 삭제할까요?")) return;
+
+      const ok = ChatbotStore.deleteQAByIndex(index);
+      if (!ok) {
+        alert("삭제에 실패했습니다.");
+        return;
+      }
+
+      renderAll();
+      alert("삭제되었습니다.");
+    }
+
+    function clearAllQA() {
+      const check = prompt("전체 삭제를 하려면 DELETE 를 입력하세요.");
+      if (check !== "DELETE") {
+        alert("취소되었습니다.");
+        return;
+      }
+
+      ChatbotStore.clearQA();
+      adminSelectedCategory = "all";
+      renderAll();
+      alert("전체 삭제되었습니다.");
+    }
+
+    function clearHistory() {
+      const check = prompt("질문 이력을 모두 삭제하려면 DELETE 를 입력하세요.");
+      if (check !== "DELETE") {
+        alert("취소되었습니다.");
+        return;
+      }
+
+      ChatbotStore.clearHistory();
+      renderAll();
+      alert("질문 이력이 초기화되었습니다.");
+    }
+
+    function exportHistory() {
+      const history = ChatbotStore.getHistory() || [];
+      const blob = new Blob([JSON.stringify(history, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "question_history.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function csvEscape(value) {
+      const s = String(value ?? "");
+      if (s.includes(",") || s.includes('"') || s.includes("\n")) {
+        return `"${s.replaceAll('"', '""')}"`;
+      }
+      return s;
+    }
+
+    function downloadCSVTemplate() {
+      const csv = [
+        ["category", "question", "keywords", "answer", "top"],
+        ["delivery", "배송은 얼마나 걸리나요?", "배송|기간|리드타임", "일반적으로 2~3개월 소요됩니다.", "true"],
+        ["documents", "세금계산서는 언제 발급해야 하나요?", "세금계산서|발급|기한", "공급 시기마다 발행하는 것이 원칙입니다.", "true"],
+        ["other", "타계정 처리란 무엇인가요?", "타계정|재고자산", "재고자산을 판매 목적 외 용도로 사용할 때 계정을 변경 처리하는 것입니다.", "true"],
+        ["purchase", "발주 취소가 가능한가요?", "발주|취소", "최초 발주 진행일 기준 약 3~4일 이내에는 가능할 수 있습니다.", "true"]
+      ].map(row => row.map(csvEscape).join(",")).join("\n");
+
+      const bom = "\uFEFF";
+      const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "faq_template.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importCSV() {
+      const file = document.getElementById("csvFileInput").files[0];
+      const mode = document.getElementById("csvMode").value;
+
+      if (!file) {
+        setStatus("csvStatus", "CSV 파일을 선택해 주세요.", "error");
+        return;
+      }
+
+      setStatus("csvStatus", "CSV 파일을 읽는 중...");
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const text = e.target.result;
+          const rows = parseCSV(text);
+
+          if (rows.length < 2) {
+            setStatus("csvStatus", "CSV 내용이 비어 있거나 형식이 올바르지 않습니다.", "error");
+            return;
+          }
+
+          const headers = rows[0].map(h => h.trim().toLowerCase());
+          const required = ["category", "question", "keywords", "answer"];
+          const hasAllHeaders = required.every(key => headers.includes(key));
+
+          if (!hasAllHeaders) {
+            setStatus("csvStatus", "CSV 헤더는 category, question, keywords, answer 형식이어야 합니다.", "error");
+            return;
+          }
+
+          const issues = [];
+          const parsed = [];
+
+          rows.slice(1).forEach((cols, rowIndex) => {
+            const row = {};
+            headers.forEach((header, idx) => {
+              row[header] = (cols[idx] || "").trim();
+            });
+
+            const item = {
+              category: normalizeCategory(row.category),
+              question: String(row.question || "").trim(),
+              keywords: normalizeKeywords(row.keywords),
+              answer: String(row.answer || "").trim(),
+              top: normalizeBoolean(row.top)
+            };
+
+            if (!item.question || !item.answer) {
+              issues.push(`${rowIndex + 2}행: 질문 또는 답변이 비어 있어 제외됨`);
+              return;
+            }
+
+            if (row.category && normalizeCategory(row.category) !== String(row.category).trim().toLowerCase()) {
+              issues.push(`${rowIndex + 2}행: category '${row.category}' → '${item.category}' 로 정규화`);
+            }
+
+            parsed.push(item);
+          });
+
+          const summary = upsertQAs(parsed, mode);
+          adminSelectedCategory = "all";
+          renderAll();
+
+          const lines = [
+            `업로드 완료: 신규 ${summary.inserted}건, 갱신 ${summary.updated}건, 제외 ${summary.skipped}건`,
+            issues.length ? `참고: ${issues.slice(0, 5).join(" / ")}${issues.length > 5 ? " ..." : ""}` : "형식 검증 통과"
+          ];
+          setStatus("csvStatus", lines.join("\n"), "ok");
+          alert(`CSV 업로드 완료\n신규 ${summary.inserted}건 / 갱신 ${summary.updated}건 / 제외 ${summary.skipped}건`);
+        } catch (err) {
+          console.error(err);
+          setStatus("csvStatus", `CSV 파일 처리 중 오류가 발생했습니다: ${err.message || "알 수 없는 오류"}`, "error");
+        }
+      };
+
+      reader.onerror = function() {
+        setStatus("csvStatus", "파일을 읽는 중 오류가 발생했습니다.", "error");
+      };
+
+      reader.readAsText(file, "utf-8");
+    }
+
+    function parseCSV(text) {
+      const rows = [];
+      let row = [];
+      let cell = "";
+      let inQuotes = false;
+
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const nextChar = text[i + 1];
+
+        if (char === '"') {
+          if (inQuotes && nextChar === '"') {
+            cell += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (char === "," && !inQuotes) {
+          row.push(cell);
+          cell = "";
+        } else if ((char === "\n" || char === "\r") && !inQuotes) {
+          if (char === "\r" && nextChar === "\n") i++;
+          row.push(cell);
+          if (row.some(x => x !== "")) rows.push(row);
+          row = [];
+          cell = "";
+        } else {
+          cell += char;
+        }
+      }
+
+      if (cell.length > 0 || row.length > 0) {
+        row.push(cell);
+        if (row.some(x => x !== "")) rows.push(row);
+      }
+
+      return rows;
+    }
+
+    async function loadUnmatchedFromServer() {
+      const tbody = document.getElementById("historyTable");
+      tbody.innerHTML = "";
+      setStatus("serverStatus", "서버 미매칭 질문을 불러오는 중...");
+      document.getElementById("historyCount").textContent = "조회 중";
+
+      try {
+        const apiUrl = window.ADMIN_CONFIG.unmatchedApiUrl;
+        if (!apiUrl) {
+          throw new Error("unmatchedApiUrl 설정이 없습니다.");
+        }
+
+        const res = await fetchWithTimeout(apiUrl, {
+          method: "GET",
+          headers: { "Accept": "application/json" },
+          credentials: "include"
+        });
+
+        if (!res.ok) {
+          throw new Error(`서버 응답 오류 (${res.status})`);
+        }
+
+        const data = await res.json();
+        const count = Number(data.count || 0);
+        const items = Array.isArray(data.items) ? data.items : [];
+
+        document.getElementById("statUnmatched").textContent = count;
+
+        if (!items.length) {
+          document.getElementById("historyCount").textContent = "미매칭 총 0건";
+          setStatus("serverStatus", "미매칭 질문이 없습니다.", "ok");
+          return;
+        }
+
+        items.forEach(item => {
+          const tr = document.createElement("tr");
+          const createdAt = item.createdAt ? new Date(item.createdAt) : null;
+          const createdText = createdAt && !Number.isNaN(createdAt.getTime())
+            ? createdAt.toLocaleString("ko-KR")
+            : "시간 정보 없음";
+
+          tr.innerHTML = `
+            <td>${createdText}</td>
+            <td></td>
+            <td></td>
+            <td>${item.category || ""}</td>
+            <td>N</td>
+          `;
+          tr.children[1].textContent = item.question || "";
+          tr.children[2].textContent = item.answer || "";
+          tbody.appendChild(tr);
+        });
+
+        document.getElementById("historyCount").textContent = `미매칭 총 ${count}건`;
+        setStatus("serverStatus", `조회 성공: ${count}건`, "ok");
+      } catch (e) {
+        console.error("load unmatched failed", e);
+        document.getElementById("statUnmatched").textContent = "0";
+        document.getElementById("historyCount").textContent = "서버 미매칭 질문을 불러오지 못했습니다.";
+        setStatus("serverStatus", e.message || "서버 미매칭 질문을 불러오지 못했습니다.", "error");
+      }
+    }
+
+    checkLogin();
+  </script>
+</body>
+</html>
