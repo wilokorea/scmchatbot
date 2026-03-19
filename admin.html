@@ -362,48 +362,40 @@
         <div id="csvStatus" class="status-box">업로드 대기 중</div>
       </div>
 
-      <div class="toolbar">
-  <button onclick="previewHistory()">질문 이력 미리보기</button>
-  <button onclick="exportHistory()">이력 다운로드(JSON)</button>
-  <button class="sub" onclick="exportHistoryAsCSV()">이력 다운로드(CSV)</button>
-  <button class="danger" onclick="clearHistory()">질문 이력 초기화</button>
-</div>
-
-      
-<div class="card">
-  <h2>로컬 질문 이력 관리</h2>
-  <p class="muted">이 영역은 현재 브라우저의 localStorage 기준입니다.</p>
-  <div class="toolbar">
-    <button onclick="previewHistory()">질문 이력 미리보기</button>
-    <button onclick="exportHistory()">질문 이력 다운로드(JSON)</button>
-    <button class="danger" onclick="clearHistory()">질문 이력 초기화</button>
-  </div>
-  
-  <!-- 미리보기 영역 추가 -->
-  <div id="historyPreview" class="hidden" style="margin-top:16px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <h3 style="margin:0;font-size:15px;">질문 이력 미리보기</h3>
-      <button class="small-btn sub" onclick="closeHistoryPreview()">닫기</button>
+      <div class="card">
+        <h2>로컬 질문 이력 관리</h2>
+        <p class="muted">이 영역은 현재 브라우저의 localStorage 기준입니다.</p>
+        <div class="toolbar">
+          <button onclick="previewHistory()">질문 이력 미리보기</button>
+          <button onclick="exportHistory()">이력 다운로드(JSON)</button>
+          <button class="sub" onclick="exportHistoryAsCSV()">이력 다운로드(CSV)</button>
+          <button class="danger" onclick="clearHistory()">질문 이력 초기화</button>
+        </div>
+        
+        <div id="historyPreview" class="hidden" style="margin-top:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <h3 style="margin:0;font-size:15px;">질문 이력 미리보기</h3>
+            <button class="small-btn sub" onclick="closeHistoryPreview()">닫기</button>
+          </div>
+          <div class="table-wrap" style="max-height:400px;">
+            <table>
+              <thead>
+                <tr>
+                  <th style="min-width:140px;">시간</th>
+                  <th style="min-width:200px;">질문</th>
+                  <th style="min-width:220px;">답변</th>
+                  <th style="min-width:90px;">카테고리</th>
+                  <th style="min-width:70px;">매칭</th>
+                  <th style="min-width:80px;">소스</th>
+                </tr>
+              </thead>
+              <tbody id="historyPreviewTable"></tbody>
+            </table>
+          </div>
+          <div id="historyPreviewCount" class="muted" style="margin-top:8px;"></div>
+        </div>
+      </div>
     </div>
-    <div class="table-wrap" style="max-height:400px;">
-      <table>
-        <thead>
-          <tr>
-            <th style="min-width:140px;">시간</th>
-            <th style="min-width:200px;">질문</th>
-            <th style="min-width:220px;">답변</th>
-            <th style="min-width:90px;">카테고리</th>
-            <th style="min-width:70px;">매칭</th>
-            <th style="min-width:80px;">소스</th>
-          </tr>
-        </thead>
-        <tbody id="historyPreviewTable"></tbody>
-      </table>
-    </div>
-    <div id="historyPreviewCount" class="muted" style="margin-top:8px;"></div>
-  </div>
-</div>
-
 
     <div class="card">
       <h2>저장된 Q&A</h2>
@@ -506,6 +498,7 @@
       "all",
       "delivery",
       "documents",
+      "production",
       "other",
       "purchase"
     ]);
@@ -1154,421 +1147,4 @@
       alert("질문 이력이 초기화되었습니다.");
     }
 
-    function exportHistory() {
-      const history = ChatbotStore.getHistory() || [];
-      if (history.length === 0) {
-        alert("내보낼 질문 이력이 없습니다.");
-        return;
-      }
-
-      const blob = new Blob([JSON.stringify(history, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `question_history_${new Date().toISOString().slice(0, 10)}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      logActivity('EXPORT_HISTORY', { count: history.length });
-    }
-
-    // ========== CSV 처리 ==========
-    function csvEscape(value) {
-      const s = String(value ?? "");
-      if (s.includes(",") || s.includes('"') || s.includes("\n")) {
-        return `"${s.replaceAll('"', '""')}"`;
-      }
-      return s;
-    }
-
-function downloadCSVTemplate() {
-  const csv = [
-    ["category", "question", "keywords", "answer", "top"],
-    ["delivery", "독일 및 프랑스 본사로부터 해상 선적 기간은 얼마나 되나요?", "해상|선적|기간|리드타임|독일|프랑스", "생산 리드타임 + 해상 운송 기준, 출하일부터 공장 입고까지는 총 약 2~3개월 소요됩니다.", "true"],
-    ["documents", "원산지 증명서 발급 가능한가요?", "원산지증명서|발급|가능|FTA", "원산지증명서는 요청 제품(부품)이 해당 FTA 협정의 원산지 기준을 충족하는 경우에 한하여 발급 가능합니다.", "true"],
-    ["production", "단종된 제품의 경우 추가 오더가 가능한가요?", "단종|오더|재고|라스트오더", "단종된 제품의 경우 사내에 부품 재고가 남아 있는 경우에 한해 생산 가능 수량을 안내드립니다.", "false"],
-    ["purchase", "해외 도입 제품의 표준 리드타임이 어떻게 되나요?", "리드타임|해외|도입|기간|유럽|중국", "유럽발: 항공 2~3주, 해상 2.5~3.5개월 / 중국발: 항공 1~2주, 해상 2~3주", "true"],
-    ["other", "Ariba 비용처리되었는지 확인 부탁드립니다.", "Ariba|비용|처리|확인|재무", "Ariba 관련 비용 처리는 재무팀에서 전담하고 있으므로, 재무팀의 비용 처리 담당자에게 직접 문의해 주시기 바랍니다.", "true"]
-  ].map(row => row.map(csvEscape).join(",")).join("\n");
-
-  const bom = "\uFEFF";
-  const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "faq_template.csv";
-  a.click();
-  URL.revokeObjectURL(url);
-  
-  logActivity('DOWNLOAD_TEMPLATE', {});
-}
-
-
-    function exportQAToCSV() {
-      const allQA = getAllQA();
-      if (!allQA.length) {
-        alert("내보낼 Q&A가 없습니다.");
-        return;
-      }
-
-      const csv = [
-        ["category", "question", "keywords", "answer", "top"],
-        ...allQA.map(item => [
-          item.category,
-          item.question,
-          item.keywords.join("|"),
-          item.answer,
-          item.top ? "true" : "false"
-        ])
-      ].map(row => row.map(csvEscape).join(",")).join("\n");
-
-      const bom = "\uFEFF";
-      const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `qa_export_${new Date().toISOString().slice(0, 10)}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
-      logActivity('EXPORT_QA_CSV', { count: allQA.length });
-    }
-
-    function importCSV() {
-      const file = document.getElementById("csvFileInput").files[0];
-      const mode = document.getElementById("csvMode").value;
-
-      if (!file) {
-        setStatus("csvStatus", "CSV 파일을 선택해 주세요.", "error");
-        return;
-      }
-
-      const allowedTypes = ['text/csv', 'application/vnd.ms-excel', 'text/plain'];
-      if (!allowedTypes.includes(file.type) && !file.name.toLowerCase().endsWith('.csv')) {
-        setStatus("csvStatus", "CSV 파일만 업로드 가능합니다.", "error");
-        return;
-      }
-
-      const maxSize = 10 * 1024 * 1024;
-      if (file.size > maxSize) {
-        setStatus("csvStatus", `파일 크기는 ${Math.floor(maxSize / 1024 / 1024)}MB 이하여야 합니다.`, "error");
-        return;
-      }
-
-      setStatus("csvStatus", "CSV 파일을 읽는 중...");
-      const reader = new FileReader();
-      
-      reader.onload = function(e) {
-        try {
-          const text = e.target.result;
-          const rows = parseCSV(text);
-
-          if (rows.length < 2) {
-            setStatus("csvStatus", "CSV 내용이 비어 있거나 형식이 올바르지 않습니다.", "error");
-            return;
-          }
-
-          const headers = rows[0].map(h => h.trim().toLowerCase());
-          const required = ["category", "question", "keywords", "answer"];
-          const hasAllHeaders = required.every(key => headers.includes(key));
-
-          if (!hasAllHeaders) {
-            setStatus("csvStatus", "CSV 헤더는 category, question, keywords, answer 형식이어야 합니다.", "error");
-            return;
-          }
-
-          const issues = [];
-          const parsed = [];
-
-          rows.slice(1).forEach((cols, rowIndex) => {
-            const row = {};
-            headers.forEach((header, idx) => {
-              row[header] = (cols[idx] || "").trim();
-            });
-
-            const item = {
-              category: normalizeCategory(row.category),
-              question: String(row.question || "").trim(),
-              keywords: normalizeKeywords(row.keywords),
-              answer: String(row.answer || "").trim(),
-              top: normalizeBoolean(row.top)
-            };
-
-            const validationErrors = validateQAItem(item, rowIndex + 2);
-            if (validationErrors.length > 0) {
-              issues.push(...validationErrors);
-              return;
-            }
-
-            if (row.category && normalizeCategory(row.category) !== String(row.category).trim().toLowerCase()) {
-              issues.push(`${rowIndex + 2}행: category '${row.category}' → '${item.category}' 로 정규화`);
-            }
-
-            parsed.push(item);
-          });
-
-          if (parsed.length === 0) {
-            setStatus("csvStatus", "유효한 데이터가 없습니다.\n" + issues.slice(0, 10).join("\n"), "error");
-            return;
-          }
-
-          saveToHistory();
-          const summary = upsertQAs(parsed, mode);
-          adminSelectedCategory = "all";
-          currentPage = 1;
-          renderAll();
-
-          const lines = [
-            `업로드 완료: 신규 ${summary.inserted}건, 갱신 ${summary.updated}건, 제외 ${summary.skipped}건`,
-            issues.length ? `참고: ${issues.slice(0, 5).join(" / ")}${issues.length > 5 ? ` 외 ${issues.length - 5}건` : ""}` : "형식 검증 통과"
-          ];
-          setStatus("csvStatus", lines.join("\n"), "ok");
-          
-          logActivity('IMPORT_CSV', { 
-            mode, 
-            inserted: summary.inserted, 
-            updated: summary.updated, 
-            skipped: summary.skipped 
-          });
-          
-          alert(`CSV 업로드 완료\n신규 ${summary.inserted}건 / 갱신 ${summary.updated}건 / 제외 ${summary.skipped}건`);
-        } catch (err) {
-          console.error(err);
-          setStatus("csvStatus", `CSV 파일 처리 중 오류가 발생했습니다: ${err.message || "알 수 없는 오류"}`, "error");
-        }
-      };
-
-      reader.onerror = function() {
-        setStatus("csvStatus", "파일을 읽는 중 오류가 발생했습니다.", "error");
-      };
-
-      reader.readAsText(file, "utf-8");
-    }
-
-    function parseCSV(text) {
-      const rows = [];
-      let row = [];
-      let cell = "";
-      let inQuotes = false;
-
-      for (let i = 0; i < text.length; i++) {
-        const char = text[i];
-        const nextChar = text[i + 1];
-
-        if (char === '"') {
-          if (inQuotes && nextChar === '"') {
-            cell += '"';
-            i++;
-          } else {
-            inQuotes = !inQuotes;
-          }
-        } else if (char === "," && !inQuotes) {
-          row.push(cell);
-          cell = "";
-        } else if ((char === "\n" || char === "\r") && !inQuotes) {
-          if (char === "\r" && nextChar === "\n") i++;
-          row.push(cell);
-          if (row.some(x => x !== "")) rows.push(row);
-          row = [];
-          cell = "";
-        } else {
-          cell += char;
-        }
-      }
-
-      if (cell.length > 0 || row.length > 0) {
-        row.push(cell);
-        if (row.some(x => x !== "")) rows.push(row);
-      }
-
-      return rows;
-    }
-
-    // ========== 서버 미매칭 조회 ==========
-    async function loadUnmatchedFromServer() {
-      const tbody = document.getElementById("historyTable");
-      tbody.innerHTML = "";
-      setStatus("serverStatus", "서버 미매칭 질문을 불러오는 중...");
-      document.getElementById("historyCount").textContent = "조회 중";
-
-      try {
-        const apiUrl = window.ADMIN_CONFIG.unmatchedApiUrl;
-        if (!apiUrl) {
-          throw new Error("unmatchedApiUrl 설정이 없습니다.");
-        }
-
-        const res = await fetchWithRetry(apiUrl, {
-          method: "GET",
-          headers: { "Accept": "application/json" },
-          credentials: "include"
-        });
-
-        if (!res.ok) {
-          throw new Error(`서버 응답 오류 (${res.status})`);
-        }
-
-        const data = await res.json();
-        const count = Number(data.count || 0);
-        const items = Array.isArray(data.items) ? data.items : [];
-
-        document.getElementById("statUnmatched").textContent = count;
-
-        if (!items.length) {
-          document.getElementById("historyCount").textContent = "미매칭 총 0건";
-          setStatus("serverStatus", "미매칭 질문이 없습니다.", "ok");
-          const tr = document.createElement("tr");
-          tr.innerHTML = `<td colspan="5" style="text-align:center;padding:24px;color:var(--sub);">미매칭 질문이 없습니다.</td>`;
-          tbody.appendChild(tr);
-          return;
-        }
-
-        items.forEach(item => {
-          const tr = document.createElement("tr");
-          const createdAt = item.createdAt ? new Date(item.createdAt) : null;
-          const createdText = createdAt && !Number.isNaN(createdAt.getTime())
-            ? createdAt.toLocaleString("ko-KR")
-            : "시간 정보 없음";
-
-          tr.innerHTML = `
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td>N</td>
-          `;
-          tr.children[0].textContent = createdText;
-          tr.children[1].textContent = item.question || "";
-          tr.children[2].textContent = item.answer || "";
-          tr.children[3].textContent = item.category || "";
-          tbody.appendChild(tr);
-        });
-
-        document.getElementById("historyCount").textContent = `미매칭 총 ${count}건`;
-        setStatus("serverStatus", `조회 성공: ${count}건`, "ok");
-        logActivity('LOAD_UNMATCHED', { count });
-      } catch (e) {
-        console.error("load unmatched failed", e);
-        document.getElementById("statUnmatched").textContent = "0";
-        document.getElementById("historyCount").textContent = "서버 미매칭 질문을 불러오지 못했습니다.";
-        setStatus("serverStatus", e.message || "서버 미매칭 질문을 불러오지 못했습니다.", "error");
-      }
-    }
-
-    // ========== Undo 기능 ==========
-    function saveToHistory() {
-      try {
-        const currentState = JSON.stringify(getAllQA());
-        historyStack.push(currentState);
-        if (historyStack.length > MAX_HISTORY) {
-          historyStack.shift();
-        }
-        updateUndoButton();
-      } catch (e) {
-        console.warn('히스토리 저장 실패:', e);
-      }
-    }
-
-    function undo() {
-      if (historyStack.length === 0) {
-        alert("되돌릴 변경 사항이 없습니다.");
-        return;
-      }
-
-      try {
-        const previousState = historyStack.pop();
-        ChatbotStore.importTemplate({ 
-          mode: "replace", 
-          data: JSON.parse(previousState) 
-        });
-        currentPage = 1;
-        renderAll();
-        updateUndoButton();
-        logActivity('UNDO', {});
-        alert("이전 상태로 되돌렸습니다.");
-      } catch (e) {
-        console.error('Undo 실패:', e);
-        alert('실행 취소 중 오류가 발생했습니다.');
-      }
-    }
-
-    function updateUndoButton() {
-      const btn = document.getElementById("undoBtn");
-      if (btn) {
-        btn.disabled = historyStack.length === 0;
-      }
-    }
-
-    // ========== 설정 관리 ==========
-    function saveSettings() {
-      const settings = {
-        itemsPerPage: parseInt(document.getElementById('itemsPerPageSetting').value),
-        autoSave: document.getElementById('autoSaveSetting').checked
-      };
-      
-      if (settings.itemsPerPage < 10 || settings.itemsPerPage > 200) {
-        alert('페이지당 항목 수는 10에서 200 사이여야 합니다.');
-        return;
-      }
-
-      safeSetLocalStorage('adminSettings', JSON.stringify(settings));
-      logActivity('SAVE_SETTINGS', settings);
-      alert('설정이 저장되었습니다.');
-      location.reload();
-    }
-
-    function loadSettings() {
-      try {
-        const saved = localStorage.getItem('adminSettings');
-        if (saved) {
-          const settings = JSON.parse(saved);
-          itemsPerPage = settings.itemsPerPage || 50;
-          
-          if (document.getElementById('itemsPerPageSetting')) {
-            document.getElementById('itemsPerPageSetting').value = itemsPerPage;
-          }
-          if (document.getElementById('autoSaveSetting')) {
-            document.getElementById('autoSaveSetting').checked = settings.autoSave !== false;
-          }
-        }
-      } catch (e) {
-        console.warn('설정 로드 실패:', e);
-      }
-    }
-
-    // ========== 키보드 단축키 ==========
-    document.addEventListener('keydown', function(e) {
-      if (document.getElementById('adminView').classList.contains('hidden')) {
-        return;
-      }
-
-      if (e.ctrlKey && e.key === 'f' && !e.shiftKey && !e.altKey) {
-        e.preventDefault();
-        document.getElementById('qaSearchInput')?.focus();
-      }
-
-      if (e.key === 'Escape' && editMode) {
-        toggleEditMode();
-      }
-
-      if (e.ctrlKey && e.key === 'z' && !e.shiftKey && !e.altKey) {
-        e.preventDefault();
-        if (historyStack.length > 0) {
-          undo();
-        }
-      }
-    });
-
-    // ========== 전역 에러 핸들러 ==========
-    window.addEventListener('error', function(e) {
-      console.error('전역 에러:', e.error);
-      logActivity('ERROR', { message: e.message, stack: e.error?.stack });
-    });
-
-    window.addEventListener('unhandledrejection', function(e) {
-      console.error('처리되지 않은 Promise 거부:', e.reason);
-      logActivity('UNHANDLED_REJECTION', { reason: String(e.reason) });
-    });
-
-    // ========== 초기화 ==========
-    checkLogin();
-  </script>
-</body>
-</html>
+    function export<span class="cursor">█</span>
