@@ -12,9 +12,6 @@
       --line:#d8e5e2;
       --text:#1f2937;
       --sub:#6b7280;
-      --soft:#eef7f5;
-      --warn:#fff7ed;
-      --warn-text:#9a3412;
     }
 
     *{box-sizing:border-box}
@@ -182,23 +179,6 @@
     .faq-list button:disabled{ opacity:.65; cursor:not-allowed; }
 
     .empty-faq{ font-size:13px; color:var(--sub); padding:8px 2px; }
-
-    .server-banner{
-      margin-bottom:10px;
-      padding:10px 12px;
-      border-radius:12px;
-      background:var(--soft);
-      color:var(--sub);
-      font-size:12px;
-      border:1px solid var(--line);
-    }
-
-    .server-banner.warn{
-      background:var(--warn);
-      color:var(--warn-text);
-      border-color:#fed7aa;
-    }
-
     .typing{ opacity:.8; font-style:italic; }
 
     .input-area{
@@ -292,15 +272,9 @@
     const categoryTabs = document.getElementById("categoryTabs");
     const userInput = document.getElementById("userInput");
     const sendButton = document.getElementById("sendButton");
-    const serverBanner = document.getElementById("serverBanner");
 
     let selectedCategory = (window.ChatbotStore && ChatbotStore.getCategories()[0]) || "all";
     let isSending = false;
-
-    function setBanner(message, warn = false) {
-      serverBanner.textContent = message;
-      serverBanner.className = `server-banner${warn ? " warn" : ""}`;
-    }
 
     function getTimeText() {
       return new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
@@ -393,27 +367,23 @@
       }
     }
 
-   async function loadTopQuestionsFromServer(category) {
-  try {
-    const res = await fetch(...);
+    async function loadTopQuestionsFromServer(category) {
+      try {
+        const res = await fetchWithTimeout(
+          `${window.CHATBOT_CONFIG.topQuestionsApiUrl}?category=${encodeURIComponent(category)}`
+        );
 
-    if (!res.ok) throw new Error();
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
 
-    const data = await res.json();
-
-    // ✅ 성공 시 아무 메시지도 안 띄움
-
-    return Array.isArray(data.items) ? data.items : [];
-
-  } catch (e) {
-    console.error("top questions failed", e);
-
-    // ❗ 실패할 때만 표시
-    // statusBox.textContent = "서버 연결 실패 - 로컬 FAQ 사용";
-
-    return [];
-  }
-}
+        const data = await res.json();
+        return Array.isArray(data.items) ? data.items : [];
+      } catch (e) {
+        console.error("top questions failed", e);
+        return [];
+      }
+    }
 
     function renderCategoryTabs() {
       const categories = ChatbotStore.getCategories();
