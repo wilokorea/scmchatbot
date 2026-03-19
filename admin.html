@@ -362,15 +362,40 @@
         <div id="csvStatus" class="status-box">업로드 대기 중</div>
       </div>
 
-      <div class="card">
-        <h2>로컬 질문 이력 관리</h2>
-        <p class="muted">이 영역은 현재 브라우저의 localStorage 기준입니다.</p>
-        <div class="toolbar">
-          <button onclick="exportHistory()">질문 이력 다운로드(JSON)</button>
-          <button class="danger" onclick="clearHistory()">질문 이력 초기화</button>
-        </div>
-      </div>
+<div class="card">
+  <h2>로컬 질문 이력 관리</h2>
+  <p class="muted">이 영역은 현재 브라우저의 localStorage 기준입니다.</p>
+  <div class="toolbar">
+    <button onclick="previewHistory()">질문 이력 미리보기</button>
+    <button onclick="exportHistory()">질문 이력 다운로드(JSON)</button>
+    <button class="danger" onclick="clearHistory()">질문 이력 초기화</button>
+  </div>
+  
+  <!-- 미리보기 영역 추가 -->
+  <div id="historyPreview" class="hidden" style="margin-top:16px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <h3 style="margin:0;font-size:15px;">질문 이력 미리보기</h3>
+      <button class="small-btn sub" onclick="closeHistoryPreview()">닫기</button>
     </div>
+    <div class="table-wrap" style="max-height:400px;">
+      <table>
+        <thead>
+          <tr>
+            <th style="min-width:140px;">시간</th>
+            <th style="min-width:200px;">질문</th>
+            <th style="min-width:220px;">답변</th>
+            <th style="min-width:90px;">카테고리</th>
+            <th style="min-width:70px;">매칭</th>
+            <th style="min-width:80px;">소스</th>
+          </tr>
+        </thead>
+        <tbody id="historyPreviewTable"></tbody>
+      </table>
+    </div>
+    <div id="historyPreviewCount" class="muted" style="margin-top:8px;"></div>
+  </div>
+</div>
+
 
     <div class="card">
       <h2>저장된 Q&A</h2>
