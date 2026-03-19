@@ -803,31 +803,61 @@
       });
     }
 
-    function normalizeTopItems(serverItems, fallbackQa, category) {
-      const limit = window.CHATBOT_CONFIG.faqButtonCount || 4;
+function normalizeTopItems(serverItems, fallbackQa, category) {
+  const limit = window.CHATBOT_CONFIG.faqButtonCount || 4;
 
-      if (Array.isArray(serverItems) && serverItems.length) {
-        return serverItems
-          .filter(item => item && item.question)
-          .slice(0, limit)
-          .map(item => ({
-            question: String(item.question).trim(),
-            category: item.category || category
-          }));
-      }
+  // 로컬 Q&A의 질문 목록 생성
+  const localQuestions = new Set(
+    fallbackQa.map(item => item.question.toLowerCase())
+  );
 
-      const historyTop = getHistoryBasedTopQuestions(category, limit);
-      if (historyTop.length) {
-        return historyTop;
-      }
+  // 1순위: 로컬 Q&A 중 top: true 항목
+  const topLocal = fallbackQa.filter(item => item.top).slice(0, limit);
+  
+  // 2순위: 서버 인기 질문 중 로컬에 존재하는 것만 필터링
+  let serverFiltered = [];
+  if (Array.isArray(serverItems) && serverItems.length) {
+    serverFiltered = serverItems
+      .filter(item => 
+        item && 
+        item.question && 
+        localQuestions.has(item.question.toLowerCase()) // 🔴 로컬에 있는 질문만
+      )
+      .map(item => 
+        fallbackQa.find(qa => 
+          qa.question.toLowerCase() === item.question.toLowerCase()
+        )
+      )
+      .filter(Boolean);
+  }
 
-      const topLocal = fallbackQa.filter(item => item.top).slice(0, limit);
-      if (topLocal.length) {
-        return topLocal;
-      }
+  // 3순위: 로컬 히스토리 기반
+  const historyTop = getHistoryBasedTopQuestions(category, limit);
 
-      return fallbackQa.slice(0, limit);
+  // 중복 제거하며 병합
+  const combined = [...topLocal, ...serverFiltered, ...historyTop];
+  const uniqueQuestions = new Map();
+  
+  combined.forEach(item => {
+    const key = item.question.toLowerCase();
+    if (!uniqueQuestions.has(key)) {
+      uniqueQuestions.set(key, item);
     }
+  });
+
+  const result = Array.from(uniqueQuestions.values()).slice(0, limit);
+
+  // 부족하면 일반 로컬 Q&A로 채우기
+  if (result.length < limit) {
+    const remaining = fallbackQa
+      .filter(item => !uniqueQuestions.has(item.question.toLowerCase()))
+      .slice(0, limit - result.length);
+    result.push(...remaining);
+  }
+
+  return result;
+}
+
 
     // ========== 렌더링 ==========
     function renderCategoryTabs() {
