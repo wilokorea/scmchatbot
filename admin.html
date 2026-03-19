@@ -508,7 +508,7 @@
           const res = await fetchWithTimeout(window.ADMIN_CONFIG.loginApiUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            credentials: "include",
+            credentials: "omit",
             body: JSON.stringify({ password: pw, passwordHash: hashedPassword })
           });
 
