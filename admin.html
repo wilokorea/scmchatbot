@@ -1,644 +1,85 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SCM 업무 도우미 관리자</title>
-  <style>
-    :root{
-      --main:#009C82;
-      --main-dark:#007a66;
-      --bg:#f4f8f7;
-      --line:#d8e5e2;
-      --text:#1f2937;
-      --sub:#6b7280;
-      --danger:#dc2626;
-    }
-
-    *{box-sizing:border-box}
-
-    body{
-      margin:0;
-      font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif;
-      background:var(--bg);
-      color:var(--text);
-    }
-
-    .login-box{
-      max-width:420px;
-      margin:90px auto;
-      background:#fff;
-      border:1px solid var(--line);
-      border-radius:20px;
-      padding:24px;
-      box-shadow:0 14px 30px rgba(0,0,0,.06);
-    }
-
-    .login-box h1{
-      margin-top:0;
-      margin-bottom:10px;
-    }
-
-    .container{
-      max-width:1200px;
-      margin:24px auto;
-      padding:0 16px;
-    }
-
-    .card{
-      background:#fff;
-      border:1px solid var(--line);
-      border-radius:18px;
-      padding:18px;
-      margin-bottom:16px;
-      box-shadow:0 8px 24px rgba(0,0,0,.05);
-    }
-
-    h1,h2{
-      margin-top:0;
-    }
-
-    .muted{
-      color:var(--sub);
-      font-size:13px;
-    }
-
-    .hidden{
-      display:none;
-    }
-
-    .grid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:16px;
-    }
-
-    input, select{
-      width:100%;
-      padding:12px;
-      border:1px solid var(--line);
-      border-radius:10px;
-      margin-top:8px;
-      font-size:14px;
-    }
-
-    button{
-      border:none;
-      background:var(--main);
-      color:#fff;
-      padding:11px 14px;
-      border-radius:10px;
-      cursor:pointer;
-      margin-top:10px;
-      font-size:14px;
-    }
-
-    button:hover{
-      background:var(--main-dark);
-    }
-
-    .sub{
-      background:#e8f3f1;
-      color:var(--text);
-    }
-
-    .sub:hover{
-      background:#dcecea;
-    }
-
-    .danger{
-      background:var(--danger);
-      color:#fff;
-    }
-
-    .danger:hover{
-      background:#b91c1c;
-    }
-
-    .toolbar{
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-      margin:10px 0;
-    }
-
-    .stats{
-      display:grid;
-      grid-template-columns:repeat(4,1fr);
-      gap:12px;
-    }
-
-    .stat{
-      background:#f8fbfb;
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:14px;
-      text-align:center;
-    }
-
-    .stat strong{
-      display:block;
-      font-size:20px;
-      color:var(--main-dark);
-      margin-bottom:4px;
-    }
-
-    .category-tabs{
-      display:flex;
-      gap:8px;
-      overflow-x:auto;
-      padding:6px 0 10px;
-    }
-
-    .category-tab{
-      border:none;
-      background:#e8f7f3;
-      color:#006f5c;
-      padding:9px 13px;
-      border-radius:999px;
-      cursor:pointer;
-      white-space:nowrap;
-      font-size:13px;
-      margin-top:0;
-      flex-shrink:0;
-    }
-
-    .category-tab.active{
-      background:var(--main);
-      color:#fff;
-    }
-
-    .table-wrap{
-      overflow:auto;
-    }
-
-    table{
-      width:100%;
-      border-collapse:collapse;
-      font-size:13px;
-      margin-top:10px;
-    }
-
-    th, td{
-      border-bottom:1px solid var(--line);
-      padding:10px;
-      text-align:left;
-      vertical-align:top;
-    }
-
-    th{
-      background:#f8fbfb;
-    }
-
-    .small-btn{
-      margin:0;
-      padding:7px 10px;
-      font-size:12px;
-      border-radius:8px;
-    }
-
-    @media (max-width:960px){
-      .grid{
-        grid-template-columns:1fr;
-      }
-
-      .stats{
-        grid-template-columns:1fr 1fr;
-      }
-    }
-
-    @media (max-width:640px){
-      .stats{
-        grid-template-columns:1fr;
-      }
-    }
-  </style>
-</head>
-<body>
-  <div id="loginView" class="login-box">
-    <h1>관리자 페이지</h1>
-    <p class="muted">관리자 비밀번호를 입력하세요.</p>
-    <input type="password" id="adminPassword" placeholder="비밀번호 입력" />
-    <button onclick="login()">로그인</button>
-  </div>
-
-  <div id="adminView" class="container hidden">
-    <div class="card">
-      <h1>SCM 업무 도우미 관리자</h1>
-      <p class="muted">CSV 업로드, Q&A 삭제, 질문 이력 조회를 수행합니다.</p>
-      <div class="toolbar">
-        <button class="sub" onclick="logout()">로그아웃</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>현황</h2>
-      <div class="stats">
-        <div class="stat"><strong id="statQA">0</strong><span>Q&A 수</span></div>
-        <div class="stat"><strong id="statHistory">0</strong><span>로컬 이력</span></div>
-        <div class="stat"><strong id="statMatched">0</strong><span>로컬 매칭</span></div>
-        <div class="stat"><strong id="statUnmatched">0</strong><span>서버 미매칭</span></div>
-      </div>
-    </div>
-
-    <div class="grid">
-      <div class="card">
-        <h2>CSV 업로드</h2>
-        <p class="muted">헤더 형식: category, question, keywords, answer, top</p>
-        <input type="file" id="csvFileInput" accept=".csv" />
-        <select id="csvMode">
-          <option value="append">기존 데이터에 추가</option>
-          <option value="replace">기존 데이터 전체 교체</option>
-        </select>
-        <div class="toolbar">
-          <button onclick="importCSV()">CSV 업로드</button>
-          <button class="sub" onclick="downloadCSVTemplate()">CSV 템플릿 다운로드</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>로컬 질문 이력 관리</h2>
-        <p class="muted">이 영역은 현재 브라우저의 localStorage 기준입니다.</p>
-        <div class="toolbar">
-          <button onclick="exportHistory()">질문 이력 다운로드(JSON)</button>
-          <button class="danger" onclick="clearHistory()">질문 이력 초기화</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>저장된 Q&A</h2>
-      <p class="muted">카테고리 탭으로 필터링 후 개별 삭제 또는 전체 삭제가 가능합니다.</p>
-
-      <div class="toolbar">
-        <button class="danger" onclick="clearAllQA()">전체 Q&A 삭제</button>
-      </div>
-
-      <div class="category-tabs" id="adminCategoryTabs"></div>
-      <div id="qaCount" class="muted"></div>
-
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th style="min-width:100px;">카테고리</th>
-              <th style="min-width:220px;">질문</th>
-              <th style="min-width:180px;">키워드</th>
-              <th style="min-width:260px;">답변</th>
-              <th style="min-width:70px;">TOP</th>
-              <th style="min-width:90px;">삭제</th>
-            </tr>
-          </thead>
-          <tbody id="qaTable"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>서버 미매칭 질문</h2>
-      <div id="historyCount" class="muted"></div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th style="min-width:160px;">시간</th>
-              <th style="min-width:220px;">질문</th>
-              <th style="min-width:260px;">답변</th>
-              <th style="min-width:100px;">카테고리</th>
-              <th style="min-width:80px;">매칭</th>
-            </tr>
-          </thead>
-          <tbody id="historyTable"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <script src="shared.js"></script>
-  <script>
-    const ADMIN_PASSWORD = "wilo-admin";
-    let adminSelectedCategory = "all";
-
-    function login() {
-      const pw = document.getElementById("adminPassword").value;
-      if (pw !== ADMIN_PASSWORD) {
-        alert("비밀번호가 올바르지 않습니다.");
-        return;
-      }
-      sessionStorage.setItem("admin_login", "true");
-      showAdmin();
-    }
-
-    function logout() {
-      sessionStorage.removeItem("admin_login");
-      location.reload();
-    }
-
-    function showAdmin() {
-      document.getElementById("loginView").classList.add("hidden");
-      document.getElementById("adminView").classList.remove("hidden");
-      renderAll();
-      loadUnmatchedFromServer();
-    }
-
-    function checkLogin() {
-      if (sessionStorage.getItem("admin_login") === "true") {
-        showAdmin();
-      }
-    }
-
-    function renderAll() {
-      renderStats();
-      renderAdminCategoryTabs();
-      renderQA();
-      renderLocalHistoryStats();
-    }
-
-    function renderStats() {
-      const qa = ChatbotStore.getQA();
-      const history = ChatbotStore.getHistory();
-      const matched = history.filter(x => x.matched).length;
-
-      document.getElementById("statQA").textContent = qa.length;
-      document.getElementById("statHistory").textContent = history.length;
-      document.getElementById("statMatched").textContent = matched;
-    }
-
-    function renderLocalHistoryStats() {
-      const history = ChatbotStore.getHistory();
-      document.getElementById("statHistory").textContent = history.length;
-      document.getElementById("statMatched").textContent = history.filter(x => x.matched).length;
-    }
-
-    function renderAdminCategoryTabs() {
-      const categories = ChatbotStore.getCategories();
-      const labels = ChatbotStore.getCategoryLabels();
-      const tabs = document.getElementById("adminCategoryTabs");
-      tabs.innerHTML = "";
-
-      categories.forEach(category => {
-        const btn = document.createElement("button");
-        btn.className = `category-tab ${adminSelectedCategory === category ? "active" : ""}`;
-        btn.textContent = labels[category] || category;
-        btn.onclick = () => {
-          adminSelectedCategory = category;
-          renderAdminCategoryTabs();
-          renderQA();
-        };
-        tabs.appendChild(btn);
-      });
-    }
-
-    function renderQA() {
-      const filtered = ChatbotStore.getQAByCategory(adminSelectedCategory);
-      const allQa = ChatbotStore.getQA();
-
-      document.getElementById("qaCount").textContent =
-        adminSelectedCategory === "all"
-          ? `총 ${allQa.length}건`
-          : `${ChatbotStore.getCategoryLabels()[adminSelectedCategory] || adminSelectedCategory} 카테고리 ${filtered.length}건`;
-
-      const tbody = document.getElementById("qaTable");
-      tbody.innerHTML = "";
-
-      filtered.forEach(item => {
-        const realIndex = allQa.findIndex(q =>
-          q.category === item.category &&
-          q.question === item.question &&
-          q.answer === item.answer &&
-          JSON.stringify(q.keywords || []) === JSON.stringify(item.keywords || []) &&
-          !!q.top === !!item.top
-        );
-
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td><button class="danger small-btn" onclick="deleteQA(${realIndex})">삭제</button></td>
-        `;
-        tr.children[0].textContent = item.category || "";
-        tr.children[1].textContent = item.question || "";
-        tr.children[2].textContent = (item.keywords || []).join(" | ");
-        tr.children[3].textContent = item.answer || "";
-        tr.children[4].textContent = item.top ? "Y" : "-";
-        tbody.appendChild(tr);
-      });
-    }
-
-    function deleteQA(index) {
-      if (index < 0) {
-        alert("삭제 대상을 찾지 못했습니다.");
-        return;
-      }
-      if (!confirm("이 Q&A를 삭제할까요?")) return;
-
-      const ok = ChatbotStore.deleteQAByIndex(index);
-      if (!ok) {
-        alert("삭제에 실패했습니다.");
-        return;
-      }
-
-      renderAll();
-      alert("삭제되었습니다.");
-    }
-
-    function clearAllQA() {
-      const check = prompt("전체 삭제를 하려면 DELETE 를 입력하세요.");
-      if (check !== "DELETE") {
-        alert("취소되었습니다.");
-        return;
-      }
-
-      ChatbotStore.clearQA();
-      adminSelectedCategory = "all";
-      renderAll();
-      alert("전체 삭제되었습니다.");
-    }
-
-    function clearHistory() {
-      const check = prompt("질문 이력을 모두 삭제하려면 DELETE 를 입력하세요.");
-      if (check !== "DELETE") {
-        alert("취소되었습니다.");
-        return;
-      }
-
-      ChatbotStore.clearHistory();
-      renderAll();
-      alert("질문 이력이 초기화되었습니다.");
-    }
-
-    function exportHistory() {
-      const history = ChatbotStore.getHistory();
-      const blob = new Blob([JSON.stringify(history, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "question_history.json";
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
-    function csvEscape(value) {
-      const s = String(value ?? "");
-      if (s.includes(",") || s.includes('"') || s.includes("\n")) {
-        return `"${s.replaceAll('"', '""')}"`;
-      }
-      return s;
-    }
-
-    function downloadCSVTemplate() {
-      const csv = [
-        ["category", "question", "keywords", "answer", "top"],
-        ["delivery", "배송은 얼마나 걸리나요?", "배송|기간|리드타임", "일반적으로 2~3개월 소요됩니다.", "true"],
-        ["documents", "세금계산서는 언제 발급해야 하나요?", "세금계산서|발급|기한", "공급 시기마다 발행하는 것이 원칙입니다.", "true"],
-        ["other", "타계정 처리란 무엇인가요?", "타계정|재고자산", "재고자산을 판매 목적 외 용도로 사용할 때 계정을 변경 처리하는 것입니다.", "true"],
-        ["purchase", "발주 취소가 가능한가요?", "발주|취소", "최초 발주 진행일 기준 약 3~4일 이내에는 가능할 수 있습니다.", "true"]
-      ].map(row => row.map(csvEscape).join(",")).join("\n");
-
-      const bom = "\uFEFF";
-      const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "faq_template.csv";
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
-    function importCSV() {
-      const file = document.getElementById("csvFileInput").files[0];
-      const mode = document.getElementById("csvMode").value;
-
-      if (!file) {
-        alert("CSV 파일을 선택해 주세요.");
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          const text = e.target.result;
-          const rows = parseCSV(text);
-
-          if (rows.length < 2) {
-            alert("CSV 내용이 비어 있거나 형식이 올바르지 않습니다.");
-            return;
-          }
-
-          const headers = rows[0].map(h => h.trim().toLowerCase());
-          const required = ["category", "question", "keywords", "answer"];
-          const hasAllHeaders = required.every(key => headers.includes(key));
-
-          if (!hasAllHeaders) {
-            alert("CSV 헤더는 category, question, keywords, answer 형식이어야 합니다.");
-            return;
-          }
-
-          const data = rows.slice(1).map(cols => {
-            const row = {};
-            headers.forEach((header, idx) => {
-              row[header] = (cols[idx] || "").trim();
-            });
-
-            return {
-              category: row.category || "other",
-              question: row.question || "",
-              keywords: row.keywords
-                ? row.keywords.split("|").map(k => k.trim()).filter(Boolean)
-                : [],
-              answer: row.answer || "",
-              top: String(row.top || "").toLowerCase() === "true"
-            };
-          }).filter(item => item.question && item.answer);
-
-          ChatbotStore.importTemplate({ mode, data });
-
-          adminSelectedCategory = "all";
-          renderAll();
-          alert(`CSV 업로드 완료: ${data.length}건 반영`);
-        } catch (err) {
-          console.error(err);
-          alert("CSV 파일 처리 중 오류가 발생했습니다.");
+const { app } = require("@azure/functions");
+const { TableClient } = require("@azure/data-tables");
+
+function getClient() {
+  const connectionString = process.env.AzureWebJobsStorage;
+  const tableName = process.env.TABLE_NAME || "chatlogs";
+  return TableClient.fromConnectionString(connectionString, tableName);
+}
+
+app.http("getTopQuestions", {
+  methods: ["GET", "OPTIONS"],
+  authLevel: "anonymous",
+  handler: async (request, context) => {
+    const allowOrigin = "https://wilokorea.github.io";
+
+    if (request.method === "OPTIONS") {
+      return {
+        status: 204,
+        headers: {
+          "Access-Control-Allow-Origin": allowOrigin,
+          "Access-Control-Allow-Methods": "GET, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type"
         }
       };
-
-      reader.readAsText(file, "utf-8");
     }
 
-    function parseCSV(text) {
-      const rows = [];
-      let row = [];
-      let cell = "";
-      let inQuotes = false;
+    try {
+      const client = getClient();
+      const url = new URL(request.url);
+      const category = url.searchParams.get("category") || "all";
 
-      for (let i = 0; i < text.length; i++) {
-        const char = text[i];
-        const nextChar = text[i + 1];
+      const counter = new Map();
 
-        if (char === '"') {
-          if (inQuotes && nextChar === '"') {
-            cell += '"';
-            i++;
-          } else {
-            inQuotes = !inQuotes;
-          }
-        } else if (char === "," && !inQuotes) {
-          row.push(cell);
-          cell = "";
-        } else if ((char === "\n" || char === "\r") && !inQuotes) {
-          if (char === "\r" && nextChar === "\n") i++;
-          row.push(cell);
-          if (row.some(x => x !== "")) rows.push(row);
-          row = [];
-          cell = "";
-        } else {
-          cell += char;
+      for await (const entity of client.listEntities()) {
+        const entityCategory = entity.category || "all";
+
+        if (category !== "all" && entityCategory !== category) {
+          continue;
         }
+
+        const question = entity.question || "";
+        if (!question) continue;
+
+        const matchedWeight = entity.matched === false ? 1 : 2;
+        const sourceWeight = entity.source === "faq-click" ? 3 : 1;
+        const score = matchedWeight * sourceWeight;
+
+        if (!counter.has(question)) {
+          counter.set(question, {
+            question,
+            category: entityCategory,
+            score: 0
+          });
+        }
+
+        counter.get(question).score += score;
       }
 
-      if (cell.length > 0 || row.length > 0) {
-        row.push(cell);
-        if (row.some(x => x !== "")) rows.push(row);
-      }
+      const items = Array.from(counter.values())
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 4)
+        .map(item => ({
+          question: item.question,
+          category: item.category
+        }));
 
-      return rows;
+      return {
+        status: 200,
+        jsonBody: { items },
+        headers: {
+          "Access-Control-Allow-Origin": allowOrigin
+        }
+      };
+    } catch (err) {
+      context.error(err);
+      return {
+        status: 500,
+        jsonBody: { ok: false, message: "top question read failed" },
+        headers: {
+          "Access-Control-Allow-Origin": allowOrigin
+        }
+      };
     }
-
-    async function loadUnmatchedFromServer() {
-      try {
-        const res = await fetch("https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/getUnmatched");
-        const data = await res.json();
-
-        document.getElementById("statUnmatched").textContent = data.count || 0;
-
-        const tbody = document.getElementById("historyTable");
-        tbody.innerHTML = "";
-
-        (data.items || []).forEach(item => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${new Date(item.createdAt).toLocaleString("ko-KR")}</td>
-            <td></td>
-            <td></td>
-            <td>${item.category || ""}</td>
-            <td>N</td>
-          `;
-          tr.children[1].textContent = item.question || "";
-          tr.children[2].textContent = item.answer || "";
-          tbody.appendChild(tr);
-        });
-
-        document.getElementById("historyCount").textContent = `미매칭 총 ${data.count || 0}건`;
-      } catch (e) {
-        console.error("load unmatched failed", e);
-        document.getElementById("historyCount").textContent = "서버 미매칭 질문을 불러오지 못했습니다.";
-      }
-    }
-
-    checkLogin();
-  </script>
-</body>
-</html>
+  }
+});
