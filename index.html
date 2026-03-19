@@ -189,21 +189,35 @@
     }
 
     .faq-list{
-      display:flex;
+      display:grid;
+      grid-template-columns:repeat(2, 1fr);
       gap:8px;
-      overflow-x:auto;
+    }
+
+    @media (min-width:480px){
+      .faq-list{
+        grid-template-columns:repeat(3, 1fr);
+      }
+    }
+
+    @media (min-width:700px){
+      .faq-list{
+        grid-template-columns:repeat(4, 1fr);
+      }
     }
 
     .faq-list button{
       border:none;
       background:#eef7f5;
       color:#135f53;
-      padding:9px 13px;
-      border-radius:999px;
+      padding:10px;
+      border-radius:12px;
       cursor:pointer;
-      white-space:nowrap;
       font-size:13px;
-      flex-shrink:0;
+      text-align:left;
+      line-height:1.4;
+      white-space:normal;
+      min-height:72px;
     }
 
     .empty-faq{
@@ -261,8 +275,8 @@
     <div class="header">
       <div class="avatar">💬</div>
       <div>
-        <h1>FAQ 챗봇</h1>
-        <p>문의 내용을 입력하시면 등록된 답변을 해드리겠습니다.</p>
+        <h1>SCM 업무 도우미</h1>
+        <p>문의 내용을 입력하시면 아는 선에서 답변해 드리겠습니다</p>
       </div>
     </div>
 
@@ -374,7 +388,15 @@
       const qa = ChatbotStore.getQAByCategory(selectedCategory);
       faqList.innerHTML = "";
 
-      if (qa.length === 0) {
+      let topQA = qa.filter(item => item.top);
+
+      if (topQA.length === 0) {
+        topQA = qa.slice(0, 4);
+      } else {
+        topQA = topQA.slice(0, 4);
+      }
+
+      if (topQA.length === 0) {
         const empty = document.createElement("div");
         empty.className = "empty-faq";
         empty.textContent = "이 카테고리에 등록된 FAQ가 없습니다.";
@@ -382,7 +404,7 @@
         return;
       }
 
-      qa.slice(0, 12).forEach(item => {
+      topQA.forEach(item => {
         const btn = document.createElement("button");
         btn.textContent = item.question;
         btn.onclick = () => sendMessage(item.question);
@@ -429,9 +451,9 @@
     });
 
     addMessage(
-      "안녕하세요.\n문의사항을 입력부탁드립니다.",
+      "안녕하세요.\n문의사항을 입력하거나 아래 FAQ를 선택해주세요.",
       "bot",
-      "FAQ 챗봇"
+      "SCM 도우미"
     );
     renderCategoryTabs();
     renderFAQ();

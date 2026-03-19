@@ -244,7 +244,7 @@
     <div class="grid">
       <div class="card">
         <h2>CSV 업로드</h2>
-        <p class="muted">헤더 형식: category, question, keywords, answer</p>
+        <p class="muted">헤더 형식: category, question, keywords, answer, top</p>
         <input type="file" id="csvFileInput" accept=".csv" />
         <select id="csvMode">
           <option value="append">기존 데이터에 추가</option>
@@ -285,6 +285,7 @@
               <th style="min-width:220px;">질문</th>
               <th style="min-width:180px;">키워드</th>
               <th style="min-width:260px;">답변</th>
+              <th style="min-width:70px;">TOP</th>
               <th style="min-width:90px;">삭제</th>
             </tr>
           </thead>
@@ -405,11 +406,13 @@
           q.category === item.category &&
           q.question === item.question &&
           q.answer === item.answer &&
-          JSON.stringify(q.keywords || []) === JSON.stringify(item.keywords || [])
+          JSON.stringify(q.keywords || []) === JSON.stringify(item.keywords || []) &&
+          !!q.top === !!item.top
         );
 
         const tr = document.createElement("tr");
         tr.innerHTML = `
+          <td></td>
           <td></td>
           <td></td>
           <td></td>
@@ -420,6 +423,7 @@
         tr.children[1].textContent = item.question || "";
         tr.children[2].textContent = (item.keywords || []).join(" | ");
         tr.children[3].textContent = item.answer || "";
+        tr.children[4].textContent = item.top ? "Y" : "-";
         tbody.appendChild(tr);
       });
     }
@@ -487,10 +491,11 @@
 
     function downloadCSVTemplate() {
       const csv = [
-        ["category", "question", "keywords", "answer"],
-        ["delivery", "배송은 얼마나 걸리나요?", "배송|기간|리드타임", "일반적으로 2~3개월 소요됩니다."],
-        ["documents", "세금계산서는 언제 발급해야 하나요?", "세금계산서|발급|기한", "공급 시기마다 발행하는 것이 원칙입니다."],
-        ["other", "타계정 처리란 무엇인가요?", "타계정|재고자산", "재고자산을 판매 목적 외 용도로 사용할 때 계정을 변경 처리하는 것입니다."]
+        ["category", "question", "keywords", "answer", "top"],
+        ["delivery", "배송은 얼마나 걸리나요?", "배송|기간|리드타임", "일반적으로 2~3개월 소요됩니다.", "true"],
+        ["documents", "세금계산서는 언제 발급해야 하나요?", "세금계산서|발급|기한", "공급 시기마다 발행하는 것이 원칙입니다.", "true"],
+        ["other", "타계정 처리란 무엇인가요?", "타계정|재고자산", "재고자산을 판매 목적 외 용도로 사용할 때 계정을 변경 처리하는 것입니다.", "true"],
+        ["purchase", "발주 취소가 가능한가요?", "발주|취소", "최초 발주 진행일 기준 약 3~4일 이내에는 가능할 수 있습니다.", "true"]
       ].map(row => row.map(csvEscape).join(",")).join("\n");
 
       const bom = "\uFEFF";
@@ -544,7 +549,8 @@
               keywords: row.keywords
                 ? row.keywords.split("|").map(k => k.trim()).filter(Boolean)
                 : [],
-              answer: row.answer || ""
+              answer: row.answer || "",
+              top: String(row.top || "").toLowerCase() === "true"
             };
           }).filter(item => item.question && item.answer);
 
