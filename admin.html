@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.azurewebsites.net; img-src 'self' data:; font-src 'self';" />
   <title>SCM 업무 도우미 관리자</title>
   <style>
     :root{
@@ -77,13 +78,25 @@
       gap:16px;
     }
 
-    input, select{
+    input, select, textarea{
       width:100%;
       padding:12px;
       border:1px solid var(--line);
       border-radius:10px;
       margin-top:8px;
       font-size:14px;
+      font-family:inherit;
+    }
+
+    textarea{
+      resize:vertical;
+      min-height:60px;
+    }
+
+    input.edit-field, select.edit-field, textarea.edit-field{
+      margin-top:0;
+      padding:8px;
+      font-size:13px;
     }
 
     button{
@@ -95,6 +108,7 @@
       cursor:pointer;
       margin-top:10px;
       font-size:14px;
+      transition:background 0.2s;
     }
 
     button:hover{ background:var(--main-dark); }
@@ -167,7 +181,10 @@
       color:#fff;
     }
 
-    .table-wrap{ overflow:auto; }
+    .table-wrap{ 
+      overflow:auto;
+      max-height:600px;
+    }
 
     table{
       width:100%;
@@ -183,7 +200,12 @@
       vertical-align:top;
     }
 
-    th{ background:#f8fbfb; }
+    th{ 
+      background:#f8fbfb;
+      position:sticky;
+      top:0;
+      z-index:10;
+    }
 
     .small-btn{
       margin:0;
@@ -210,6 +232,7 @@
       margin-top:10px;
       font-size:13px;
       color:var(--sub);
+      white-space:pre-wrap;
     }
 
     .status-box.ok{
@@ -230,6 +253,54 @@
       border-radius:6px;
       font-family:Consolas, monospace;
       font-size:12px;
+    }
+
+    .pagination{
+      display:flex;
+      gap:6px;
+      justify-content:center;
+      margin-top:16px;
+      flex-wrap:wrap;
+    }
+
+    .pagination button{
+      min-width:40px;
+      margin-top:0;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-overlay{
+      position:fixed;
+      top:0;
+      left:0;
+      right:0;
+      bottom:0;
+      background:rgba(0,0,0,0.5);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index:9999;
+    }
+
+    .loading-content{
+      background:#fff;
+      padding:24px;
+      border-radius:12px;
+      box-shadow:0 8px 24px rgba(0,0,0,0.2);
+      text-align:center;
+    }
+
+    .spinner{
+      width:40px;
+      height:40px;
+      border:4px solid var(--line);
+      border-top-color:var(--main);
+      border-radius:50%;
+      animation:spin 1s linear infinite;
+      margin:0 auto 12px;
     }
 
     @media (max-width:960px){
@@ -261,6 +332,7 @@
       <p class="muted">CSV 업로드, Q&A 삭제, 질문 이력 조회를 수행합니다.</p>
       <div class="toolbar">
         <button class="sub" onclick="logout()">로그아웃</button>
+        <button id="undoBtn" class="sub" onclick="undo()" disabled>실행 취소</button>
       </div>
     </div>
 
@@ -278,7 +350,7 @@
       <div class="card">
         <h2>CSV 업로드</h2>
         <p class="muted">헤더 형식: category, question, keywords, answer, top</p>
-        <input type="file" id="csvFileInput" accept=".csv" />
+        <input type="file" id="csvFileInput" accept=".csv,text/csv,application/vnd.ms-excel" />
         <select id="csvMode">
           <option value="append">기존 데이터에 추가</option>
           <option value="replace">기존 데이터 전체 교체</option>
@@ -304,8 +376,14 @@
       <h2>저장된 Q&A</h2>
       <p class="muted">카테고리 탭으로 필터링 후 개별 삭제 또는 전체 삭제가 가능합니다.</p>
 
+      <input type="text" id="qaSearchInput" placeholder="질문 또는 답변 검색..." 
+             style="margin-bottom:12px;" oninput="handleQASearch()" 
+             aria-label="Q&A 검색" role="searchbox" />
+
       <div class="toolbar">
         <button class="danger" onclick="clearAllQA()">전체 Q&A 삭제</button>
+        <button class="sub" onclick="exportQAToCSV()">Q&A CSV 내보내기</button>
+        <button id="editModeBtn" class="sub" onclick="toggleEditMode()">일괄 편집 모드</button>
       </div>
 
       <div class="category-tabs" id="adminCategoryTabs"></div>
@@ -320,18 +398,21 @@
               <th style="min-width:180px;">키워드</th>
               <th style="min-width:260px;">답변</th>
               <th style="min-width:70px;">TOP</th>
-              <th style="min-width:90px;">삭제</th>
+              <th style="min-width:90px;">작업</th>
             </tr>
           </thead>
           <tbody id="qaTable"></tbody>
         </table>
       </div>
+
+      <div id="qaPagination" class="pagination"></div>
     </div>
 
     <div class="card">
       <h2>서버 미매칭 질문</h2>
       <div id="historyCount" class="muted"></div>
       <div id="serverStatus" class="status-box">서버 상태 확인 전</div>
+      <button class="sub" onclick="loadUnmatchedFromServer()">새로고침</button>
       <div class="table-wrap">
         <table>
           <thead>
@@ -346,6 +427,23 @@
           <tbody id="historyTable"></tbody>
         </table>
       </div>
+    </div>
+
+    <div class="card">
+      <h2>시스템 설정</h2>
+      <div class="grid">
+        <div>
+          <label for="itemsPerPageSetting">페이지당 항목 수</label>
+          <input type="number" id="itemsPerPageSetting" value="50" min="10" max="200" />
+        </div>
+        <div>
+          <label for="autoSaveSetting">
+            <input type="checkbox" id="autoSaveSetting" checked style="width:auto;margin-right:8px;" />
+            변경 사항 자동 저장
+          </label>
+        </div>
+      </div>
+      <button onclick="saveSettings()">설정 저장</button>
     </div>
   </div>
 
@@ -362,7 +460,14 @@
   </script>
   <script src="shared.js"></script>
   <script>
+    // ========== 전역 변수 ==========
     let adminSelectedCategory = "all";
+    let qaSearchTerm = "";
+    let currentPage = 1;
+    let itemsPerPage = 50;
+    let editMode = false;
+    const historyStack = [];
+    const MAX_HISTORY = 50;
 
     const CATEGORY_WHITELIST = new Set([
       "all",
@@ -372,6 +477,72 @@
       "purchase"
     ]);
 
+    const API_RETRY_CONFIG = {
+      maxRetries: 3,
+      retryDelay: 1000,
+      backoffMultiplier: 2
+    };
+
+    // ========== 유틸리티 함수 ==========
+    function sanitizeHTML(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function sanitizeForAttribute(text) {
+      return String(text || '')
+        .replace(/[&<>"']/g, char => {
+          const entities = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+          };
+          return entities[char];
+        });
+    }
+
+    function sanitizeCSVCell(value) {
+      const str = String(value || "").trim();
+      if (/^[=+\-@\t\r]/.test(str)) {
+        return `'${str}`;
+      }
+      return str;
+    }
+
+    function debounce(func, wait) {
+      let timeout;
+      return function executedFunction(...args) {
+        const later = () => {
+          clearTimeout(timeout);
+          func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
+    }
+
+    function showLoadingOverlay(message = "처리 중...") {
+      hideLoadingOverlay();
+      const overlay = document.createElement('div');
+      overlay.id = 'loadingOverlay';
+      overlay.className = 'loading-overlay';
+      overlay.innerHTML = `
+        <div class="loading-content">
+          <div class="spinner"></div>
+          <p style="margin:0;color:var(--text);font-weight:600;">${sanitizeHTML(message)}</p>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+    }
+
+    function hideLoadingOverlay() {
+      const overlay = document.getElementById('loadingOverlay');
+      if (overlay) overlay.remove();
+    }
+
     function setStatus(id, message, type = "") {
       const el = document.getElementById(id);
       if (!el) return;
@@ -379,6 +550,43 @@
       el.textContent = message;
     }
 
+    function logActivity(action, details = {}) {
+      try {
+        const log = {
+          timestamp: new Date().toISOString(),
+          action,
+          details,
+          user: sessionStorage.getItem('admin_user') || 'unknown'
+        };
+
+        const logs = JSON.parse(localStorage.getItem('adminLogs') || '[]');
+        logs.push(log);
+        
+        if (logs.length > 1000) {
+          logs.shift();
+        }
+        
+        localStorage.setItem('adminLogs', JSON.stringify(logs));
+      } catch (e) {
+        console.warn('로그 저장 실패:', e);
+      }
+    }
+
+    function safeSetLocalStorage(key, value) {
+      try {
+        localStorage.setItem(key, value);
+        return true;
+      } catch (e) {
+        if (e.name === 'QuotaExceededError') {
+          alert('브라우저 저장 공간이 부족합니다. 질문 이력을 정리해 주세요.');
+          return false;
+        }
+        console.error('localStorage 저장 실패:', e);
+        return false;
+      }
+    }
+
+    // ========== 데이터 정규화 ==========
     function normalizeCategory(category) {
       const value = String(category || "").trim().toLowerCase();
       return CATEGORY_WHITELIST.has(value) && value !== "all" ? value : "other";
@@ -386,11 +594,11 @@
 
     function normalizeKeywords(value) {
       if (Array.isArray(value)) {
-        return [...new Set(value.map(v => String(v || "").trim()).filter(Boolean))];
+        return [...new Set(value.map(v => sanitizeCSVCell(String(v || "").trim())).filter(Boolean))];
       }
       return [...new Set(String(value || "")
         .split("|")
-        .map(v => v.trim())
+        .map(v => sanitizeCSVCell(v.trim()))
         .filter(Boolean))];
     }
 
@@ -407,13 +615,44 @@
       return {
         __id: item.__id || createQAId(),
         category: normalizeCategory(item.category),
-        question: String(item.question || "").trim(),
+        question: sanitizeCSVCell(String(item.question || "").trim()),
         keywords: normalizeKeywords(item.keywords),
-        answer: String(item.answer || "").trim(),
+        answer: sanitizeCSVCell(String(item.answer || "").trim()),
         top: !!item.top
       };
     }
 
+    function validateQAItem(item, rowNumber) {
+      const errors = [];
+
+      if (!item.question || item.question.length < 3) {
+        errors.push(`${rowNumber}행: 질문은 최소 3자 이상이어야 합니다.`);
+      }
+
+      if (item.question && item.question.length > 500) {
+        errors.push(`${rowNumber}행: 질문은 500자를 초과할 수 없습니다.`);
+      }
+
+      if (!item.answer || item.answer.length < 5) {
+        errors.push(`${rowNumber}행: 답변은 최소 5자 이상이어야 합니다.`);
+      }
+
+      if (item.answer && item.answer.length > 5000) {
+        errors.push(`${rowNumber}행: 답변은 5000자를 초과할 수 없습니다.`);
+      }
+
+      if (!item.keywords || item.keywords.length === 0) {
+        errors.push(`${rowNumber}행: 최소 1개 이상의 키워드가 필요합니다.`);
+      }
+
+      if (item.keywords && item.keywords.length > 20) {
+        errors.push(`${rowNumber}행: 키워드는 20개를 초과할 수 없습니다.`);
+      }
+
+      return errors;
+    }
+
+    // ========== Q&A 데이터 관리 ==========
     function getAllQA() {
       return (ChatbotStore.getQA() || []).map(normalizeQAItem);
     }
@@ -472,6 +711,7 @@
       return { inserted, updated, skipped, total: Array.from(map.values()).length };
     }
 
+    // ========== 네트워크 함수 ==========
     async function fetchWithTimeout(url, options = {}, timeoutMs = window.ADMIN_CONFIG.requestTimeoutMs || 12000) {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -483,6 +723,19 @@
       }
     }
 
+    async function fetchWithRetry(url, options = {}, retryCount = 0) {
+      try {
+        return await fetchWithTimeout(url, options);
+      } catch (error) {
+        if (retryCount < API_RETRY_CONFIG.maxRetries) {
+          const delay = API_RETRY_CONFIG.retryDelay * Math.pow(API_RETRY_CONFIG.backoffMultiplier, retryCount);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          return fetchWithRetry(url, options, retryCount + 1);
+        }
+        throw error;
+      }
+    }
+
     async function sha256(text) {
       const encoder = new TextEncoder();
       const data = encoder.encode(text);
@@ -490,6 +743,7 @@
       return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
     }
 
+    // ========== 인증 ==========
     async function login() {
       const pw = document.getElementById("adminPassword").value;
       const btn = document.getElementById("loginButton");
@@ -508,7 +762,7 @@
           const res = await fetchWithTimeout(window.ADMIN_CONFIG.loginApiUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            credentials: "omit",
+            credentials: "include",
             body: JSON.stringify({ password: pw, passwordHash: hashedPassword })
           });
 
@@ -523,6 +777,7 @@
 
           sessionStorage.setItem("admin_login", "true");
           setStatus("loginStatus", "서버 인증 성공", "ok");
+          logActivity('LOGIN', { method: 'server' });
           showAdmin();
           return;
         }
@@ -533,6 +788,7 @@
           }
           sessionStorage.setItem("admin_login", "true");
           setStatus("loginStatus", "개발용 로그인 성공", "ok");
+          logActivity('LOGIN', { method: 'dev' });
           showAdmin();
           return;
         }
@@ -549,9 +805,13 @@
 
     async function logout() {
       sessionStorage.removeItem("admin_login");
+      logActivity('LOGOUT', {});
       if (window.ADMIN_CONFIG.logoutApiUrl) {
         try {
-          await fetchWithTimeout(window.ADMIN_CONFIG.logoutApiUrl, { method: "POST", credentials: "include" });
+          await fetchWithTimeout(window.ADMIN_CONFIG.logoutApiUrl, { 
+            method: "POST", 
+            credentials: "include" 
+          });
         } catch (e) {
           console.warn("logout api failed", e);
         }
@@ -561,6 +821,7 @@
 
     function showAdmin() {
       syncQAIdsIfNeeded();
+      loadSettings();
       document.getElementById("loginView").classList.add("hidden");
       document.getElementById("adminView").classList.remove("hidden");
       renderAll();
@@ -589,6 +850,7 @@
       showAdmin();
     }
 
+    // ========== 렌더링 ==========
     function renderAll() {
       renderStats();
       renderAdminCategoryTabs();
@@ -624,6 +886,7 @@
         btn.textContent = labels[category] || category;
         btn.onclick = () => {
           adminSelectedCategory = category;
+          currentPage = 1;
           renderAdminCategoryTabs();
           renderQA();
         };
@@ -631,38 +894,178 @@
       });
     }
 
+    const handleQASearch = debounce(function() {
+      qaSearchTerm = document.getElementById("qaSearchInput").value.toLowerCase().trim();
+      currentPage = 1;
+      renderQA();
+    }, 300);
+
     function renderQA() {
       const allQa = getAllQA();
-      const filtered = adminSelectedCategory === "all"
+      let filtered = adminSelectedCategory === "all"
         ? allQa
         : allQa.filter(item => item.category === adminSelectedCategory);
 
+      if (qaSearchTerm) {
+        filtered = filtered.filter(item => 
+          item.question.toLowerCase().includes(qaSearchTerm) ||
+          item.answer.toLowerCase().includes(qaSearchTerm) ||
+          item.keywords.some(k => k.toLowerCase().includes(qaSearchTerm))
+        );
+      }
+
+      const totalPages = Math.ceil(filtered.length / itemsPerPage);
+      const startIdx = (currentPage - 1) * itemsPerPage;
+      const endIdx = startIdx + itemsPerPage;
+      const pageItems = filtered.slice(startIdx, endIdx);
+
+      const categoryLabel = (ChatbotStore.getCategoryLabels() || {})[adminSelectedCategory] || adminSelectedCategory;
       document.getElementById("qaCount").textContent =
         adminSelectedCategory === "all"
-          ? `총 ${allQa.length}건`
-          : `${(ChatbotStore.getCategoryLabels() || {})[adminSelectedCategory] || adminSelectedCategory} 카테고리 ${filtered.length}건`;
+          ? `총 ${filtered.length}건 ${qaSearchTerm ? `(검색 결과)` : ''} ${totalPages > 1 ? `(${currentPage}/${totalPages} 페이지)` : ''}`
+          : `${categoryLabel} 카테고리 ${filtered.length}건 ${totalPages > 1 ? `(${currentPage}/${totalPages} 페이지)` : ''}`;
 
       const tbody = document.getElementById("qaTable");
       tbody.innerHTML = "";
 
-      filtered.forEach(item => {
+      if (pageItems.length === 0) {
         const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td><button class="danger small-btn">삭제</button></td>
-        `;
-        tr.children[0].textContent = item.category || "";
-        tr.children[1].textContent = item.question || "";
-        tr.children[2].textContent = (item.keywords || []).join(" | ");
-        tr.children[3].textContent = item.answer || "";
-        tr.children[4].textContent = item.top ? "Y" : "-";
-        tr.querySelector("button").onclick = () => deleteQAById(item.__id);
+        tr.innerHTML = `<td colspan="6" style="text-align:center;padding:24px;color:var(--sub);">표시할 Q&A가 없습니다.</td>`;
         tbody.appendChild(tr);
+      } else {
+        pageItems.forEach(item => {
+          const tr = document.createElement("tr");
+          
+          if (editMode) {
+            const categories = ChatbotStore.getCategories() || [];
+            const labels = ChatbotStore.getCategoryLabels() || {};
+            const categoryOptions = categories
+              .filter(c => c !== 'all')
+              .map(c => `<option value="${c}" ${item.category === c ? 'selected' : ''}>${labels[c] || c}</option>`)
+              .join('');
+
+            tr.innerHTML = `
+              <td><select class="edit-field edit-category">${categoryOptions}</select></td>
+              <td><input type="text" class="edit-field edit-question" value="${sanitizeForAttribute(item.question)}" /></td>
+              <td><input type="text" class="edit-field edit-keywords" value="${sanitizeForAttribute(item.keywords.join(' | '))}" /></td>
+              <td><textarea class="edit-field edit-answer" rows="3">${sanitizeForAttribute(item.answer)}</textarea></td>
+              <td><input type="checkbox" class="edit-top" ${item.top ? 'checked' : ''} style="width:auto;margin:0;" /></td>
+              <td><button class="small-btn" data-id="${item.__id}">저장</button></td>
+            `;
+            tr.querySelector('button').onclick = (e) => saveQAEdit(e.target.dataset.id, tr);
+          } else {
+            tr.innerHTML = `
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td><button class="danger small-btn" data-id="${item.__id}">삭제</button></td>
+            `;
+            tr.children[0].textContent = item.category || "";
+            tr.children[1].textContent = item.question || "";
+            tr.children[2].textContent = (item.keywords || []).join(" | ");
+            tr.children[3].textContent = item.answer || "";
+            tr.children[4].textContent = item.top ? "Y" : "-";
+            tr.querySelector("button").onclick = (e) => deleteQAById(e.target.dataset.id);
+          }
+          
+          tbody.appendChild(tr);
+        });
+      }
+
+      renderPagination(totalPages);
+    }
+
+    function renderPagination(totalPages) {
+      const container = document.getElementById("qaPagination");
+      container.innerHTML = "";
+      if (totalPages <= 1) return;
+
+      const maxButtons = 7;
+      let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+      let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+
+      if (endPage - startPage + 1 < maxButtons) {
+        startPage = Math.max(1, endPage - maxButtons + 1);
+      }
+
+      if (currentPage > 1) {
+        const btn = document.createElement("button");
+        btn.className = "small-btn sub";
+        btn.textContent = "이전";
+        btn.onclick = () => {
+          currentPage--;
+          renderQA();
+        };
+        container.appendChild(btn);
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        const btn = document.createElement("button");
+        btn.className = `small-btn ${i === currentPage ? '' : 'sub'}`;
+        btn.textContent = i;
+        btn.onclick = () => {
+          currentPage = i;
+          renderQA();
+        };
+        container.appendChild(btn);
+      }
+
+      if (currentPage < totalPages) {
+        const btn = document.createElement("button");
+        btn.className = "small-btn sub";
+        btn.textContent = "다음";
+        btn.onclick = () => {
+          currentPage++;
+          renderQA();
+        };
+        container.appendChild(btn);
+      }
+    }
+
+    function toggleEditMode() {
+      editMode = !editMode;
+      renderQA();
+      document.getElementById("editModeBtn").textContent = 
+        editMode ? "편집 모드 종료" : "일괄 편집 모드";
+      
+      if (editMode) {
+        logActivity('EDIT_MODE_ENABLED', {});
+      } else {
+        logActivity('EDIT_MODE_DISABLED', {});
+      }
+    }
+
+    function saveQAEdit(id, row) {
+      const allQa = getAllQA();
+      const index = allQa.findIndex(item => item.__id === id);
+      if (index < 0) {
+        alert("수정 대상을 찾지 못했습니다.");
+        return;
+      }
+
+      const updatedItem = normalizeQAItem({
+        __id: id,
+        category: row.querySelector('.edit-category').value,
+        question: row.querySelector('.edit-question').value,
+        keywords: row.querySelector('.edit-keywords').value,
+        answer: row.querySelector('.edit-answer').value,
+        top: row.querySelector('.edit-top').checked
       });
+
+      const errors = validateQAItem(updatedItem, index + 1);
+      if (errors.length > 0) {
+        alert(`유효성 검사 실패:\n${errors.join('\n')}`);
+        return;
+      }
+
+      saveToHistory();
+      allQa[index] = updatedItem;
+      ChatbotStore.importTemplate({ mode: "replace", data: allQa });
+      logActivity('UPDATE_QA', { id, question: updatedItem.question });
+      renderAll();
+      alert("저장되었습니다.");
     }
 
     function deleteQAById(id) {
@@ -675,12 +1078,14 @@
       }
       if (!confirm("이 Q&A를 삭제할까요?")) return;
 
+      saveToHistory();
       const ok = ChatbotStore.deleteQAByIndex(index);
       if (!ok) {
         alert("삭제에 실패했습니다.");
         return;
       }
 
+      logActivity('DELETE_QA', { id, question: allQa[index].question });
       renderAll();
       alert("삭제되었습니다.");
     }
@@ -692,8 +1097,12 @@
         return;
       }
 
+      saveToHistory();
+      const count = getAllQA().length;
       ChatbotStore.clearQA();
       adminSelectedCategory = "all";
+      currentPage = 1;
+      logActivity('DELETE_ALL_QA', { count });
       renderAll();
       alert("전체 삭제되었습니다.");
     }
@@ -705,22 +1114,31 @@
         return;
       }
 
+      const count = (ChatbotStore.getHistory() || []).length;
       ChatbotStore.clearHistory();
+      logActivity('CLEAR_HISTORY', { count });
       renderAll();
       alert("질문 이력이 초기화되었습니다.");
     }
 
     function exportHistory() {
       const history = ChatbotStore.getHistory() || [];
+      if (history.length === 0) {
+        alert("내보낼 질문 이력이 없습니다.");
+        return;
+      }
+
       const blob = new Blob([JSON.stringify(history, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "question_history.json";
+      a.download = `question_history_${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
+      logActivity('EXPORT_HISTORY', { count: history.length });
     }
 
+    // ========== CSV 처리 ==========
     function csvEscape(value) {
       const s = String(value ?? "");
       if (s.includes(",") || s.includes('"') || s.includes("\n")) {
@@ -746,6 +1164,36 @@
       a.download = "faq_template.csv";
       a.click();
       URL.revokeObjectURL(url);
+      logActivity('DOWNLOAD_TEMPLATE', {});
+    }
+
+    function exportQAToCSV() {
+      const allQA = getAllQA();
+      if (!allQA.length) {
+        alert("내보낼 Q&A가 없습니다.");
+        return;
+      }
+
+      const csv = [
+        ["category", "question", "keywords", "answer", "top"],
+        ...allQA.map(item => [
+          item.category,
+          item.question,
+          item.keywords.join("|"),
+          item.answer,
+          item.top ? "true" : "false"
+        ])
+      ].map(row => row.map(csvEscape).join(",")).join("\n");
+
+      const bom = "\uFEFF";
+      const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `qa_export_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      logActivity('EXPORT_QA_CSV', { count: allQA.length });
     }
 
     function importCSV() {
@@ -757,8 +1205,21 @@
         return;
       }
 
+      const allowedTypes = ['text/csv', 'application/vnd.ms-excel', 'text/plain'];
+      if (!allowedTypes.includes(file.type) && !file.name.toLowerCase().endsWith('.csv')) {
+        setStatus("csvStatus", "CSV 파일만 업로드 가능합니다.", "error");
+        return;
+      }
+
+      const maxSize = 10 * 1024 * 1024;
+      if (file.size > maxSize) {
+        setStatus("csvStatus", `파일 크기는 ${Math.floor(maxSize / 1024 / 1024)}MB 이하여야 합니다.`, "error");
+        return;
+      }
+
       setStatus("csvStatus", "CSV 파일을 읽는 중...");
       const reader = new FileReader();
+      
       reader.onload = function(e) {
         try {
           const text = e.target.result;
@@ -795,8 +1256,9 @@
               top: normalizeBoolean(row.top)
             };
 
-            if (!item.question || !item.answer) {
-              issues.push(`${rowIndex + 2}행: 질문 또는 답변이 비어 있어 제외됨`);
+            const validationErrors = validateQAItem(item, rowIndex + 2);
+            if (validationErrors.length > 0) {
+              issues.push(...validationErrors);
               return;
             }
 
@@ -807,15 +1269,30 @@
             parsed.push(item);
           });
 
+          if (parsed.length === 0) {
+            setStatus("csvStatus", "유효한 데이터가 없습니다.\n" + issues.slice(0, 10).join("\n"), "error");
+            return;
+          }
+
+          saveToHistory();
           const summary = upsertQAs(parsed, mode);
           adminSelectedCategory = "all";
+          currentPage = 1;
           renderAll();
 
           const lines = [
             `업로드 완료: 신규 ${summary.inserted}건, 갱신 ${summary.updated}건, 제외 ${summary.skipped}건`,
-            issues.length ? `참고: ${issues.slice(0, 5).join(" / ")}${issues.length > 5 ? " ..." : ""}` : "형식 검증 통과"
+            issues.length ? `참고: ${issues.slice(0, 5).join(" / ")}${issues.length > 5 ? ` 외 ${issues.length - 5}건` : ""}` : "형식 검증 통과"
           ];
           setStatus("csvStatus", lines.join("\n"), "ok");
+          
+          logActivity('IMPORT_CSV', { 
+            mode, 
+            inserted: summary.inserted, 
+            updated: summary.updated, 
+            skipped: summary.skipped 
+          });
+          
           alert(`CSV 업로드 완료\n신규 ${summary.inserted}건 / 갱신 ${summary.updated}건 / 제외 ${summary.skipped}건`);
         } catch (err) {
           console.error(err);
@@ -869,6 +1346,7 @@
       return rows;
     }
 
+    // ========== 서버 미매칭 조회 ==========
     async function loadUnmatchedFromServer() {
       const tbody = document.getElementById("historyTable");
       tbody.innerHTML = "";
@@ -881,7 +1359,7 @@
           throw new Error("unmatchedApiUrl 설정이 없습니다.");
         }
 
-        const res = await fetchWithTimeout(apiUrl, {
+        const res = await fetchWithRetry(apiUrl, {
           method: "GET",
           headers: { "Accept": "application/json" },
           credentials: "include"
@@ -900,6 +1378,9 @@
         if (!items.length) {
           document.getElementById("historyCount").textContent = "미매칭 총 0건";
           setStatus("serverStatus", "미매칭 질문이 없습니다.", "ok");
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td colspan="5" style="text-align:center;padding:24px;color:var(--sub);">미매칭 질문이 없습니다.</td>`;
+          tbody.appendChild(tr);
           return;
         }
 
@@ -911,19 +1392,22 @@
             : "시간 정보 없음";
 
           tr.innerHTML = `
-            <td>${createdText}</td>
             <td></td>
             <td></td>
-            <td>${item.category || ""}</td>
+            <td></td>
+            <td></td>
             <td>N</td>
           `;
+          tr.children[0].textContent = createdText;
           tr.children[1].textContent = item.question || "";
           tr.children[2].textContent = item.answer || "";
+          tr.children[3].textContent = item.category || "";
           tbody.appendChild(tr);
         });
 
         document.getElementById("historyCount").textContent = `미매칭 총 ${count}건`;
         setStatus("serverStatus", `조회 성공: ${count}건`, "ok");
+        logActivity('LOAD_UNMATCHED', { count });
       } catch (e) {
         console.error("load unmatched failed", e);
         document.getElementById("statUnmatched").textContent = "0";
@@ -932,6 +1416,122 @@
       }
     }
 
+    // ========== Undo 기능 ==========
+    function saveToHistory() {
+      try {
+        const currentState = JSON.stringify(getAllQA());
+        historyStack.push(currentState);
+        if (historyStack.length > MAX_HISTORY) {
+          historyStack.shift();
+        }
+        updateUndoButton();
+      } catch (e) {
+        console.warn('히스토리 저장 실패:', e);
+      }
+    }
+
+    function undo() {
+      if (historyStack.length === 0) {
+        alert("되돌릴 변경 사항이 없습니다.");
+        return;
+      }
+
+      try {
+        const previousState = historyStack.pop();
+        ChatbotStore.importTemplate({ 
+          mode: "replace", 
+          data: JSON.parse(previousState) 
+        });
+        currentPage = 1;
+        renderAll();
+        updateUndoButton();
+        logActivity('UNDO', {});
+        alert("이전 상태로 되돌렸습니다.");
+      } catch (e) {
+        console.error('Undo 실패:', e);
+        alert('실행 취소 중 오류가 발생했습니다.');
+      }
+    }
+
+    function updateUndoButton() {
+      const btn = document.getElementById("undoBtn");
+      if (btn) {
+        btn.disabled = historyStack.length === 0;
+      }
+    }
+
+    // ========== 설정 관리 ==========
+    function saveSettings() {
+      const settings = {
+        itemsPerPage: parseInt(document.getElementById('itemsPerPageSetting').value),
+        autoSave: document.getElementById('autoSaveSetting').checked
+      };
+      
+      if (settings.itemsPerPage < 10 || settings.itemsPerPage > 200) {
+        alert('페이지당 항목 수는 10에서 200 사이여야 합니다.');
+        return;
+      }
+
+      safeSetLocalStorage('adminSettings', JSON.stringify(settings));
+      logActivity('SAVE_SETTINGS', settings);
+      alert('설정이 저장되었습니다.');
+      location.reload();
+    }
+
+    function loadSettings() {
+      try {
+        const saved = localStorage.getItem('adminSettings');
+        if (saved) {
+          const settings = JSON.parse(saved);
+          itemsPerPage = settings.itemsPerPage || 50;
+          
+          if (document.getElementById('itemsPerPageSetting')) {
+            document.getElementById('itemsPerPageSetting').value = itemsPerPage;
+          }
+          if (document.getElementById('autoSaveSetting')) {
+            document.getElementById('autoSaveSetting').checked = settings.autoSave !== false;
+          }
+        }
+      } catch (e) {
+        console.warn('설정 로드 실패:', e);
+      }
+    }
+
+    // ========== 키보드 단축키 ==========
+    document.addEventListener('keydown', function(e) {
+      if (document.getElementById('adminView').classList.contains('hidden')) {
+        return;
+      }
+
+      if (e.ctrlKey && e.key === 'f' && !e.shiftKey && !e.altKey) {
+        e.preventDefault();
+        document.getElementById('qaSearchInput')?.focus();
+      }
+
+      if (e.key === 'Escape' && editMode) {
+        toggleEditMode();
+      }
+
+      if (e.ctrlKey && e.key === 'z' && !e.shiftKey && !e.altKey) {
+        e.preventDefault();
+        if (historyStack.length > 0) {
+          undo();
+        }
+      }
+    });
+
+    // ========== 전역 에러 핸들러 ==========
+    window.addEventListener('error', function(e) {
+      console.error('전역 에러:', e.error);
+      logActivity('ERROR', { message: e.message, stack: e.error?.stack });
+    });
+
+    window.addEventListener('unhandledrejection', function(e) {
+      console.error('처리되지 않은 Promise 거부:', e.reason);
+      logActivity('UNHANDLED_REJECTION', { reason: String(e.reason) });
+    });
+
+    // ========== 초기화 ==========
     checkLogin();
   </script>
 </body>
