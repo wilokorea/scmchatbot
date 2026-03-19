@@ -1,392 +1,644 @@
-const ChatbotStore = (() => {
-  const QA_KEY = "faq_chatbot_qa_v5";
-  const HISTORY_KEY = "faq_chatbot_history_v5";
-
-  const CATEGORY_LABELS = {
-    all: "전체",
-    delivery: "delivery",
-    documents: "documents",
-    other: "other",
-    production: "production",
-    purchase: "purchase"
-  };
-
-  const defaultQA = [
-    {
-      category: "delivery",
-      question: "독일 및 프랑스 본사로부터 해상 선적 기간은 얼마나 되나요?",
-      keywords: ["해상", "선적", "기간", "리드타임"],
-      answer: "생산 리드타임과 해상 운송을 포함해 출하일부터 공장 입고까지 총 약 2~3개월 소요됩니다.\n현재 유럽 출발 해상 화물은 지정학적 리스크로 인해 출항 후 부산항 도착까지 약 60~70일이 걸릴 수 있습니다.",
-      top: true
-    },
-    {
-      category: "delivery",
-      question: "독일 본사 제품을 주문했는데 수입신고필증에 적출국이 네덜란드 혹은 벨기에인 이유는 무엇인가요?",
-      keywords: ["적출국", "네덜란드", "벨기에", "독일 본사"],
-      answer: "유럽 출발 화물은 Port Share 방식에 따라 가장 가까운 항구를 이용하는 것이 일반적입니다. 독일 본사 제품도 물류 효율상 네덜란드 로테르담 또는 벨기에 안트베르펜 항을 이용할 수 있으며, 제품의 생산국이 독일이라는 점은 변하지 않습니다.",
-      top: false
-    },
-    {
-      category: "delivery",
-      question: "도입 완제품 진행상황은 어디서 확인 할 수 있나요?",
-      keywords: ["진행상황", "bi report", "도입 완제품"],
-      answer: "관계사 도입 완제품 진행 현황은 BI Report에서 확인 가능합니다. 조회되지 않는 경우 담당자에게 문의해 주세요.",
-      top: true
-    },
-    {
-      category: "documents",
-      question: "세금계산서는 언제 발급해야 하나요?",
-      keywords: ["세금계산서", "발급", "기한"],
-      answer: "공급 시기마다 발행하는 것이 원칙이며, 예외적으로 공급일이 속한 달의 다음 달 10일까지 발행할 수 있습니다.",
-      top: true
-    },
-    {
-      category: "documents",
-      question: "세금계산서를 기한 이후 발행하면 어떻게 되나요?",
-      keywords: ["세금계산서", "가산세", "기한"],
-      answer: "발행자에게 1%, 수취자에게 0.5%의 가산세가 부과될 수 있습니다.",
-      top: false
-    },
-    {
-      category: "documents",
-      question: "고객이 수입신고필증을 요구합니다. 수입신고필증 제공이 가능한가요?",
-      keywords: ["수입신고필증", "제공", "가격 정보"],
-      answer: "수입신고필증 제공은 가능하지만, 단가·총액·세금 등 가격 정보는 반드시 삭제 후 제공해야 합니다.",
-      top: false
-    },
-    {
-      category: "documents",
-      question: "원산지(포괄)확인서와 원산지증명서의 차이는 무엇인가요?",
-      keywords: ["원산지 확인서", "원산지 증명서", "차이"],
-      answer: "원산지 확인서는 원산지증명서 발급을 위한 근거 자료이고, 원산지증명서는 최종적으로 원산지를 증명하는 문서입니다. 생산자만 원산지(포괄)확인서를 발급할 수 있습니다.",
-      top: false
-    },
-    {
-      category: "documents",
-      question: "원산지 증명서 발급 시 필요한 서류는 어떤 것이 있나요?",
-      keywords: ["원산지 증명서", "필요 서류", "상업송장"],
-      answer: "상업송장, 포장명세서, 선하증권, 수출신고필증이 필요합니다.",
-      top: false
-    },
-    {
-      category: "documents",
-      question: "원산지 증명서 발급 가능한가요?",
-      keywords: ["원산지 증명서", "발급 가능", "fta"],
-      answer: "요청 제품 또는 부품이 해당 FTA 협정의 원산지 기준을 충족하는 경우에 한하여 발급 가능합니다. 발급 요청 전 SCM 담당자를 통한 사전 검증이 필요합니다.",
-      top: false
-    },
-    {
-      category: "other",
-      question: "타계정 처리란 무엇인가요?",
-      keywords: ["타계정 처리", "타계정", "재고자산"],
-      answer: "재고자산을 판매 목적이 아닌 자가사용, 접대, 연구개발 등 다른 용도로 사용할 경우, 기존 재고 계정에서 해당 목적에 맞는 계정 과목으로 변경 처리하는 것을 의미합니다.",
-      top: true
-    },
-    {
-      category: "other",
-      question: "타계정 처리는 언제 필요한가요?",
-      keywords: ["타계정", "언제", "판매 목적 외"],
-      answer: "재고자산을 판매 목적 외의 용도로 사용할 때 반드시 필요합니다.",
-      top: false
-    },
-    {
-      category: "other",
-      question: "타계정 부품 인출 절차는 어떻게 되나요?",
-      keywords: ["타계정", "인출 절차", "품의서"],
-      answer: "1단계 품의서 작성 → 2단계 승인 절차 → 3단계 수령 및 인계 순으로 진행됩니다.",
-      top: false
-    },
-    {
-      category: "other",
-      question: "부품 수령 담당자는 누구인가요?",
-      keywords: ["부품 수령", "담당자", "김현태"],
-      answer: "부품 수령 담당자는 김현태 부장님입니다.",
-      top: false
-    },
-    {
-      category: "other",
-      question: "원재료 타계정 부품은 어디서 받아가나요?",
-      keywords: ["타계정 부품", "수령", "김현태"],
-      answer: "타계정 품의 완료 후 품의서를 출력해 지참하고, SCM반 김현태 부장에게 전달하면 부품 수령이 가능합니다.",
-      top: false
-    },
-    {
-      category: "other",
-      question: "원재료 타계정 부품 재고 없는 경우엔 어떻게 하나요?",
-      keywords: ["타계정 부품", "재고 없음", "입고 예정"],
-      answer: "사내 재고가 없는 경우 SCM 부품 담당자에게 공유하여 확인 절차를 진행해 주세요.",
-      top: false
-    },
-    {
-      category: "other",
-      question: "항공비용이 어느정도 나올까요?",
-      keywords: ["항공비", "운송비", "항공 운임"],
-      answer: "운송비는 선적 국가, 중량, 운송 방식에 따라 다릅니다. 항공 운임은 국가물류통합정보센터 기준으로 확인 가능합니다.",
-      top: false
-    },
-    {
-      category: "other",
-      question: "우리회사의 펌프 HS코드에 대해서 알려주세요",
-      keywords: ["hs코드", "펌프", "8413"],
-      answer: "대표 HS CODE는 다음과 같습니다.\n- 원심펌프 기타: 8413.70-9090\n- 터빈펌프: 8413.70-9010\n- 볼류트펌프: 8413.70-9020\n- 펌프 부분품: 8413.91-4000",
-      top: false
-    },
-    {
-      category: "other",
-      question: "경비는 어떻게 분류되나요?",
-      keywords: ["경비 분류", "경비 종류", "사원 경비"],
-      answer: "경비는 사원 경비, 업체 경비, 간담회/회의비의 세 가지로 분류됩니다.",
-      top: false
-    },
-    {
-      category: "other",
-      question: "사원 경비란 무엇인가요?",
-      keywords: ["사원 경비", "개인 비용", "정산"],
-      answer: "임직원이 업무 목적으로 개인 비용을 선지출하고, 회계 정산 시스템을 통해 지급받는 경비입니다.",
-      top: false
-    },
-    {
-      category: "other",
-      question: "업체 경비란 무엇인가요?",
-      keywords: ["업체 경비", "외부 거래처", "지출"],
-      answer: "회사 외부 거래처에 직접 지급되는 경비로, NPM 또는 지출품의서를 통해 승인 후 지급됩니다.",
-      top: false
-    },
-    {
-      category: "other",
-      question: "간담회/회의비는 무엇인가요?",
-      keywords: ["간담회", "회의비", "식사"],
-      answer: "업무 관련 회의 또는 팀·부서 간 친목 도모를 위한 식사 및 다과 비용이며, 별도 규정된 한도 및 증빙 기준을 준수해야 합니다.",
-      top: false
-    },
-    {
-      category: "other",
-      question: "사원 경비는 어떻게 정산하나요?",
-      keywords: ["사원 경비", "정산", "비즈플레이"],
-      answer: "비즈플레이(Bizplay) 시스템을 통해 경비 보고서를 작성하고 전자 결재를 거쳐 정산 신청합니다.",
-      top: false
-    },
-    {
-      category: "production",
-      question: "NPM이란 무엇인가요?",
-      keywords: ["npm", "비생산", "구매 절차"],
-      answer: "생산에 직접 사용되지 않는 자재나 용역을 구매할 때 사용하는 Group Standard 절차입니다.",
-      top: false
-    },
-    {
-      category: "production",
-      question: "MVI 90, 125제품은 단종되었나요?",
-      keywords: ["mvi", "90", "125", "단종"],
-      answer: "MVI 10인치 제품(90, 125 시리즈)은 추가 오더 접수가 불가하며, 대체 모델로 Helix First 제품으로 변경 진행 중입니다.",
-      top: false
-    },
-    {
-      category: "production",
-      question: "NL 제품은 단종되었나요?",
-      keywords: ["nl", "단종", "atomos giga n"],
-      answer: "NL 제품은 인도 공장에서도 단종되었으며, 대체품으로 ATOMOS GIGA N 제품 적용이 가능합니다.",
-      top: false
-    },
-    {
-      category: "production",
-      question: "단종된 제품의 경우 추가 오더가 가능한가요?",
-      keywords: ["단종", "추가 오더", "라스트 오더"],
-      answer: "단종된 제품은 사내 부품 재고가 남아 있는 경우에 한해 생산 가능 수량을 안내할 수 있으며, 관계사 제조 제품은 라스트 오더 가능 시점 이후에는 추가 오더가 불가합니다.",
-      top: false
-    },
-    {
-      category: "purchase",
-      question: "발주 취소가 가능한가요?",
-      keywords: ["발주", "취소", "오더 취소"],
-      answer: "관계사 제품은 최초 발주 진행일 기준 약 3~4일 이내에는 오더 취소가 가능하나, 이후에는 불가하거나 추가 취소 비용이 발생할 수 있습니다.",
-      top: true
-    },
-    {
-      category: "purchase",
-      question: "해외 도입 제품의 표준 리드타임이 어떻게 되나요?",
-      keywords: ["도입 제품", "리드타임", "해외"],
-      answer: "도입 업체별로 리드타임이 상이하므로, 정확한 일정은 해당 업체 담당자에게 확인해 주세요.",
-      top: false
-    },
-    {
-      category: "purchase",
-      question: "수량 변경이 가능한가요?",
-      keywords: ["수량 변경", "변경", "추가 수량"],
-      answer: "사내 조립품은 변경 가능하나, 이미 생산 완료 또는 진행 중인 경우 불용 재고 비용이 발생할 수 있습니다. 도입품은 생산 완료 또는 선적 진행 중인 건의 취소 수량은 불가합니다.",
-      top: false
-    },
-    {
-      category: "purchase",
-      question: "샘플 발주가 가능한가요?",
-      keywords: ["샘플 발주", "샘플", "구매팀"],
-      answer: "샘플 발주 가능 여부는 공급업체의 제작 가능 여부 및 단가 확인이 필요하므로 구매팀을 통해 문의해 주세요.",
-      top: false
-    },
-    {
-      category: "purchase",
-      question: "시험 생산용 자재 조달 가능한가요?",
-      keywords: ["시험 생산", "자재 조달", "신규 부품"],
-      answer: "시험 생산용 자재는 대부분 신규 부품이므로 구매팀을 통해 먼저 확인해 주세요. 기존 양산 부품은 SCM을 통해 공급 가능합니다.",
-      top: false
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SCM 업무 도우미 관리자</title>
+  <style>
+    :root{
+      --main:#009C82;
+      --main-dark:#007a66;
+      --bg:#f4f8f7;
+      --line:#d8e5e2;
+      --text:#1f2937;
+      --sub:#6b7280;
+      --danger:#dc2626;
     }
-  ];
 
-  function clone(obj) {
-    return JSON.parse(JSON.stringify(obj));
-  }
+    *{box-sizing:border-box}
 
-  function getQA() {
-    const stored = localStorage.getItem(QA_KEY);
-    if (stored) {
+    body{
+      margin:0;
+      font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif;
+      background:var(--bg);
+      color:var(--text);
+    }
+
+    .login-box{
+      max-width:420px;
+      margin:90px auto;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:20px;
+      padding:24px;
+      box-shadow:0 14px 30px rgba(0,0,0,.06);
+    }
+
+    .login-box h1{
+      margin-top:0;
+      margin-bottom:10px;
+    }
+
+    .container{
+      max-width:1200px;
+      margin:24px auto;
+      padding:0 16px;
+    }
+
+    .card{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:18px;
+      margin-bottom:16px;
+      box-shadow:0 8px 24px rgba(0,0,0,.05);
+    }
+
+    h1,h2{
+      margin-top:0;
+    }
+
+    .muted{
+      color:var(--sub);
+      font-size:13px;
+    }
+
+    .hidden{
+      display:none;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:16px;
+    }
+
+    input, select{
+      width:100%;
+      padding:12px;
+      border:1px solid var(--line);
+      border-radius:10px;
+      margin-top:8px;
+      font-size:14px;
+    }
+
+    button{
+      border:none;
+      background:var(--main);
+      color:#fff;
+      padding:11px 14px;
+      border-radius:10px;
+      cursor:pointer;
+      margin-top:10px;
+      font-size:14px;
+    }
+
+    button:hover{
+      background:var(--main-dark);
+    }
+
+    .sub{
+      background:#e8f3f1;
+      color:var(--text);
+    }
+
+    .sub:hover{
+      background:#dcecea;
+    }
+
+    .danger{
+      background:var(--danger);
+      color:#fff;
+    }
+
+    .danger:hover{
+      background:#b91c1c;
+    }
+
+    .toolbar{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin:10px 0;
+    }
+
+    .stats{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:12px;
+    }
+
+    .stat{
+      background:#f8fbfb;
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:14px;
+      text-align:center;
+    }
+
+    .stat strong{
+      display:block;
+      font-size:20px;
+      color:var(--main-dark);
+      margin-bottom:4px;
+    }
+
+    .category-tabs{
+      display:flex;
+      gap:8px;
+      overflow-x:auto;
+      padding:6px 0 10px;
+    }
+
+    .category-tab{
+      border:none;
+      background:#e8f7f3;
+      color:#006f5c;
+      padding:9px 13px;
+      border-radius:999px;
+      cursor:pointer;
+      white-space:nowrap;
+      font-size:13px;
+      margin-top:0;
+      flex-shrink:0;
+    }
+
+    .category-tab.active{
+      background:var(--main);
+      color:#fff;
+    }
+
+    .table-wrap{
+      overflow:auto;
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      font-size:13px;
+      margin-top:10px;
+    }
+
+    th, td{
+      border-bottom:1px solid var(--line);
+      padding:10px;
+      text-align:left;
+      vertical-align:top;
+    }
+
+    th{
+      background:#f8fbfb;
+    }
+
+    .small-btn{
+      margin:0;
+      padding:7px 10px;
+      font-size:12px;
+      border-radius:8px;
+    }
+
+    @media (max-width:960px){
+      .grid{
+        grid-template-columns:1fr;
+      }
+
+      .stats{
+        grid-template-columns:1fr 1fr;
+      }
+    }
+
+    @media (max-width:640px){
+      .stats{
+        grid-template-columns:1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="loginView" class="login-box">
+    <h1>관리자 페이지</h1>
+    <p class="muted">관리자 비밀번호를 입력하세요.</p>
+    <input type="password" id="adminPassword" placeholder="비밀번호 입력" />
+    <button onclick="login()">로그인</button>
+  </div>
+
+  <div id="adminView" class="container hidden">
+    <div class="card">
+      <h1>SCM 업무 도우미 관리자</h1>
+      <p class="muted">CSV 업로드, Q&A 삭제, 질문 이력 조회를 수행합니다.</p>
+      <div class="toolbar">
+        <button class="sub" onclick="logout()">로그아웃</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>현황</h2>
+      <div class="stats">
+        <div class="stat"><strong id="statQA">0</strong><span>Q&A 수</span></div>
+        <div class="stat"><strong id="statHistory">0</strong><span>로컬 이력</span></div>
+        <div class="stat"><strong id="statMatched">0</strong><span>로컬 매칭</span></div>
+        <div class="stat"><strong id="statUnmatched">0</strong><span>서버 미매칭</span></div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>CSV 업로드</h2>
+        <p class="muted">헤더 형식: category, question, keywords, answer, top</p>
+        <input type="file" id="csvFileInput" accept=".csv" />
+        <select id="csvMode">
+          <option value="append">기존 데이터에 추가</option>
+          <option value="replace">기존 데이터 전체 교체</option>
+        </select>
+        <div class="toolbar">
+          <button onclick="importCSV()">CSV 업로드</button>
+          <button class="sub" onclick="downloadCSVTemplate()">CSV 템플릿 다운로드</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>로컬 질문 이력 관리</h2>
+        <p class="muted">이 영역은 현재 브라우저의 localStorage 기준입니다.</p>
+        <div class="toolbar">
+          <button onclick="exportHistory()">질문 이력 다운로드(JSON)</button>
+          <button class="danger" onclick="clearHistory()">질문 이력 초기화</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>저장된 Q&A</h2>
+      <p class="muted">카테고리 탭으로 필터링 후 개별 삭제 또는 전체 삭제가 가능합니다.</p>
+
+      <div class="toolbar">
+        <button class="danger" onclick="clearAllQA()">전체 Q&A 삭제</button>
+      </div>
+
+      <div class="category-tabs" id="adminCategoryTabs"></div>
+      <div id="qaCount" class="muted"></div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="min-width:100px;">카테고리</th>
+              <th style="min-width:220px;">질문</th>
+              <th style="min-width:180px;">키워드</th>
+              <th style="min-width:260px;">답변</th>
+              <th style="min-width:70px;">TOP</th>
+              <th style="min-width:90px;">삭제</th>
+            </tr>
+          </thead>
+          <tbody id="qaTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>서버 미매칭 질문</h2>
+      <div id="historyCount" class="muted"></div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="min-width:160px;">시간</th>
+              <th style="min-width:220px;">질문</th>
+              <th style="min-width:260px;">답변</th>
+              <th style="min-width:100px;">카테고리</th>
+              <th style="min-width:80px;">매칭</th>
+            </tr>
+          </thead>
+          <tbody id="historyTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="shared.js"></script>
+  <script>
+    const ADMIN_PASSWORD = "wilo-admin";
+    let adminSelectedCategory = "all";
+
+    function login() {
+      const pw = document.getElementById("adminPassword").value;
+      if (pw !== ADMIN_PASSWORD) {
+        alert("비밀번호가 올바르지 않습니다.");
+        return;
+      }
+      sessionStorage.setItem("admin_login", "true");
+      showAdmin();
+    }
+
+    function logout() {
+      sessionStorage.removeItem("admin_login");
+      location.reload();
+    }
+
+    function showAdmin() {
+      document.getElementById("loginView").classList.add("hidden");
+      document.getElementById("adminView").classList.remove("hidden");
+      renderAll();
+      loadUnmatchedFromServer();
+    }
+
+    function checkLogin() {
+      if (sessionStorage.getItem("admin_login") === "true") {
+        showAdmin();
+      }
+    }
+
+    function renderAll() {
+      renderStats();
+      renderAdminCategoryTabs();
+      renderQA();
+      renderLocalHistoryStats();
+    }
+
+    function renderStats() {
+      const qa = ChatbotStore.getQA();
+      const history = ChatbotStore.getHistory();
+      const matched = history.filter(x => x.matched).length;
+
+      document.getElementById("statQA").textContent = qa.length;
+      document.getElementById("statHistory").textContent = history.length;
+      document.getElementById("statMatched").textContent = matched;
+    }
+
+    function renderLocalHistoryStats() {
+      const history = ChatbotStore.getHistory();
+      document.getElementById("statHistory").textContent = history.length;
+      document.getElementById("statMatched").textContent = history.filter(x => x.matched).length;
+    }
+
+    function renderAdminCategoryTabs() {
+      const categories = ChatbotStore.getCategories();
+      const labels = ChatbotStore.getCategoryLabels();
+      const tabs = document.getElementById("adminCategoryTabs");
+      tabs.innerHTML = "";
+
+      categories.forEach(category => {
+        const btn = document.createElement("button");
+        btn.className = `category-tab ${adminSelectedCategory === category ? "active" : ""}`;
+        btn.textContent = labels[category] || category;
+        btn.onclick = () => {
+          adminSelectedCategory = category;
+          renderAdminCategoryTabs();
+          renderQA();
+        };
+        tabs.appendChild(btn);
+      });
+    }
+
+    function renderQA() {
+      const filtered = ChatbotStore.getQAByCategory(adminSelectedCategory);
+      const allQa = ChatbotStore.getQA();
+
+      document.getElementById("qaCount").textContent =
+        adminSelectedCategory === "all"
+          ? `총 ${allQa.length}건`
+          : `${ChatbotStore.getCategoryLabels()[adminSelectedCategory] || adminSelectedCategory} 카테고리 ${filtered.length}건`;
+
+      const tbody = document.getElementById("qaTable");
+      tbody.innerHTML = "";
+
+      filtered.forEach(item => {
+        const realIndex = allQa.findIndex(q =>
+          q.category === item.category &&
+          q.question === item.question &&
+          q.answer === item.answer &&
+          JSON.stringify(q.keywords || []) === JSON.stringify(item.keywords || []) &&
+          !!q.top === !!item.top
+        );
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td><button class="danger small-btn" onclick="deleteQA(${realIndex})">삭제</button></td>
+        `;
+        tr.children[0].textContent = item.category || "";
+        tr.children[1].textContent = item.question || "";
+        tr.children[2].textContent = (item.keywords || []).join(" | ");
+        tr.children[3].textContent = item.answer || "";
+        tr.children[4].textContent = item.top ? "Y" : "-";
+        tbody.appendChild(tr);
+      });
+    }
+
+    function deleteQA(index) {
+      if (index < 0) {
+        alert("삭제 대상을 찾지 못했습니다.");
+        return;
+      }
+      if (!confirm("이 Q&A를 삭제할까요?")) return;
+
+      const ok = ChatbotStore.deleteQAByIndex(index);
+      if (!ok) {
+        alert("삭제에 실패했습니다.");
+        return;
+      }
+
+      renderAll();
+      alert("삭제되었습니다.");
+    }
+
+    function clearAllQA() {
+      const check = prompt("전체 삭제를 하려면 DELETE 를 입력하세요.");
+      if (check !== "DELETE") {
+        alert("취소되었습니다.");
+        return;
+      }
+
+      ChatbotStore.clearQA();
+      adminSelectedCategory = "all";
+      renderAll();
+      alert("전체 삭제되었습니다.");
+    }
+
+    function clearHistory() {
+      const check = prompt("질문 이력을 모두 삭제하려면 DELETE 를 입력하세요.");
+      if (check !== "DELETE") {
+        alert("취소되었습니다.");
+        return;
+      }
+
+      ChatbotStore.clearHistory();
+      renderAll();
+      alert("질문 이력이 초기화되었습니다.");
+    }
+
+    function exportHistory() {
+      const history = ChatbotStore.getHistory();
+      const blob = new Blob([JSON.stringify(history, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "question_history.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function csvEscape(value) {
+      const s = String(value ?? "");
+      if (s.includes(",") || s.includes('"') || s.includes("\n")) {
+        return `"${s.replaceAll('"', '""')}"`;
+      }
+      return s;
+    }
+
+    function downloadCSVTemplate() {
+      const csv = [
+        ["category", "question", "keywords", "answer", "top"],
+        ["delivery", "배송은 얼마나 걸리나요?", "배송|기간|리드타임", "일반적으로 2~3개월 소요됩니다.", "true"],
+        ["documents", "세금계산서는 언제 발급해야 하나요?", "세금계산서|발급|기한", "공급 시기마다 발행하는 것이 원칙입니다.", "true"],
+        ["other", "타계정 처리란 무엇인가요?", "타계정|재고자산", "재고자산을 판매 목적 외 용도로 사용할 때 계정을 변경 처리하는 것입니다.", "true"],
+        ["purchase", "발주 취소가 가능한가요?", "발주|취소", "최초 발주 진행일 기준 약 3~4일 이내에는 가능할 수 있습니다.", "true"]
+      ].map(row => row.map(csvEscape).join(",")).join("\n");
+
+      const bom = "\uFEFF";
+      const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "faq_template.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importCSV() {
+      const file = document.getElementById("csvFileInput").files[0];
+      const mode = document.getElementById("csvMode").value;
+
+      if (!file) {
+        alert("CSV 파일을 선택해 주세요.");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const text = e.target.result;
+          const rows = parseCSV(text);
+
+          if (rows.length < 2) {
+            alert("CSV 내용이 비어 있거나 형식이 올바르지 않습니다.");
+            return;
+          }
+
+          const headers = rows[0].map(h => h.trim().toLowerCase());
+          const required = ["category", "question", "keywords", "answer"];
+          const hasAllHeaders = required.every(key => headers.includes(key));
+
+          if (!hasAllHeaders) {
+            alert("CSV 헤더는 category, question, keywords, answer 형식이어야 합니다.");
+            return;
+          }
+
+          const data = rows.slice(1).map(cols => {
+            const row = {};
+            headers.forEach((header, idx) => {
+              row[header] = (cols[idx] || "").trim();
+            });
+
+            return {
+              category: row.category || "other",
+              question: row.question || "",
+              keywords: row.keywords
+                ? row.keywords.split("|").map(k => k.trim()).filter(Boolean)
+                : [],
+              answer: row.answer || "",
+              top: String(row.top || "").toLowerCase() === "true"
+            };
+          }).filter(item => item.question && item.answer);
+
+          ChatbotStore.importTemplate({ mode, data });
+
+          adminSelectedCategory = "all";
+          renderAll();
+          alert(`CSV 업로드 완료: ${data.length}건 반영`);
+        } catch (err) {
+          console.error(err);
+          alert("CSV 파일 처리 중 오류가 발생했습니다.");
+        }
+      };
+
+      reader.readAsText(file, "utf-8");
+    }
+
+    function parseCSV(text) {
+      const rows = [];
+      let row = [];
+      let cell = "";
+      let inQuotes = false;
+
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const nextChar = text[i + 1];
+
+        if (char === '"') {
+          if (inQuotes && nextChar === '"') {
+            cell += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (char === "," && !inQuotes) {
+          row.push(cell);
+          cell = "";
+        } else if ((char === "\n" || char === "\r") && !inQuotes) {
+          if (char === "\r" && nextChar === "\n") i++;
+          row.push(cell);
+          if (row.some(x => x !== "")) rows.push(row);
+          row = [];
+          cell = "";
+        } else {
+          cell += char;
+        }
+      }
+
+      if (cell.length > 0 || row.length > 0) {
+        row.push(cell);
+        if (row.some(x => x !== "")) rows.push(row);
+      }
+
+      return rows;
+    }
+
+    async function loadUnmatchedFromServer() {
       try {
-        return JSON.parse(stored);
-      } catch (e) {}
-    }
-    localStorage.setItem(QA_KEY, JSON.stringify(defaultQA));
-    return clone(defaultQA);
-  }
+        const res = await fetch("https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/getUnmatched");
+        const data = await res.json();
 
-  function setQA(data) {
-    localStorage.setItem(QA_KEY, JSON.stringify(data));
-  }
+        document.getElementById("statUnmatched").textContent = data.count || 0;
 
-  function clearQA() {
-    localStorage.setItem(QA_KEY, JSON.stringify([]));
-  }
+        const tbody = document.getElementById("historyTable");
+        tbody.innerHTML = "";
 
-  function deleteQAByIndex(index) {
-    const qa = getQA();
-    if (index < 0 || index >= qa.length) return false;
-    qa.splice(index, 1);
-    setQA(qa);
-    return true;
-  }
+        (data.items || []).forEach(item => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${new Date(item.createdAt).toLocaleString("ko-KR")}</td>
+            <td></td>
+            <td></td>
+            <td>${item.category || ""}</td>
+            <td>N</td>
+          `;
+          tr.children[1].textContent = item.question || "";
+          tr.children[2].textContent = item.answer || "";
+          tbody.appendChild(tr);
+        });
 
-  function getHistory() {
-    const stored = localStorage.getItem(HISTORY_KEY);
-    if (!stored) return [];
-    try {
-      return JSON.parse(stored);
-    } catch (e) {
-      return [];
-    }
-  }
-
-  function saveHistory(item) {
-    const history = getHistory();
-    history.push(item);
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
-  }
-
-  function clearHistory() {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify([]));
-  }
-
-  function normalizeText(text) {
-    return String(text || "").toLowerCase().trim();
-  }
-
-  function getQAByCategory(category) {
-    const qa = getQA();
-    if (!category || category === "all") {
-      return qa;
-    }
-    return qa.filter(item => item.category === category);
-  }
-
-  function getCategories() {
-    const qa = getQA();
-    const set = new Set(["all"]);
-    qa.forEach(item => {
-      if (item.category) set.add(item.category);
-    });
-    return Array.from(set);
-  }
-
-  function getCategoryLabels() {
-    return { ...CATEGORY_LABELS };
-  }
-
-  function findAnswer(input, category = "all") {
-    const text = normalizeText(input);
-    const qa = getQAByCategory(category);
-
-    let best = null;
-    let bestScore = 0;
-
-    for (const item of qa) {
-      let score = 0;
-      const q = normalizeText(item.question);
-
-      if (text.includes(q)) score += 10;
-      if (q.includes(text) && text.length >= 2) score += 5;
-
-      for (const kw of item.keywords || []) {
-        const keyword = normalizeText(kw);
-        if (keyword && text.includes(keyword)) score += 3;
-      }
-
-      const words = q.split(/\s+/);
-      for (const w of words) {
-        if (w.length > 1 && text.includes(w)) score += 1;
-      }
-
-      if (score > bestScore) {
-        bestScore = score;
-        best = item;
+        document.getElementById("historyCount").textContent = `미매칭 총 ${data.count || 0}건`;
+      } catch (e) {
+        console.error("load unmatched failed", e);
+        document.getElementById("historyCount").textContent = "서버 미매칭 질문을 불러오지 못했습니다.";
       }
     }
 
-    if (!best && category !== "all") {
-      return findAnswer(input, "all");
-    }
-
-    return bestScore > 1 ? best : best;
-  }
-
-  function importTemplate(parsed) {
-    if (!parsed || !Array.isArray(parsed.data) || !parsed.mode) {
-      throw new Error("invalid template");
-    }
-
-    const normalized = parsed.data
-      .map(item => ({
-        category: item.category || "other",
-        question: String(item.question || "").trim(),
-        keywords: Array.isArray(item.keywords)
-          ? item.keywords.map(x => String(x).trim()).filter(Boolean)
-          : [],
-        answer: String(item.answer || "").trim(),
-        top: !!item.top
-      }))
-      .filter(item => item.question && item.answer);
-
-    if (parsed.mode === "replace") {
-      setQA(normalized);
-      return;
-    }
-
-    if (parsed.mode === "append") {
-      const current = getQA();
-      setQA([...current, ...normalized]);
-      return;
-    }
-
-    throw new Error("invalid mode");
-  }
-
-  return {
-    getQA,
-    setQA,
-    clearQA,
-    deleteQAByIndex,
-    getHistory,
-    saveHistory,
-    clearHistory,
-    getCategories,
-    getCategoryLabels,
-    getQAByCategory,
-    findAnswer,
-    importTemplate
-  };
-})();
+    checkLogin();
+  </script>
+</body>
+</html>
