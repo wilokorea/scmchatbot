@@ -623,7 +623,7 @@
         return [...new Set(value.map(v => sanitizeCSVCell(String(v || "").trim())).filter(Boolean))];
       }
       return [...new Set(String(value || "")
-        .split("|")
+        .split(/\||,|;/)
         .map(v => sanitizeCSVCell(v.trim()))
         .filter(Boolean))];
     }
@@ -644,7 +644,7 @@
         question: sanitizeCSVCell(String(item.question || "").trim()),
         keywords: normalizeKeywords(item.keywords),
         answer: sanitizeCSVCell(String(item.answer || "").trim()),
-        top: !!item.top
+        top: !!item.top || normalizeBoolean(item.top)
       };
     }
 
@@ -933,11 +933,17 @@
         : allQa.filter(item => item.category === adminSelectedCategory);
 
       if (qaSearchTerm) {
-        filtered = filtered.filter(item => 
-          item.question.toLowerCase().includes(qaSearchTerm) ||
-          item.answer.toLowerCase().includes(qaSearchTerm) ||
-          item.keywords.some(k => k.toLowerCase().includes(qaSearchTerm))
-        );
+        const searchLower = qaSearchTerm.toLowerCase();
+        
+        filtered = filtered.filter(item => {
+          const questionMatch = item.question.toLowerCase().includes(searchLower);
+          if (questionMatch) return true;
+          
+          const answerMatch = item.answer.toLowerCase().includes(searchLower);
+          if (answerMatch) return true;
+          
+          return item.keywords.some(k => k.toLowerCase().includes(searchLower));
+        });
       }
 
       const totalPages = Math.ceil(filtered.length / itemsPerPage);
@@ -1147,4 +1153,541 @@
       alert("질문 이력이 초기화되었습니다.");
     }
 
-    function export<span class="cursor">█</span>
+    // ========== CSV 관련 함수 ==========
+    function parseCSVLine(line) {
+      const result = [];
+      let current = '';
+      let inQuotes = false;
+      let i = 0;
+
+      while (i < line.length) {
+        const char = line[i];
+        const nextChar = line[i + 1];
+
+        if (char === '"') {
+          if (inQuotes && nextChar === '"') {
+            current += '"';
+            i += 2;
+            continue;
+          } else {
+            inQuotes = !inQuotes;
+            i++;
+            continue;
+          }
+        }
+
+        if (char === ',' && !inQuotes) {
+          result.push(current);
+          current = '';
+          i++;
+          continue;
+        }
+
+        current += char;
+        i++;
+      }
+
+      result.push(current);
+
+      return result.map(field => {
+        let trimmed = field.trim();
+        if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+          trimmed = trimmed.slice(1, -1);
+        }
+        return trimmed;
+      });
+    }
+
+    function downloadCSVTemplate() {
+      const template = `category,question,keywords,answer,top
+delivery,독일 및 프랑스 본사로부터 해상 선적 기간은 얼마나 되나요?,해상|선적|기간|리드타임,"생산 리드타임 + 해상 운송 기준, 출하일부터 공장 입고까지는 총 약 2~3개월 소요됩니다.",TRUE
+documents,원산지 증명서 발급 가능한가요?,원산지증명서|발급|가능,원산지증명서는 요청 제품이 해당 FTA 협정의 원산지 기준을 충족하는 경우에 한하여 발급 가능합니다.,FALSE`;
+
+      const bom = "\uFEFF";
+      const blob = new Blob([bom + template], { 
+        type: "text/csv;charset=utf-8;" 
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "qa_template.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      logActivity('DOWNLOAD_CSV_TEMPLATE', {});
+    }
+
+    function importCSV() {
+      const fileInput = document.getElementById("csvFileInput");
+      const file = fileInput.files[0];
+      
+      if (!file) {
+        setStatus("csvStatus", "파일을 선택해 주세요.", "error");
+        return;
+      }
+
+      const mode = document.getElementById("csvMode").value;
+      
+      showLoadingOverlay("CSV 파일 처리 중...");
+      
+      const reader = new FileReader();
+      
+      reader.onload = function(e) {
+        try {
+          const text = e.target.result;
+          const lines = text.split(/\r?\n/).filter(line => line.trim());
+          
+          if (lines.length < 2) {
+            throw new Error("CSV 파일이 비어 있거나 형식이 올바르지 않습니다.\n파일을 확인하고 다시 시도해 주세요.");
+          }
+
+          const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/^"(.*)"$/, '$1'));
+          const requiredHeaders = ['category', 'question', 'keywords', 'answer'];
+          
+          const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
+          if (missingHeaders.length > 0) {
+            throw new Error(`필수 컬럼이 누락되었습니다: ${missingHeaders.join(', ')}\n\nCSV 템플릿을 다운로드하여 형식을 확인해 주세요.`);
+          }
+
+          const data = [];
+          const errors = [];
+
+          for (let i = 1; i < lines.length; i++) {
+            const line = lines[i];
+            if (!line.trim()) continue;
+
+            const values = parseCSVLine(line);
+            
+            const item = {
+              category: values[headers.indexOf('category')] || '',
+              question: values[headers.indexOf('question')] || '',
+              keywords: values[headers.indexOf('keywords')] || '',
+              answer: values[headers.indexOf('answer')] || '',
+              top: values[headers.indexOf('top')] || 'FALSE'
+            };
+
+            const normalized = normalizeQAItem(item);
+            const itemErrors = validateQAItem(normalized, i + 1);
+            
+            if (itemErrors.length > 0) {
+              errors.push(...itemErrors);
+            } else {
+              data.push(normalized);
+            }
+          }
+
+          if (errors.length > 0) {
+            hideLoadingOverlay();
+            const proceed = confirm(
+              `${errors.length}개의 유효성 오류가 발견되었습니다.\n\n` +
+              `${errors.slice(0, 5).join('\n')}\n` +
+              `${errors.length > 5 ? `\n... 외 ${errors.length - 5}개\n` : ''}\n` +
+              `유효한 데이터만 가져오시겠습니까?`
+            );
+            
+            if (!proceed) {
+              setStatus("csvStatus", "CSV 업로드가 취소되었습니다.", "error");
+              return;
+            }
+          }
+
+          if (data.length === 0) {
+            hideLoadingOverlay();
+            setStatus("csvStatus", "가져올 유효한 데이터가 없습니다.", "error");
+            return;
+          }
+
+          saveToHistory();
+          const result = upsertQAs(data, mode);
+          
+          hideLoadingOverlay();
+          renderAll();
+          
+          setStatus(
+            "csvStatus",
+            `${mode === 'replace' ? '전체 교체' : '추가'} 완료: ` +
+            `삽입 ${result.inserted}건, 업데이트 ${result.updated}건, ` +
+            `건너뜀 ${result.skipped}건`,
+            "ok"
+          );
+          
+          logActivity('IMPORT_CSV', { 
+            mode, 
+            inserted: result.inserted, 
+            updated: result.updated, 
+            skipped: result.skipped 
+          });
+          
+          fileInput.value = "";
+          
+        } catch (error) {
+          hideLoadingOverlay();
+          console.error('CSV 가져오기 오류:', error);
+          setStatus("csvStatus", `오류: ${error.message}`, "error");
+        }
+      };
+
+      reader.onerror = function() {
+        hideLoadingOverlay();
+        setStatus("csvStatus", "파일 읽기 실패", "error");
+      };
+
+      reader.readAsText(file);
+    }
+
+    // ========== 내보내기 함수 ==========
+    function exportHistory() {
+      const history = ChatbotStore.getHistory ? ChatbotStore.getHistory() : [];
+      
+      if (!history || history.length === 0) {
+        alert('내보낼 질문 이력이 없습니다.');
+        return;
+      }
+
+      const blob = new Blob([JSON.stringify(history, null, 2)], { 
+        type: "application/json" 
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `question_history_${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      logActivity('EXPORT_HISTORY', { count: history.length });
+      alert(`질문 이력 ${history.length}건을 다운로드했습니다.`);
+    }
+
+    function exportHistoryAsCSV() {
+      const history = ChatbotStore.getHistory ? ChatbotStore.getHistory() : [];
+      
+      if (!history || history.length === 0) {
+        alert('내보낼 질문 이력이 없습니다.');
+        return;
+      }
+
+      function csvEscape(value) {
+        const str = String(value || "");
+        if (/[",\n\r]/.test(str)) {
+          return `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+      }
+
+      const csvRows = [
+        ['시간', '질문', '답변', '카테고리', '매칭여부', '소스', '페이지', 'UserAgent']
+      ];
+
+      history.forEach(item => {
+        const createdAt = item.createdAt 
+          ? new Date(item.createdAt).toLocaleString("ko-KR") 
+          : '';
+        const matched = item.matched ? 'Y' : 'N';
+        const source = item.source === 'faq-click' ? 'FAQ 클릭' : '직접 입력';
+        
+        csvRows.push([
+          createdAt,
+          item.question || '',
+          item.answer || '',
+          item.category || '',
+          matched,
+          source,
+          item.page || '',
+          item.userAgent || ''
+        ]);
+      });
+
+      const csv = csvRows.map(row => 
+        row.map(csvEscape).join(',')
+      ).join('\n');
+      
+      const bom = "\uFEFF";
+      const blob = new Blob([bom + csv], { 
+        type: "text/csv;charset=utf-8;" 
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `question_history_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      logActivity('EXPORT_HISTORY_CSV', { count: history.length });
+      alert(`질문 이력 ${history.length}건을 CSV로 다운로드했습니다.`);
+    }
+
+    function exportQAToCSV() {
+      const allQa = getAllQA();
+      
+      if (!allQa || allQa.length === 0) {
+        alert('내보낼 Q&A가 없습니다.');
+        return;
+      }
+
+      function csvEscape(value) {
+        const str = String(value || "");
+        if (/[",\n\r]/.test(str)) {
+          return `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+      }
+
+      const csvRows = [
+        ['category', 'question', 'keywords', 'answer', 'top']
+      ];
+
+      allQa.forEach(item => {
+        csvRows.push([
+          item.category || '',
+          item.question || '',
+          (item.keywords || []).join(' | '),
+          item.answer || '',
+          item.top ? 'TRUE' : 'FALSE'
+        ]);
+      });
+
+      const csv = csvRows.map(row => 
+        row.map(csvEscape).join(',')
+      ).join('\n');
+      
+      const bom = "\uFEFF";
+      const blob = new Blob([bom + csv], { 
+        type: "text/csv;charset=utf-8;" 
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `qa_export_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      logActivity('EXPORT_QA_CSV', { count: allQa.length });
+      alert(`Q&A ${allQa.length}건을 CSV로 다운로드했습니다.`);
+    }
+
+    // ========== 미리보기 함수 ==========
+    function previewHistory() {
+      const history = ChatbotStore.getHistory ? ChatbotStore.getHistory() : [];
+      const previewSection = document.getElementById('historyPreview');
+      const tbody = document.getElementById('historyPreviewTable');
+      const countDiv = document.getElementById('historyPreviewCount');
+
+      if (!history || history.length === 0) {
+        alert('질문 이력이 없습니다.');
+        return;
+      }
+
+      tbody.innerHTML = '';
+      
+      const displayItems = history.slice(0, 100);
+
+      displayItems.forEach((item) => {
+        const tr = document.createElement('tr');
+        
+        const createdAt = item.createdAt ? new Date(item.createdAt) : null;
+        const createdText = createdAt && !Number.isNaN(createdAt.getTime())
+          ? createdAt.toLocaleString("ko-KR")
+          : "시간 정보 없음";
+
+        const matchedText = item.matched ? 'Y' : 'N';
+        const matchedColor = item.matched ? '#059669' : '#dc2626';
+        
+        const sourceText = item.source === 'faq-click' ? 'FAQ 클릭' : '직접 입력';
+        const sourceColor = item.source === 'faq-click' ? '#2563eb' : '#64748b';
+
+        tr.innerHTML = `
+          <td style="font-size:12px;">${createdText}</td>
+          <td></td>
+          <td style="font-size:12px;"></td>
+          <td style="font-size:12px;">${item.category || 'N/A'}</td>
+          <td style="color:${matchedColor};font-weight:600;">${matchedText}</td>
+          <td style="color:${sourceColor};font-size:12px;">${sourceText}</td>
+        `;
+
+        tr.children[1].textContent = item.question || '';
+        tr.children[2].textContent = (item.answer || '').substring(0, 100) + 
+          (item.answer && item.answer.length > 100 ? '...' : '');
+
+        tbody.appendChild(tr);
+      });
+
+      countDiv.textContent = `전체 ${history.length}건 중 ${displayItems.length}건 표시`;
+      previewSection.classList.remove('hidden');
+      previewSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      
+      logActivity('PREVIEW_HISTORY', { count: displayItems.length });
+    }
+
+    function closeHistoryPreview() {
+      document.getElementById('historyPreview').classList.add('hidden');
+    }
+
+    // ========== 실행 취소 ==========
+    function saveToHistory() {
+      if (historyStack.length >= MAX_HISTORY) {
+        historyStack.shift();
+      }
+      
+      const snapshot = {
+        timestamp: Date.now(),
+        data: JSON.parse(JSON.stringify(getAllQA()))
+      };
+      
+      historyStack.push(snapshot);
+      document.getElementById("undoBtn").disabled = false;
+    }
+
+    function undo() {
+      if (historyStack.length === 0) {
+        alert("실행 취소할 작업이 없습니다.");
+        return;
+      }
+
+      const snapshot = historyStack.pop();
+      
+      if (snapshot && snapshot.data) {
+        ChatbotStore.importTemplate({ 
+          mode: "replace", 
+          data: snapshot.data 
+        });
+        renderAll();
+        logActivity('UNDO', { timestamp: snapshot.timestamp });
+        alert("실행 취소되었습니다.");
+      }
+
+      if (historyStack.length === 0) {
+        document.getElementById("undoBtn").disabled = true;
+      }
+    }
+
+    // ========== 서버 미매칭 질문 ==========
+    async function loadUnmatchedFromServer() {
+      if (!window.ADMIN_CONFIG.unmatchedApiUrl) {
+        setStatus("serverStatus", "서버 API가 설정되지 않았습니다.", "error");
+        return;
+      }
+
+      setStatus("serverStatus", "서버에서 미매칭 질문을 불러오는 중...");
+
+      try {
+        const res = await fetchWithRetry(window.ADMIN_CONFIG.unmatchedApiUrl);
+
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        const items = Array.isArray(data.items) ? data.items : [];
+
+        document.getElementById("statUnmatched").textContent = items.length;
+        document.getElementById("historyCount").textContent = 
+          `서버 미매칭 질문: ${items.length}건`;
+
+        const tbody = document.getElementById("historyTable");
+        tbody.innerHTML = "";
+
+        if (items.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="5" style="text-align:center;padding:24px;color:var(--sub);">
+                미매칭 질문이 없습니다.
+              </td>
+            </tr>
+          `;
+          setStatus("serverStatus", "미매칭 질문이 없습니다.", "ok");
+          return;
+        }
+
+        items.forEach(item => {
+          const tr = document.createElement("tr");
+          
+          const createdAt = item.createdAt 
+            ? new Date(item.createdAt).toLocaleString("ko-KR")
+            : "시간 정보 없음";
+          
+          tr.innerHTML = `
+            <td style="font-size:12px;"></td>
+            <td></td>
+            <td style="font-size:12px;"></td>
+            <td style="font-size:12px;"></td>
+            <td style="color:var(--danger);font-weight:600;"></td>
+          `;
+
+          tr.children[0].textContent = createdAt;
+          tr.children[1].textContent = item.question || '';
+          tr.children[2].textContent = item.answer || '';
+          tr.children[3].textContent = item.category || 'N/A';
+          tr.children[4].textContent = item.matched ? 'Y' : 'N';
+
+          tbody.appendChild(tr);
+        });
+
+        setStatus("serverStatus", `미매칭 질문 ${items.length}건을 불러왔습니다.`, "ok");
+
+      } catch (error) {
+        console.error('서버 미매칭 질문 로드 실패:', error);
+        setStatus("serverStatus", `오류: ${error.message}`, "error");
+      }
+    }
+
+    // ========== 설정 ==========
+    function saveSettings() {
+      const itemsPerPageValue = parseInt(
+        document.getElementById("itemsPerPageSetting").value
+      );
+      
+      if (itemsPerPageValue >= 10 && itemsPerPageValue <= 200) {
+        itemsPerPage = itemsPerPageValue;
+        safeSetLocalStorage('admin_items_per_page', itemsPerPageValue);
+      }
+
+      const autoSave = document.getElementById("autoSaveSetting").checked;
+      safeSetLocalStorage('admin_auto_save', autoSave);
+
+      logActivity('SAVE_SETTINGS', { 
+        itemsPerPage: itemsPerPageValue, 
+        autoSave 
+      });
+      
+      alert('설정이 저장되었습니다.');
+      renderQA();
+    }
+
+    function loadSettings() {
+      try {
+        const storedItemsPerPage = localStorage.getItem('admin_items_per_page');
+        if (storedItemsPerPage) {
+          const value = parseInt(storedItemsPerPage);
+          if (value >= 10 && value <= 200) {
+            itemsPerPage = value;
+            document.getElementById("itemsPerPageSetting").value = value;
+          }
+        }
+
+        const storedAutoSave = localStorage.getItem('admin_auto_save');
+        if (storedAutoSave !== null) {
+          document.getElementById("autoSaveSetting").checked = 
+            storedAutoSave === 'true';
+        }
+      } catch (e) {
+        console.error('설정 로드 실패:', e);
+      }
+    }
+
+    // ========== Enter 키 이벤트 ==========
+    document.getElementById('adminPassword')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        login();
+      }
+    });
+
+    // ========== 페이지 로드 시 자동 실행 ==========
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', checkLogin);
+    } else {
+      checkLogin();
+    }
+  </script>
+</body>
+</html>
