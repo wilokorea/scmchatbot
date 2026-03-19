@@ -394,27 +394,27 @@
       }
     }
 
-    async function loadTopQuestionsFromServer(category) {
-      if (!window.CHATBOT_CONFIG.topQuestionsApiUrl) {
-        setBanner("상위 질문 API 미설정 - 로컬 FAQ 사용 중", true);
-        return [];
-      }
+   async function loadTopQuestionsFromServer(category) {
+  try {
+    const res = await fetch(...);
 
-      try {
-        const url = `${window.CHATBOT_CONFIG.topQuestionsApiUrl}?category=${encodeURIComponent(category)}`;
-        const res = await fetchWithTimeout(url, { headers: { "Accept": "application/json" } });
-        if (!res.ok) throw new Error(`top api ${res.status}`);
+    if (!res.ok) throw new Error();
 
-        const data = await res.json();
-        const items = Array.isArray(data.items) ? data.items : (Array.isArray(data.data) ? data.data : []);
-        setBanner("상위 질문 서버 연동 정상");
-        return items;
-      } catch (e) {
-        console.error("load top questions failed", e);
-        setBanner("상위 질문 서버 연결 실패 - 로컬 FAQ로 대체 중", true);
-        return [];
-      }
-    }
+    const data = await res.json();
+
+    // ✅ 성공 시 아무 메시지도 안 띄움
+
+    return Array.isArray(data.items) ? data.items : [];
+
+  } catch (e) {
+    console.error("top questions failed", e);
+
+    // ❗ 실패할 때만 표시
+    // statusBox.textContent = "서버 연결 실패 - 로컬 FAQ 사용";
+
+    return [];
+  }
+}
 
     function renderCategoryTabs() {
       const categories = ChatbotStore.getCategories();
