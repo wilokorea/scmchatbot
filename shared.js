@@ -506,6 +506,91 @@
       return false;
     }
 
+
+// ========== 질문 이력 미리보기 ==========
+function previewHistory() {
+  const history = ChatbotStore.getHistory ? ChatbotStore.getHistory() : [];
+  const previewSection = document.getElementById('historyPreview');
+  const tbody = document.getElementById('historyPreviewTable');
+  const countDiv = document.getElementById('historyPreviewCount');
+
+  if (!history || history.length === 0) {
+    alert('질문 이력이 없습니다.');
+    return;
+  }
+
+  tbody.innerHTML = '';
+  
+  // 최근 100개만 표시
+  const displayItems = history.slice(0, 100);
+
+  displayItems.forEach((item, index) => {
+    const tr = document.createElement('tr');
+    
+    const createdAt = item.createdAt ? new Date(item.createdAt) : null;
+    const createdText = createdAt && !Number.isNaN(createdAt.getTime())
+      ? createdAt.toLocaleString("ko-KR")
+      : "시간 정보 없음";
+
+    const matchedText = item.matched ? 'Y' : 'N';
+    const matchedColor = item.matched ? '#059669' : '#dc2626';
+    
+    const sourceText = item.source === 'faq-click' ? 'FAQ 클릭' : '직접 입력';
+    const sourceColor = item.source === 'faq-click' ? '#2563eb' : '#64748b';
+
+    tr.innerHTML = `
+      <td style="font-size:12px;">${createdText}</td>
+      <td></td>
+      <td style="font-size:12px;"></td>
+      <td style="font-size:12px;">${item.category || 'N/A'}</td>
+      <td style="color:${matchedColor};font-weight:600;">${matchedText}</td>
+      <td style="color:${sourceColor};font-size:12px;">${sourceText}</td>
+    `;
+
+    // XSS 방지를 위해 textContent 사용
+    tr.children[1].textContent = item.question || '';
+    tr.children[2].textContent = (item.answer || '').substring(0, 100) + 
+      (item.answer && item.answer.length > 100 ? '...' : '');
+
+    tbody.appendChild(tr);
+  });
+
+  countDiv.textContent = `전체 ${history.length}건 중 ${displayItems.length}건 표시`;
+  previewSection.classList.remove('hidden');
+  
+  // 미리보기 영역으로 스크롤
+  previewSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  
+  logActivity('PREVIEW_HISTORY', { count: displayItems.length });
+}
+
+function closeHistoryPreview() {
+  const previewSection = document.getElementById('historyPreview');
+  previewSection.classList.add('hidden');
+}
+
+// 기존 exportHistory 함수 개선
+function exportHistory() {
+  const history = ChatbotStore.getHistory ? ChatbotStore.getHistory() : [];
+  
+  if (!history || history.length === 0) {
+    alert('내보낼 질문 이력이 없습니다.');
+    return;
+  }
+
+  const blob = new Blob([JSON.stringify(history, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `question_history_${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  
+  logActivity('EXPORT_HISTORY', { count: history.length });
+  alert(`질문 이력 ${history.length}건을 다운로드했습니다.`);
+}
+
+    
     const history = getHistory();
     
     const sanitizedItem = {
