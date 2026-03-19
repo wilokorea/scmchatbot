@@ -612,6 +612,51 @@ function exportHistory() {
     return safeRemoveItem(HISTORY_KEY);
   }
 
+function exportHistoryAsCSV() {
+  const history = ChatbotStore.getHistory ? ChatbotStore.getHistory() : [];
+  
+  if (!history || history.length === 0) {
+    alert('내보낼 질문 이력이 없습니다.');
+    return;
+  }
+
+  const csvRows = [
+    ['시간', '질문', '답변', '카테고리', '매칭여부', '소스', '페이지', 'UserAgent']
+  ];
+
+  history.forEach(item => {
+    const createdAt = item.createdAt ? new Date(item.createdAt).toLocaleString("ko-KR") : '';
+    const matched = item.matched ? 'Y' : 'N';
+    const source = item.source === 'faq-click' ? 'FAQ 클릭' : '직접 입력';
+    
+    csvRows.push([
+      createdAt,
+      item.question || '',
+      item.answer || '',
+      item.category || '',
+      matched,
+      source,
+      item.page || '',
+      item.userAgent || ''
+    ]);
+  });
+
+  const csv = csvRows.map(row => row.map(csvEscape).join(',')).join('\n');
+  const bom = "\uFEFF";
+  const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `question_history_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  
+  logActivity('EXPORT_HISTORY_CSV', { count: history.length });
+  alert(`질문 이력 ${history.length}건을 CSV로 다운로드했습니다.`);
+}
+
+
+  
   // ========== 텍스트 정규화 및 매칭 ==========
   function normalizeText(value) {
     return String(value || "")
