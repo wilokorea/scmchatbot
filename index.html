@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.azurewebsites.net; img-src 'self' data:; font-src 'self';" />
+  <meta name="description" content="SCM 업무 관련 자주 묻는 질문에 대한 빠른 답변을 제공하는 챗봇입니다." />
   <title>SCM FAQ봇</title>
   <style>
     :root{
@@ -12,6 +14,8 @@
       --line:#d8e5e2;
       --text:#1f2937;
       --sub:#6b7280;
+      --error:#dc2626;
+      --warning:#f59e0b;
     }
 
     *{box-sizing:border-box}
@@ -69,11 +73,24 @@
       text-align:center;
     }
 
+    .notice.error{
+      background:#fef2f2;
+      color:var(--error);
+      border-color:#fecaca;
+    }
+
+    .notice.warning{
+      background:#fffbeb;
+      color:var(--warning);
+      border-color:#fef3c7;
+    }
+
     .chat{
       flex:1;
       overflow-y:auto;
       padding:16px;
       background:#f8fbfb;
+      scroll-behavior:smooth;
     }
 
     .row{
@@ -81,6 +98,12 @@
       gap:8px;
       margin-bottom:14px;
       align-items:flex-end;
+      animation:fadeIn 0.3s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity:0; transform:translateY(10px); }
+      to { opacity:1; transform:translateY(0); }
     }
 
     .row.user{ justify-content:flex-end; }
@@ -132,6 +155,26 @@
 
     .user .time{ text-align:right; }
 
+    .typing{
+      opacity:.8;
+    }
+
+    .typing .bubble::after{
+      content:'';
+      display:inline-block;
+      width:3px;
+      height:3px;
+      border-radius:50%;
+      background:var(--sub);
+      margin-left:4px;
+      animation:blink 1.4s infinite;
+    }
+
+    @keyframes blink {
+      0%, 20%, 100% { opacity:0; }
+      50% { opacity:1; }
+    }
+
     .faq{
       padding:12px;
       border-top:1px solid var(--line);
@@ -150,6 +193,16 @@
       gap:8px;
       overflow-x:auto;
       padding-bottom:4px;
+      scrollbar-width:thin;
+    }
+
+    .category-tabs::-webkit-scrollbar{
+      height:4px;
+    }
+
+    .category-tabs::-webkit-scrollbar-thumb{
+      background:var(--line);
+      border-radius:4px;
     }
 
     .category-tab{
@@ -162,11 +215,21 @@
       white-space:nowrap;
       font-size:13px;
       flex-shrink:0;
+      transition:all 0.2s;
+    }
+
+    .category-tab:hover{
+      background:#d0f0e8;
     }
 
     .category-tab.active{
       background:var(--main);
       color:#fff;
+    }
+
+    .category-tab:focus{
+      outline:2px solid var(--main);
+      outline-offset:2px;
     }
 
     .faq-list{
@@ -186,23 +249,46 @@
       font-size:14px;
       text-align:left;
       line-height:1.5;
+      transition:all 0.2s;
+      position:relative;
     }
 
-    .faq-list button:hover{ background:#dff3ef; }
+    .faq-list button:hover:not(:disabled){ 
+      background:#dff3ef;
+      transform:translateX(2px);
+    }
+
+    .faq-list button:focus{
+      outline:2px solid var(--main);
+      outline-offset:2px;
+    }
+
     .faq-list button:disabled{
       opacity:.65;
       cursor:not-allowed;
     }
 
+    .faq-list button::before{
+      content:'Q';
+      display:inline-block;
+      width:20px;
+      height:20px;
+      background:var(--main);
+      color:#fff;
+      border-radius:50%;
+      text-align:center;
+      line-height:20px;
+      font-size:11px;
+      font-weight:bold;
+      margin-right:8px;
+      vertical-align:middle;
+    }
+
     .empty-faq{
       font-size:13px;
       color:var(--sub);
-      padding:8px 2px;
-    }
-
-    .typing{
-      opacity:.8;
-      font-style:italic;
+      padding:16px 8px;
+      text-align:center;
     }
 
     .input-area{
@@ -218,6 +304,11 @@
       border:1px solid var(--line);
       border-radius:16px;
       padding:8px;
+      transition:border-color 0.2s;
+    }
+
+    .input-wrap:focus-within{
+      border-color:var(--main);
     }
 
     .input-wrap input{
@@ -237,11 +328,87 @@
       width:48px;
       cursor:pointer;
       font-size:18px;
+      transition:background 0.2s;
+    }
+
+    .input-wrap button:hover:not(:disabled){
+      background:var(--main-dark);
     }
 
     .input-wrap button:disabled{
       opacity:.7;
       cursor:not-allowed;
+    }
+
+    .input-wrap button:focus{
+      outline:2px solid var(--main-dark);
+      outline-offset:2px;
+    }
+
+    .char-counter{
+      font-size:11px;
+      color:var(--sub);
+      text-align:right;
+      margin-top:4px;
+    }
+
+    .char-counter.warning{
+      color:var(--warning);
+    }
+
+    .char-counter.error{
+      color:var(--error);
+    }
+
+    .loading-dots{
+      display:inline-flex;
+      gap:4px;
+      align-items:center;
+    }
+
+    .loading-dots span{
+      width:6px;
+      height:6px;
+      background:var(--sub);
+      border-radius:50%;
+      animation:bounce 1.4s infinite ease-in-out;
+    }
+
+    .loading-dots span:nth-child(1){ animation-delay:-0.32s; }
+    .loading-dots span:nth-child(2){ animation-delay:-0.16s; }
+
+    @keyframes bounce {
+      0%, 80%, 100% { transform:scale(0); }
+      40% { transform:scale(1); }
+    }
+
+    .scroll-to-bottom{
+      position:absolute;
+      bottom:80px;
+      right:24px;
+      width:40px;
+      height:40px;
+      border-radius:50%;
+      background:var(--main);
+      color:#fff;
+      border:none;
+      cursor:pointer;
+      box-shadow:0 4px 12px rgba(0,0,0,0.15);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      font-size:20px;
+      transition:all 0.2s;
+      z-index:10;
+    }
+
+    .scroll-to-bottom.visible{
+      display:flex;
+    }
+
+    .scroll-to-bottom:hover{
+      background:var(--main-dark);
+      transform:scale(1.1);
     }
 
     @media (max-width:520px){
@@ -252,35 +419,52 @@
         min-height:100vh;
       }
     }
+
+    @media (prefers-reduced-motion: reduce) {
+      .row, .faq-list button {
+        animation:none;
+        transition:none;
+      }
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="header">
-      <div class="avatar">💬</div>
+      <div class="avatar" role="img" aria-label="챗봇 아이콘">💬</div>
       <div>
         <h1>SCM봇</h1>
         <p>문의 내용을 입력하시면 등록된 답변을 안내드립니다.</p>
       </div>
     </div>
 
-    <div class="notice">아래 카테고리를 선택하면 해당 FAQ가 아래에 표시됩니다.</div>
+    <div class="notice" id="noticeBar">아래 카테고리를 선택하면 해당 FAQ가 표시됩니다.</div>
 
-    <div class="chat" id="chatBox"></div>
+    <div class="chat" id="chatBox" role="log" aria-live="polite" aria-atomic="false"></div>
+
+    <button class="scroll-to-bottom" id="scrollToBottom" aria-label="맨 아래로 스크롤">↓</button>
 
     <div class="faq">
       <div class="faq-title">카테고리</div>
-      <div class="category-tabs" id="categoryTabs"></div>
+      <div class="category-tabs" id="categoryTabs" role="tablist"></div>
 
       <div class="faq-title" style="margin-top:12px;">자주 묻는 질문</div>
-      <div class="faq-list" id="faqList"></div>
+      <div class="faq-list" id="faqList" role="list"></div>
     </div>
 
     <div class="input-area">
       <div class="input-wrap">
-        <input id="userInput" type="text" placeholder="질문을 입력하세요" />
-        <button id="sendButton" onclick="sendMessage()">➤</button>
+        <input 
+          id="userInput" 
+          type="text" 
+          placeholder="질문을 입력하세요" 
+          maxlength="500"
+          aria-label="질문 입력"
+          autocomplete="off"
+        />
+        <button id="sendButton" onclick="sendMessage()" aria-label="메시지 전송">➤</button>
       </div>
+      <div class="char-counter" id="charCounter"></div>
     </div>
   </div>
 
@@ -289,44 +473,111 @@
       logApiUrl: "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/logQuestion",
       topQuestionsApiUrl: "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/getTopQuestions",
       requestTimeoutMs: 10000,
-      faqButtonCount: 4
+      faqButtonCount: 4,
+      maxQuestionLength: 500,
+      typingDelay: 400,
+      maxRetries: 3,
+      retryDelay: 1000
     }, window.CHATBOT_CONFIG || {});
   </script>
 
   <script src="shared.js"></script>
 
   <script>
+    // ========== 전역 변수 ==========
     const chatBox = document.getElementById("chatBox");
     const faqList = document.getElementById("faqList");
     const categoryTabs = document.getElementById("categoryTabs");
     const userInput = document.getElementById("userInput");
     const sendButton = document.getElementById("sendButton");
+    const charCounter = document.getElementById("charCounter");
+    const noticeBar = document.getElementById("noticeBar");
+    const scrollToBottomBtn = document.getElementById("scrollToBottom");
 
     let selectedCategory = (window.ChatbotStore && ChatbotStore.getCategories()[0]) || "all";
     let isSending = false;
+    let messageCount = 0;
+    let pendingLogs = [];
+
+    // ========== 유틸리티 함수 ==========
+    function sanitizeHTML(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function escapeHtml(text) {
+      return sanitizeHTML(String(text));
+    }
+
+    function formatAnswer(text) {
+      return escapeHtml(String(text))
+        .replaceAll("\n", "<br>")
+        .replaceAll(/https?:\/\/[^\s]+/g, (url) => {
+          return `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color:#0891b2;text-decoration:underline;">${url}</a>`;
+        });
+    }
 
     function getTimeText() {
       return new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
     }
 
-    function escapeHtml(text) {
-      return String(text)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;");
+    function debounce(func, wait) {
+      let timeout;
+      return function executedFunction(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func(...args), wait);
+      };
     }
 
-    function formatAnswer(text) {
-      return escapeHtml(String(text)).replaceAll("\n", "<br>");
+    function showNotice(message, type = "") {
+      noticeBar.textContent = message;
+      noticeBar.className = `notice ${type}`;
     }
 
+    function updateCharCounter() {
+      const length = userInput.value.length;
+      const max = window.CHATBOT_CONFIG.maxQuestionLength || 500;
+      
+      if (length === 0) {
+        charCounter.textContent = "";
+        charCounter.className = "char-counter";
+        return;
+      }
+
+      charCounter.textContent = `${length}/${max}`;
+      
+      if (length > max * 0.9) {
+        charCounter.className = "char-counter error";
+      } else if (length > max * 0.7) {
+        charCounter.className = "char-counter warning";
+      } else {
+        charCounter.className = "char-counter";
+      }
+    }
+
+    function scrollToBottom(smooth = true) {
+      chatBox.scrollTo({
+        top: chatBox.scrollHeight,
+        behavior: smooth ? 'smooth' : 'auto'
+      });
+    }
+
+    function checkScrollPosition() {
+      const isNearBottom = chatBox.scrollHeight - chatBox.scrollTop - chatBox.clientHeight < 100;
+      scrollToBottomBtn.classList.toggle('visible', !isNearBottom && messageCount > 3);
+    }
+
+    // ========== 메시지 관리 ==========
     function addMessage(text, sender, name = "", extraClass = "") {
       const row = document.createElement("div");
       row.className = `row ${sender} ${extraClass}`.trim();
+      row.setAttribute('role', 'article');
+      row.setAttribute('aria-label', `${sender === 'bot' ? '챗봇' : '사용자'} 메시지`);
 
       if (sender === "bot") {
         row.innerHTML = `
-          <div class="bot-icon">Q</div>
+          <div class="bot-icon" role="img" aria-label="챗봇">Q</div>
           <div class="bubble-group bot">
             <div class="sender">${escapeHtml(name || "상담봇")}</div>
             <div class="bubble"></div>
@@ -345,26 +596,81 @@
 
       row.querySelector(".bubble").innerHTML = formatAnswer(text);
       chatBox.appendChild(row);
-      chatBox.scrollTop = chatBox.scrollHeight;
+      messageCount++;
+      
+      requestAnimationFrame(() => {
+        scrollToBottom();
+        checkScrollPosition();
+      });
+
       return row;
     }
 
     function removeRow(row) {
-      if (row && row.parentNode) row.parentNode.removeChild(row);
+      if (row && row.parentNode) {
+        row.classList.add('removing');
+        setTimeout(() => {
+          if (row.parentNode) {
+            row.parentNode.removeChild(row);
+            messageCount = Math.max(0, messageCount - 1);
+          }
+        }, 150);
+      }
     }
 
+    function addTypingIndicator() {
+      const row = document.createElement("div");
+      row.className = "row bot typing";
+      row.innerHTML = `
+        <div class="bot-icon" role="img" aria-label="챗봇">Q</div>
+        <div class="bubble-group bot">
+          <div class="sender">SCM봇</div>
+          <div class="bubble">
+            <span class="loading-dots" aria-label="답변을 찾는 중">
+              <span></span><span></span><span></span>
+            </span>
+          </div>
+        </div>
+      `;
+      chatBox.appendChild(row);
+      scrollToBottom();
+      return row;
+    }
+
+    // ========== 네트워크 함수 ==========
     async function fetchWithTimeout(url, options = {}, timeoutMs = window.CHATBOT_CONFIG.requestTimeoutMs || 10000) {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), timeoutMs);
       try {
         return await fetch(url, { ...options, signal: controller.signal });
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          throw new Error('요청 시간이 초과되었습니다.');
+        }
+        throw error;
       } finally {
         clearTimeout(timer);
       }
     }
 
+    async function fetchWithRetry(url, options = {}, retryCount = 0) {
+      try {
+        return await fetchWithTimeout(url, options);
+      } catch (error) {
+        if (retryCount < (window.CHATBOT_CONFIG.maxRetries || 3)) {
+          const delay = (window.CHATBOT_CONFIG.retryDelay || 1000) * Math.pow(2, retryCount);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          return fetchWithRetry(url, options, retryCount + 1);
+        }
+        throw error;
+      }
+    }
+
     async function sendToServer(data) {
-      if (!window.CHATBOT_CONFIG.logApiUrl) return;
+      if (!window.CHATBOT_CONFIG.logApiUrl) {
+        console.warn('logApiUrl이 설정되지 않았습니다.');
+        return;
+      }
 
       try {
         const res = await fetchWithTimeout(window.CHATBOT_CONFIG.logApiUrl, {
@@ -373,18 +679,56 @@
           body: JSON.stringify(data)
         });
 
-        if (!res.ok) throw new Error(`log api ${res.status}`);
+        if (!res.ok) {
+          throw new Error(`서버 응답 오류: ${res.status}`);
+        }
+
+        await processPendingLogs();
       } catch (err) {
-        console.warn("server log error:", err);
-        const pending = JSON.parse(localStorage.getItem("chatbot_pending_logs") || "[]");
-        pending.push(data);
-        localStorage.setItem("chatbot_pending_logs", JSON.stringify(pending.slice(-100)));
+        console.warn("서버 로그 전송 실패:", err);
+        pendingLogs.push(data);
+        
+        try {
+          const stored = JSON.parse(localStorage.getItem("chatbot_pending_logs") || "[]");
+          stored.push(data);
+          localStorage.setItem("chatbot_pending_logs", JSON.stringify(stored.slice(-100)));
+        } catch (e) {
+          console.error("localStorage 저장 실패:", e);
+        }
+      }
+    }
+
+    async function processPendingLogs() {
+      if (pendingLogs.length === 0) return;
+
+      const logsToSend = [...pendingLogs];
+      pendingLogs = [];
+
+      for (const log of logsToSend) {
+        try {
+          const res = await fetchWithTimeout(window.CHATBOT_CONFIG.logApiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(log)
+          });
+
+          if (!res.ok) {
+            pendingLogs.push(log);
+          }
+        } catch (err) {
+          pendingLogs.push(log);
+          break;
+        }
       }
     }
 
     async function loadTopQuestionsFromServer(category) {
+      if (!window.CHATBOT_CONFIG.topQuestionsApiUrl) {
+        return [];
+      }
+
       try {
-        const res = await fetchWithTimeout(
+        const res = await fetchWithRetry(
           `${window.CHATBOT_CONFIG.topQuestionsApiUrl}?category=${encodeURIComponent(category)}`
         );
 
@@ -395,11 +739,12 @@
         const data = await res.json();
         return Array.isArray(data.items) ? data.items : [];
       } catch (e) {
-        console.error("top questions failed", e);
+        console.error("인기 질문 로드 실패:", e);
         return [];
       }
     }
 
+    // ========== 인기 질문 계산 ==========
     function getHistoryBasedTopQuestions(category, limit = window.CHATBOT_CONFIG.faqButtonCount || 4) {
       const qa = ChatbotStore.getQAByCategory(category);
       const history = ChatbotStore.getHistory ? ChatbotStore.getHistory() : [];
@@ -484,6 +829,7 @@
       return fallbackQa.slice(0, limit);
     }
 
+    // ========== 렌더링 ==========
     function renderCategoryTabs() {
       const categories = ChatbotStore.getCategories();
       const labels = ChatbotStore.getCategoryLabels();
@@ -494,16 +840,30 @@
 
       categoryTabs.innerHTML = "";
 
-      categories.forEach(category => {
+      categories.forEach((category, index) => {
         const btn = document.createElement("button");
         btn.className = `category-tab ${selectedCategory === category ? "active" : ""}`;
         btn.textContent = labels[category] || category;
+        btn.setAttribute('role', 'tab');
+        btn.setAttribute('aria-selected', selectedCategory === category ? 'true' : 'false');
+        btn.setAttribute('aria-controls', 'faqList');
+        btn.setAttribute('tabindex', selectedCategory === category ? '0' : '-1');
 
         btn.onclick = async () => {
           if (isSending) return;
           selectedCategory = category;
           renderCategoryTabs();
+          showNotice(`${labels[category] || category} 카테고리의 FAQ를 불러오는 중...`);
           await renderFAQ();
+          showNotice(`아래 카테고리를 선택하면 해당 FAQ가 표시됩니다.`);
+        };
+
+        btn.onkeydown = (e) => {
+          if (e.key === 'ArrowRight' && index < categories.length - 1) {
+            categoryTabs.children[index + 1]?.focus();
+          } else if (e.key === 'ArrowLeft' && index > 0) {
+            categoryTabs.children[index - 1]?.focus();
+          }
         };
 
         categoryTabs.appendChild(btn);
@@ -514,59 +874,87 @@
       const qa = ChatbotStore.getQAByCategory(selectedCategory);
       faqList.innerHTML = "";
 
-      const serverTop = await loadTopQuestionsFromServer(selectedCategory);
-      const topQA = normalizeTopItems(serverTop, qa, selectedCategory);
+      try {
+        const serverTop = await loadTopQuestionsFromServer(selectedCategory);
+        const topQA = normalizeTopItems(serverTop, qa, selectedCategory);
 
-      if (!topQA.length) {
+        if (!topQA.length) {
+          const empty = document.createElement("div");
+          empty.className = "empty-faq";
+          empty.textContent = "이 카테고리에 등록된 FAQ가 없습니다.";
+          faqList.appendChild(empty);
+          return;
+        }
+
+        topQA.forEach((item, index) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.textContent = item.question;
+          btn.setAttribute('role', 'listitem');
+          btn.setAttribute('aria-label', `자주 묻는 질문 ${index + 1}: ${item.question}`);
+
+          btn.onclick = async () => {
+            if (btn.disabled || isSending) return;
+            btn.disabled = true;
+
+            try {
+              await sendMessage(item.question, true);
+            } catch (error) {
+              console.error('FAQ 클릭 처리 오류:', error);
+              showNotice('오류가 발생했습니다. 다시 시도해주세요.', 'error');
+            } finally {
+              setTimeout(() => {
+                btn.disabled = false;
+              }, 500);
+            }
+          };
+
+          faqList.appendChild(btn);
+        });
+      } catch (error) {
+        console.error('FAQ 렌더링 오류:', error);
         const empty = document.createElement("div");
         empty.className = "empty-faq";
-        empty.textContent = "이 카테고리에 등록된 FAQ가 없습니다.";
+        empty.textContent = "FAQ를 불러오는 중 오류가 발생했습니다.";
         faqList.appendChild(empty);
+      }
+    }
+
+    // ========== 메시지 전송 ==========
+    async function sendMessage(customText = null, isFaqClick = false) {
+      const text = (customText ?? userInput.value).trim();
+      
+      if (!text) {
+        userInput.focus();
         return;
       }
 
-      topQA.forEach(item => {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.textContent = item.question;
+      if (text.length > (window.CHATBOT_CONFIG.maxQuestionLength || 500)) {
+        showNotice('질문이 너무 깁니다. 더 짧게 입력해주세요.', 'error');
+        return;
+      }
 
-        btn.onclick = async () => {
-          if (btn.disabled || isSending) return;
-          btn.disabled = true;
-
-          try {
-            await sendMessage(item.question, true);
-          } finally {
-            setTimeout(() => {
-              btn.disabled = false;
-            }, 500);
-          }
-        };
-
-        faqList.appendChild(btn);
-      });
-    }
-
-    async function sendMessage(customText = null, isFaqClick = false) {
-      const text = (customText ?? userInput.value).trim();
-      if (!text || isSending) return;
+      if (isSending) {
+        return;
+      }
 
       isSending = true;
       sendButton.disabled = true;
       userInput.disabled = true;
 
-      addMessage(text, "user");
-      userInput.value = "";
-
-      const typingRow = addMessage("답변을 찾는 중입니다...", "bot", "SCM봇", "typing");
-
       try {
+        addMessage(text, "user");
+        userInput.value = "";
+        updateCharCounter();
+
+        const typingRow = addTypingIndicator();
+
+        await new Promise(resolve => setTimeout(resolve, window.CHATBOT_CONFIG.typingDelay || 400));
+
         const result = ChatbotStore.findAnswer(text, selectedCategory);
         const answer = result
           ? result.answer
           : "등록된 답변을 찾지 못했습니다. 해당 문의 사항은 SCM팀 담당자에게 문의 부탁드립니다.";
-
-        await new Promise(resolve => setTimeout(resolve, 250));
 
         removeRow(typingRow);
         addMessage(answer, "bot", "SCM봇");
@@ -588,6 +976,13 @@
 
         sendToServer(payload);
         await renderFAQ();
+
+        if (!result) {
+          showNotice('등록된 답변을 찾지 못했습니다. 다른 표현으로 검색해보세요.', 'warning');
+        }
+      } catch (error) {
+        console.error('메시지 전송 오류:', error);
+        showNotice('오류가 발생했습니다. 다시 시도해주세요.', 'error');
       } finally {
         isSending = false;
         sendButton.disabled = false;
@@ -596,13 +991,72 @@
       }
     }
 
+    // ========== 이벤트 리스너 ==========
+    userInput.addEventListener("input", updateCharCounter);
+
     userInput.addEventListener("keydown", e => {
-      if (e.key === "Enter") sendMessage();
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
     });
 
-    addMessage("안녕하세요.\n문의사항을 입력하거나 아래 FAQ를 선택해주세요.", "bot", "SCM봇");
-    renderCategoryTabs();
-    renderFAQ();
+    chatBox.addEventListener('scroll', debounce(checkScrollPosition, 100));
+
+    scrollToBottomBtn.addEventListener('click', () => {
+      scrollToBottom();
+    });
+
+    window.addEventListener('online', () => {
+      showNotice('네트워크 연결이 복구되었습니다.', 'ok');
+      processPendingLogs();
+    });
+
+    window.addEventListener('offline', () => {
+      showNotice('네트워크 연결이 끊어졌습니다. 연결이 복구되면 자동으로 재시도합니다.', 'error');
+    });
+
+    // ========== 초기화 ==========
+    async function init() {
+      try {
+        addMessage("안녕하세요.\n문의사항을 입력하거나 아래 FAQ를 선택해주세요.", "bot", "SCM봇");
+        renderCategoryTabs();
+        await renderFAQ();
+        userInput.focus();
+        
+        const storedLogs = localStorage.getItem("chatbot_pending_logs");
+        if (storedLogs) {
+          try {
+            pendingLogs = JSON.parse(storedLogs);
+            localStorage.removeItem("chatbot_pending_logs");
+            processPendingLogs();
+          } catch (e) {
+            console.error('저장된 로그 복원 실패:', e);
+          }
+        }
+      } catch (error) {
+        console.error('초기화 오류:', error);
+        showNotice('챗봇 초기화 중 오류가 발생했습니다.', 'error');
+      }
+    }
+
+    // ========== 전역 에러 핸들러 ==========
+    window.addEventListener('error', (e) => {
+      console.error('전역 에러:', e.error);
+      showNotice('예기치 않은 오류가 발생했습니다.', 'error');
+    });
+
+    window.addEventListener('unhandledrejection', (e) => {
+      console.error('처리되지 않은 Promise 거부:', e.reason);
+      showNotice('네트워크 오류가 발생했습니다.', 'error');
+    });
+
+    // ========== 시작 ==========
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
   </script>
 </body>
 </html>
