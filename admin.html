@@ -3,13 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script>
-  window.ADMIN_CONFIG = {
-    authMode: "dev",
-    devPassword: "wiloscm"
-  };
-</script>
-  
   <title>SCM 업무 도우미 관리자</title>
   <style>
     :root{
@@ -356,17 +349,17 @@
     </div>
   </div>
 
-  <script>
-    window.ADMIN_CONFIG = Object.assign({
-      authMode: "server",
-      loginApiUrl: "",
-      verifyApiUrl: "",
-      logoutApiUrl: "",
-      unmatchedApiUrl: "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/getUnmatched",
-      requestTimeoutMs: 12000,
-      devPassword: ""
-    }, window.ADMIN_CONFIG || {});
-  </script>
+<script>
+  window.ADMIN_CONFIG = Object.assign({
+    authMode: "dev",
+    devPassword: "wpkscm",
+    loginApiUrl: "",
+    verifyApiUrl: "",
+    logoutApiUrl: "",
+    unmatchedApiUrl: "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/getUnmatched",
+    requestTimeoutMs: 12000
+  }, window.ADMIN_CONFIG || {});
+</script>
   <script src="shared.js"></script>
   <script>
     let adminSelectedCategory = "all";

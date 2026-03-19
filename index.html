@@ -12,6 +12,9 @@
       --line:#d8e5e2;
       --text:#1f2937;
       --sub:#6b7280;
+      --soft:#eef7f5;
+      --warn:#fff7ed;
+      --warn-text:#9a3412;
     }
 
     *{box-sizing:border-box}
@@ -57,16 +60,8 @@
       flex-shrink:0;
     }
 
-    .header h1{
-      margin:0;
-      font-size:20px;
-    }
-
-    .header p{
-      margin:6px 0 0;
-      font-size:13px;
-      opacity:.95;
-    }
+    .header h1{ margin:0; font-size:20px; }
+    .header p{ margin:6px 0 0; font-size:13px; opacity:.95; }
 
     .notice{
       background:#f8fbfb;
@@ -91,9 +86,7 @@
       align-items:flex-end;
     }
 
-    .row.user{
-      justify-content:flex-end;
-    }
+    .row.user{ justify-content:flex-end; }
 
     .bot-icon{
       width:34px;
@@ -109,15 +102,8 @@
       flex-shrink:0;
     }
 
-    .bubble-group{
-      max-width:78%;
-    }
-
-    .sender{
-      font-size:12px;
-      color:#64748b;
-      margin:0 0 4px 4px;
-    }
+    .bubble-group{ max-width:78%; }
+    .sender{ font-size:12px; color:#64748b; margin:0 0 4px 4px; }
 
     .bubble{
       padding:12px 14px;
@@ -140,16 +126,8 @@
       border-bottom-right-radius:6px;
     }
 
-    .time{
-      font-size:11px;
-      color:#94a3b8;
-      margin-top:4px;
-      padding:0 4px;
-    }
-
-    .user .time{
-      text-align:right;
-    }
+    .time{ font-size:11px; color:#94a3b8; margin-top:4px; padding:0 4px; }
+    .user .time{ text-align:right; }
 
     .faq{
       padding:12px;
@@ -183,16 +161,9 @@
       flex-shrink:0;
     }
 
-    .category-tab.active{
-      background:var(--main);
-      color:#fff;
-    }
+    .category-tab.active{ background:var(--main); color:#fff; }
 
-    .faq-list{
-      display:flex;
-      flex-direction:column;
-      gap:8px;
-    }
+    .faq-list{ display:flex; flex-direction:column; gap:8px; }
 
     .faq-list button{
       width:100%;
@@ -207,15 +178,28 @@
       line-height:1.5;
     }
 
-    .faq-list button:hover{
-      background:#dff3ef;
+    .faq-list button:hover{ background:#dff3ef; }
+    .faq-list button:disabled{ opacity:.65; cursor:not-allowed; }
+
+    .empty-faq{ font-size:13px; color:var(--sub); padding:8px 2px; }
+
+    .server-banner{
+      margin-bottom:10px;
+      padding:10px 12px;
+      border-radius:12px;
+      background:var(--soft);
+      color:var(--sub);
+      font-size:12px;
+      border:1px solid var(--line);
     }
 
-    .empty-faq{
-      font-size:13px;
-      color:var(--sub);
-      padding:8px 2px;
+    .server-banner.warn{
+      background:var(--warn);
+      color:var(--warn-text);
+      border-color:#fed7aa;
     }
+
+    .typing{ opacity:.8; font-style:italic; }
 
     .input-area{
       border-top:1px solid var(--line);
@@ -251,6 +235,8 @@
       font-size:18px;
     }
 
+    .input-wrap button:disabled{ opacity:.7; cursor:not-allowed; }
+
     @media (max-width:520px){
       .wrap{
         margin:0;
@@ -267,17 +253,16 @@
       <div class="avatar">💬</div>
       <div>
         <h1>SCM봇</h1>
-        <p>문의 내용을 입력하시면 등록된 답변을 해드리겠습니다.</p>
+        <p>문의 내용을 입력하시면 등록된 답변을 안내드립니다.</p>
       </div>
     </div>
 
-    <div class="notice">
-      아래 카테고리를 선택하면 해당 FAQ가 아래에 표시됩니다.
-    </div>
+    <div class="notice">아래 카테고리를 선택하면 해당 FAQ가 아래에 표시됩니다.</div>
 
     <div class="chat" id="chatBox"></div>
 
     <div class="faq">
+      <div id="serverBanner" class="server-banner">상태 확인 전</div>
       <div class="faq-title">카테고리</div>
       <div class="category-tabs" id="categoryTabs"></div>
 
@@ -288,46 +273,38 @@
     <div class="input-area">
       <div class="input-wrap">
         <input id="userInput" type="text" placeholder="질문을 입력하세요" />
-        <button onclick="sendMessage()">➤</button>
+        <button id="sendButton" onclick="sendMessage()">➤</button>
       </div>
     </div>
   </div>
 
+  <script>
+    window.CHATBOT_CONFIG = Object.assign({
+      logApiUrl: "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/logQuestion",
+      topQuestionsApiUrl: "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/getTopQuestions",
+      requestTimeoutMs: 10000,
+      faqButtonCount: 4
+    }, window.CHATBOT_CONFIG || {});
+  </script>
   <script src="shared.js"></script>
   <script>
     const chatBox = document.getElementById("chatBox");
     const faqList = document.getElementById("faqList");
     const categoryTabs = document.getElementById("categoryTabs");
     const userInput = document.getElementById("userInput");
+    const sendButton = document.getElementById("sendButton");
+    const serverBanner = document.getElementById("serverBanner");
 
-    let selectedCategory = "all";
+    let selectedCategory = (window.ChatbotStore && ChatbotStore.getCategories()[0]) || "all";
+    let isSending = false;
 
-    function sendToServer(data){
-      fetch("https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/logQuestion", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(data)
-      }).catch(err => console.error("server log error:", err));
-    }
-
-    async function loadTopQuestionsFromServer(category) {
-      try {
-        const res = await fetch(
-          `https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/getTopQuestions?category=${encodeURIComponent(category)}`
-        );
-        const data = await res.json();
-        return Array.isArray(data.items) ? data.items : [];
-      } catch (e) {
-        console.error("load top questions failed", e);
-        return [];
-      }
+    function setBanner(message, warn = false) {
+      serverBanner.textContent = message;
+      serverBanner.className = `server-banner${warn ? " warn" : ""}`;
     }
 
     function getTimeText() {
-      const now = new Date();
-      return now.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
+      return new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
     }
 
     function escapeHtml(text) {
@@ -341,15 +318,15 @@
       return escapeHtml(String(text)).replaceAll("\n", "<br>");
     }
 
-    function addMessage(text, sender, name = "") {
+    function addMessage(text, sender, name = "", extraClass = "") {
       const row = document.createElement("div");
-      row.className = `row ${sender}`;
+      row.className = `row ${sender} ${extraClass}`.trim();
 
       if (sender === "bot") {
         row.innerHTML = `
           <div class="bot-icon">Q</div>
           <div class="bubble-group bot">
-            <div class="sender">${name || "상담봇"}</div>
+            <div class="sender">${escapeHtml(name || "상담봇")}</div>
             <div class="bubble"></div>
             <div class="time">${getTimeText()}</div>
           </div>
@@ -367,19 +344,92 @@
       row.querySelector(".bubble").innerHTML = formatAnswer(text);
       chatBox.appendChild(row);
       chatBox.scrollTop = chatBox.scrollHeight;
+      return row;
+    }
+
+    function removeRow(row) {
+      if (row && row.parentNode) row.parentNode.removeChild(row);
+    }
+
+    function normalizeTopItems(items, fallbackQa) {
+      if (Array.isArray(items) && items.length) {
+        return items
+          .filter(item => item && item.question)
+          .slice(0, window.CHATBOT_CONFIG.faqButtonCount)
+          .map(item => ({
+            question: String(item.question).trim(),
+            category: item.category || selectedCategory
+          }));
+      }
+
+      const topLocal = fallbackQa.filter(item => item.top).slice(0, window.CHATBOT_CONFIG.faqButtonCount);
+      if (topLocal.length) return topLocal;
+      return fallbackQa.slice(0, window.CHATBOT_CONFIG.faqButtonCount);
+    }
+
+    async function fetchWithTimeout(url, options = {}, timeoutMs = window.CHATBOT_CONFIG.requestTimeoutMs || 10000) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        return await fetch(url, { ...options, signal: controller.signal });
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    async function sendToServer(data) {
+      if (!window.CHATBOT_CONFIG.logApiUrl) return;
+      try {
+        const res = await fetchWithTimeout(window.CHATBOT_CONFIG.logApiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        });
+        if (!res.ok) throw new Error(`log api ${res.status}`);
+      } catch (err) {
+        console.warn("server log error:", err);
+        const pending = JSON.parse(localStorage.getItem("chatbot_pending_logs") || "[]");
+        pending.push(data);
+        localStorage.setItem("chatbot_pending_logs", JSON.stringify(pending.slice(-100)));
+      }
+    }
+
+    async function loadTopQuestionsFromServer(category) {
+      if (!window.CHATBOT_CONFIG.topQuestionsApiUrl) {
+        setBanner("상위 질문 API 미설정 - 로컬 FAQ 사용 중", true);
+        return [];
+      }
+
+      try {
+        const url = `${window.CHATBOT_CONFIG.topQuestionsApiUrl}?category=${encodeURIComponent(category)}`;
+        const res = await fetchWithTimeout(url, { headers: { "Accept": "application/json" } });
+        if (!res.ok) throw new Error(`top api ${res.status}`);
+
+        const data = await res.json();
+        const items = Array.isArray(data.items) ? data.items : (Array.isArray(data.data) ? data.data : []);
+        setBanner("상위 질문 서버 연동 정상");
+        return items;
+      } catch (e) {
+        console.error("load top questions failed", e);
+        setBanner("상위 질문 서버 연결 실패 - 로컬 FAQ로 대체 중", true);
+        return [];
+      }
     }
 
     function renderCategoryTabs() {
       const categories = ChatbotStore.getCategories();
       const labels = ChatbotStore.getCategoryLabels();
+      if (!categories.includes(selectedCategory)) {
+        selectedCategory = categories[0] || "all";
+      }
 
       categoryTabs.innerHTML = "";
-
       categories.forEach(category => {
         const btn = document.createElement("button");
         btn.className = `category-tab ${selectedCategory === category ? "active" : ""}`;
         btn.textContent = labels[category] || category;
         btn.onclick = async () => {
+          if (isSending) return;
           selectedCategory = category;
           renderCategoryTabs();
           await renderFAQ();
@@ -391,18 +441,9 @@
     async function renderFAQ() {
       const qa = ChatbotStore.getQAByCategory(selectedCategory);
       faqList.innerHTML = "";
+      const topQA = normalizeTopItems(await loadTopQuestionsFromServer(selectedCategory), qa);
 
-      let topQA = await loadTopQuestionsFromServer(selectedCategory);
-
-      if (topQA.length === 0) {
-        topQA = qa.filter(item => item.top).slice(0, 4);
-      }
-
-      if (topQA.length === 0) {
-        topQA = qa.slice(0, 4);
-      }
-
-      if (topQA.length === 0) {
+      if (!topQA.length) {
         const empty = document.createElement("div");
         empty.className = "empty-faq";
         empty.textContent = "이 카테고리에 등록된 FAQ가 없습니다.";
@@ -412,56 +453,69 @@
 
       topQA.forEach(item => {
         const btn = document.createElement("button");
+        btn.type = "button";
         btn.textContent = item.question;
-        btn.onclick = () => sendMessage(item.question, true);
+        btn.onclick = async () => {
+          if (btn.disabled || isSending) return;
+          btn.disabled = true;
+          try {
+            await sendMessage(item.question, true);
+          } finally {
+            setTimeout(() => { btn.disabled = false; }, 500);
+          }
+        };
         faqList.appendChild(btn);
       });
     }
 
-    function sendMessage(customText = null, isFaqClick = false) {
+    async function sendMessage(customText = null, isFaqClick = false) {
       const text = (customText ?? userInput.value).trim();
-      if (!text) return;
+      if (!text || isSending) return;
+
+      isSending = true;
+      sendButton.disabled = true;
+      userInput.disabled = true;
 
       addMessage(text, "user");
       userInput.value = "";
+      const typingRow = addMessage("답변을 찾는 중입니다...", "bot", "SCM봇", "typing");
 
-      const result = ChatbotStore.findAnswer(text, selectedCategory);
-      const answer = result
-        ? result.answer
-        : "등록된 답변을 찾지 못했습니다. 해당 문의 사항은 SCM팀 담당자에게 문의 부탁드립니다.";
+      try {
+        const result = ChatbotStore.findAnswer(text, selectedCategory);
+        const answer = result
+          ? result.answer
+          : "등록된 답변을 찾지 못했습니다. 해당 문의 사항은 SCM팀 담당자에게 문의 부탁드립니다.";
 
-      setTimeout(() => addMessage(answer, "bot", "SCM봇"), 250);
+        await new Promise(resolve => setTimeout(resolve, 250));
+        removeRow(typingRow);
+        addMessage(answer, "bot", "SCM봇");
 
-      ChatbotStore.saveHistory({
-        question: text,
-        answer,
-        matched: !!result,
-        category: result ? result.category : selectedCategory,
-        createdAt: new Date().toISOString(),
-        source: isFaqClick ? "faq-click" : "user"
-      });
+        const payload = {
+          question: text,
+          answer,
+          matched: !!result,
+          category: result ? result.category : selectedCategory,
+          createdAt: new Date().toISOString(),
+          page: location.href,
+          userAgent: navigator.userAgent,
+          source: isFaqClick ? "faq-click" : "user"
+        };
 
-      sendToServer({
-        question: text,
-        answer: answer,
-        matched: !!result,
-        category: result ? result.category : selectedCategory,
-        createdAt: new Date().toISOString(),
-        page: location.href,
-        userAgent: navigator.userAgent,
-        source: isFaqClick ? "faq-click" : "user"
-      });
+        ChatbotStore.saveHistory(payload);
+        sendToServer(payload);
+      } finally {
+        isSending = false;
+        sendButton.disabled = false;
+        userInput.disabled = false;
+        userInput.focus();
+      }
     }
 
     userInput.addEventListener("keydown", e => {
       if (e.key === "Enter") sendMessage();
     });
 
-    addMessage(
-      "안녕하세요.\n문의사항을 입력하거나 아래 FAQ를 선택해주세요.",
-      "bot",
-      "SCM봇"
-    );
+    addMessage("안녕하세요.\n문의사항을 입력하거나 아래 FAQ를 선택해주세요.", "bot", "SCM봇");
     renderCategoryTabs();
     renderFAQ();
   </script>
