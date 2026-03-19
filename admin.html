@@ -1180,25 +1180,28 @@
       return s;
     }
 
-    function downloadCSVTemplate() {
-      const csv = [
-        ["category", "question", "keywords", "answer", "top"],
-        ["delivery", "배송은 얼마나 걸리나요?", "배송|기간|리드타임", "일반적으로 2~3개월 소요됩니다.", "true"],
-        ["documents", "세금계산서는 언제 발급해야 하나요?", "세금계산서|발급|기한", "공급 시기마다 발행하는 것이 원칙입니다.", "true"],
-        ["other", "타계정 처리란 무엇인가요?", "타계정|재고자산", "재고자산을 판매 목적 외 용도로 사용할 때 계정을 변경 처리하는 것입니다.", "true"],
-        ["purchase", "발주 취소가 가능한가요?", "발주|취소", "최초 발주 진행일 기준 약 3~4일 이내에는 가능할 수 있습니다.", "true"]
-      ].map(row => row.map(csvEscape).join(",")).join("\n");
+function downloadCSVTemplate() {
+  const csv = [
+    ["category", "question", "keywords", "answer", "top"],
+    ["delivery", "독일 및 프랑스 본사로부터 해상 선적 기간은 얼마나 되나요?", "해상|선적|기간|리드타임|독일|프랑스", "생산 리드타임 + 해상 운송 기준, 출하일부터 공장 입고까지는 총 약 2~3개월 소요됩니다.", "true"],
+    ["documents", "원산지 증명서 발급 가능한가요?", "원산지증명서|발급|가능|FTA", "원산지증명서는 요청 제품(부품)이 해당 FTA 협정의 원산지 기준을 충족하는 경우에 한하여 발급 가능합니다.", "true"],
+    ["production", "단종된 제품의 경우 추가 오더가 가능한가요?", "단종|오더|재고|라스트오더", "단종된 제품의 경우 사내에 부품 재고가 남아 있는 경우에 한해 생산 가능 수량을 안내드립니다.", "false"],
+    ["purchase", "해외 도입 제품의 표준 리드타임이 어떻게 되나요?", "리드타임|해외|도입|기간|유럽|중국", "유럽발: 항공 2~3주, 해상 2.5~3.5개월 / 중국발: 항공 1~2주, 해상 2~3주", "true"],
+    ["other", "Ariba 비용처리되었는지 확인 부탁드립니다.", "Ariba|비용|처리|확인|재무", "Ariba 관련 비용 처리는 재무팀에서 전담하고 있으므로, 재무팀의 비용 처리 담당자에게 직접 문의해 주시기 바랍니다.", "true"]
+  ].map(row => row.map(csvEscape).join(",")).join("\n");
 
-      const bom = "\uFEFF";
-      const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "faq_template.csv";
-      a.click();
-      URL.revokeObjectURL(url);
-      logActivity('DOWNLOAD_TEMPLATE', {});
-    }
+  const bom = "\uFEFF";
+  const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "faq_template.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+  
+  logActivity('DOWNLOAD_TEMPLATE', {});
+}
+
 
     function exportQAToCSV() {
       const allQA = getAllQA();
