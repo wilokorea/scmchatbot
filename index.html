@@ -931,63 +931,74 @@
     }
 
     // ========== 인기 질문 계산 ==========
-    function getHistoryBasedTopQuestions(category, limit = window.CHATBOT_CONFIG.faqButtonCount || 4) {
-      const qa = ChatbotStore.getQAByCategory(category);
-      const history = ChatbotStore.getHistory ? ChatbotStore.getHistory() : [];
-      const counter = new Map();
+ function getHistoryBasedTopQuestions(category, limit = window.CHATBOT_CONFIG.faqButtonCount || 4) {
+  const qa = ChatbotStore.getQAByCategory(category);
+  const history = ChatbotStore.getHistory ? ChatbotStore.getHistory() : [];
+  const counter = new Map();
 
-      history.forEach(item => {
-        const question = String(item.question || "").trim();
-        if (!question) return;
+  // 로컬 Q&A 질문 목록
+  const localQuestions = new Set(
+    qa.filter(item => item && item.question)
+      .map(item => item.question.toLowerCase())
+  );
 
-        const itemCategory = String(item.category || "all").trim().toLowerCase();
-        if (category !== "all" && itemCategory !== category) return;
+  history.forEach(item => {
+    const question = String(item.question || "").trim();
+    if (!question) return;
 
-        const prev = counter.get(question) || {
-          question,
-          category: itemCategory || category,
-          score: 0,
-          lastCreatedAt: ""
-        };
+    const itemCategory = String(item.category || "all").trim().toLowerCase();
+    if (category !== "all" && itemCategory !== category) return;
 
-        let score = 1;
-
-        if (item.source === "faq-click") score += 3;
-        if (item.matched) score += 2;
-
-        if (item.createdAt) {
-          const diffMs = Date.now() - new Date(item.createdAt).getTime();
-          const diffDays = diffMs / (1000 * 60 * 60 * 24);
-
-          if (diffDays <= 7) score += 2;
-          else if (diffDays <= 30) score += 1;
-        }
-
-        prev.score += score;
-        prev.lastCreatedAt = item.createdAt || prev.lastCreatedAt;
-        counter.set(question, prev);
-      });
-
-      const ranked = Array.from(counter.values())
-        .sort((a, b) => {
-          if (b.score !== a.score) return b.score - a.score;
-          return new Date(b.lastCreatedAt || 0) - new Date(a.lastCreatedAt || 0);
-        })
-        .slice(0, limit);
-
-      if (!ranked.length) return [];
-
-      return ranked.map(item => {
-        const matchedQa =
-          qa.find(q => q.question === item.question) ||
-          ChatbotStore.getQA().find(q => q.question === item.question);
-
-        return matchedQa || {
-          question: item.question,
-          category: item.category || category
-        };
-      });
+    // ✅ 로컬 Q&A에 존재하는 질문만 카운트
+    if (!localQuestions.has(question.toLowerCase())) {
+      return;
     }
+
+    const prev = counter.get(question) || {
+      question,
+      category: itemCategory || category,
+      score: 0,
+      lastCreatedAt: ""
+    };
+
+    let score = 1;
+
+    if (item.source === "faq-click") score += 3;
+    if (item.matched) score += 2;
+
+    if (item.createdAt) {
+      const diffMs = Date.now() - new Date(item.createdAt).getTime();
+      const diffDays = diffMs / (1000 * 60 * 60 * 24);
+
+      if (diffDays <= 7) score += 2;
+      else if (diffDays <= 30) score += 1;
+    }
+
+    prev.score += score;
+    prev.lastCreatedAt = item.createdAt || prev.lastCreatedAt;
+    counter.set(question, prev);
+  });
+
+  const ranked = Array.from(counter.values())
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return new Date(b.lastCreatedAt || 0) - new Date(a.lastCreatedAt || 0);
+    })
+    .slice(0, limit);
+
+  if (!ranked.length) return [];
+
+  return ranked
+    .map(item => {
+      const matchedQa = qa.find(q => 
+        q && q.question && 
+        q.question.toLowerCase() === item.question.toLowerCase()
+      );
+      return matchedQa;
+    })
+    .filter(Boolean);
+}
+
 
     function normalizeTopItems(serverItems, fallbackQa, category) {
       const limit = window.CHATBOT_CONFIG.faqButtonCount || 4;
