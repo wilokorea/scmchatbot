@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>챗봇 관리자</title>
+  <title>SCM 업무 도우미 관리자</title>
   <style>
     :root{
       --main:#009C82;
@@ -36,6 +36,7 @@
 
     .login-box h1{
       margin-top:0;
+      margin-bottom:10px;
     }
 
     .container{
@@ -223,8 +224,8 @@
 
   <div id="adminView" class="container hidden">
     <div class="card">
-      <h1>챗봇 관리자</h1>
-      <p class="muted">CSV 업로드, Q&A 삭제, 질문 이력 조회/다운로드를 이 화면에서만 수행합니다.</p>
+      <h1>SCM 업무 도우미 관리자</h1>
+      <p class="muted">CSV 업로드, Q&A 삭제, 질문 이력 조회를 수행합니다.</p>
       <div class="toolbar">
         <button class="sub" onclick="logout()">로그아웃</button>
       </div>
@@ -234,9 +235,9 @@
       <h2>현황</h2>
       <div class="stats">
         <div class="stat"><strong id="statQA">0</strong><span>Q&A 수</span></div>
-        <div class="stat"><strong id="statHistory">0</strong><span>질문 이력</span></div>
-        <div class="stat"><strong id="statMatched">0</strong><span>매칭 성공</span></div>
-        <div class="stat"><strong id="statUnmatched">0</strong><span>미매칭</span></div>
+        <div class="stat"><strong id="statHistory">0</strong><span>로컬 이력</span></div>
+        <div class="stat"><strong id="statMatched">0</strong><span>로컬 매칭</span></div>
+        <div class="stat"><strong id="statUnmatched">0</strong><span>서버 미매칭</span></div>
       </div>
     </div>
 
@@ -256,8 +257,8 @@
       </div>
 
       <div class="card">
-        <h2>질문 이력 관리</h2>
-        <p class="muted">사용자 질문 이력은 나중에 데이터 분석용으로 활용할 수 있습니다.</p>
+        <h2>로컬 질문 이력 관리</h2>
+        <p class="muted">이 영역은 현재 브라우저의 localStorage 기준입니다.</p>
         <div class="toolbar">
           <button onclick="exportHistory()">질문 이력 다운로드(JSON)</button>
           <button class="danger" onclick="clearHistory()">질문 이력 초기화</button>
@@ -293,7 +294,7 @@
     </div>
 
     <div class="card">
-      <h2>질문 이력</h2>
+      <h2>서버 미매칭 질문</h2>
       <div id="historyCount" class="muted"></div>
       <div class="table-wrap">
         <table>
@@ -314,7 +315,7 @@
 
   <script src="shared.js"></script>
   <script>
-    const ADMIN_PASSWORD = "wilo-scm";
+    const ADMIN_PASSWORD = "wilo-admin";
     let adminSelectedCategory = "all";
 
     function login() {
@@ -336,6 +337,7 @@
       document.getElementById("loginView").classList.add("hidden");
       document.getElementById("adminView").classList.remove("hidden");
       renderAll();
+      loadUnmatchedFromServer();
     }
 
     function checkLogin() {
@@ -348,19 +350,23 @@
       renderStats();
       renderAdminCategoryTabs();
       renderQA();
-      renderHistory();
+      renderLocalHistoryStats();
     }
 
     function renderStats() {
       const qa = ChatbotStore.getQA();
       const history = ChatbotStore.getHistory();
       const matched = history.filter(x => x.matched).length;
-      const unmatched = history.filter(x => !x.matched).length;
 
       document.getElementById("statQA").textContent = qa.length;
       document.getElementById("statHistory").textContent = history.length;
       document.getElementById("statMatched").textContent = matched;
-      document.getElementById("statUnmatched").textContent = unmatched;
+    }
+
+    function renderLocalHistoryStats() {
+      const history = ChatbotStore.getHistory();
+      document.getElementById("statHistory").textContent = history.length;
+      document.getElementById("statMatched").textContent = history.filter(x => x.matched).length;
     }
 
     function renderAdminCategoryTabs() {
@@ -414,27 +420,6 @@
         tr.children[1].textContent = item.question || "";
         tr.children[2].textContent = (item.keywords || []).join(" | ");
         tr.children[3].textContent = item.answer || "";
-        tbody.appendChild(tr);
-      });
-    }
-
-    function renderHistory() {
-      const history = ChatbotStore.getHistory();
-      const tbody = document.getElementById("historyTable");
-      document.getElementById("historyCount").textContent = `총 ${history.length}건`;
-      tbody.innerHTML = "";
-
-      history.slice().reverse().forEach(item => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${new Date(item.createdAt).toLocaleString("ko-KR")}</td>
-          <td></td>
-          <td></td>
-          <td>${item.category || ""}</td>
-          <td>${item.matched ? "Y" : "N"}</td>
-        `;
-        tr.children[1].textContent = item.question || "";
-        tr.children[2].textContent = item.answer || "";
         tbody.appendChild(tr);
       });
     }
@@ -614,6 +599,37 @@
       }
 
       return rows;
+    }
+
+    async function loadUnmatchedFromServer() {
+      try {
+        const res = await fetch("https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/getUnmatched");
+        const data = await res.json();
+
+        document.getElementById("statUnmatched").textContent = data.count || 0;
+
+        const tbody = document.getElementById("historyTable");
+        tbody.innerHTML = "";
+
+        (data.items || []).forEach(item => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${new Date(item.createdAt).toLocaleString("ko-KR")}</td>
+            <td></td>
+            <td></td>
+            <td>${item.category || ""}</td>
+            <td>N</td>
+          `;
+          tr.children[1].textContent = item.question || "";
+          tr.children[2].textContent = item.answer || "";
+          tbody.appendChild(tr);
+        });
+
+        document.getElementById("historyCount").textContent = `미매칭 총 ${data.count || 0}건`;
+      } catch (e) {
+        console.error("load unmatched failed", e);
+        document.getElementById("historyCount").textContent = "서버 미매칭 질문을 불러오지 못했습니다.";
+      }
     }
 
     checkLogin();

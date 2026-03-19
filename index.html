@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>업무 FAQ 챗봇</title>
+  <title>SCM 업무 도우미</title>
   <style>
     :root{
       --main:#009C82;
@@ -261,13 +261,13 @@
     <div class="header">
       <div class="avatar">💬</div>
       <div>
-        <h1>업무 FAQ 챗봇</h1>
-        <p>문의 내용을 입력하면 등록된 답변을 안내합니다</p>
+        <h1>FAQ 챗봇</h1>
+        <p>문의 내용을 입력하시면 등록된 답변을 해드리겠습니다.</p>
       </div>
     </div>
 
     <div class="notice">
-      카테고리를 선택하면 해당 FAQ만 아래에 표시됩니다.
+      아래 카테고리를 선택하면 해당 FAQ가 아래에 표시됩니다.
     </div>
 
     <div class="chat" id="chatBox"></div>
@@ -290,21 +290,22 @@
 
   <script src="shared.js"></script>
   <script>
-function sendToServer(data){
-  fetch("https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/logQuestion", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(data)
-  }).catch(err => console.error(err));
-}
     const chatBox = document.getElementById("chatBox");
     const faqList = document.getElementById("faqList");
     const categoryTabs = document.getElementById("categoryTabs");
     const userInput = document.getElementById("userInput");
 
     let selectedCategory = "all";
+
+    function sendToServer(data){
+      fetch("https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/logQuestion", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+      }).catch(err => console.error("server log error:", err));
+    }
 
     function getTimeText() {
       const now = new Date();
@@ -399,7 +400,7 @@ function sendToServer(data){
       const result = ChatbotStore.findAnswer(text, selectedCategory);
       const answer = result
         ? result.answer
-        : "등록된 답변을 찾지 못했습니다. 해당 업무 담당자에게 문의부탁드립니다.";
+        : "등록된 답변을 찾지 못했습니다. 해당 문의 사항은 SCM팀 담당자에게 문의 부탁드립니다.";
 
       setTimeout(() => addMessage(answer, "bot", "FAQ 챗봇"), 250);
 
@@ -411,20 +412,24 @@ function sendToServer(data){
         createdAt: new Date().toISOString(),
         source: "user"
       });
-    }
-ChatbotStore.sendToServer({
-  question: text,
-  answer: answer,
-  matched: !!result
-});
 
+      sendToServer({
+        question: text,
+        answer: answer,
+        matched: !!result,
+        category: result ? result.category : selectedCategory,
+        createdAt: new Date().toISOString(),
+        page: location.href,
+        userAgent: navigator.userAgent
+      });
+    }
 
     userInput.addEventListener("keydown", e => {
       if (e.key === "Enter") sendMessage();
     });
 
     addMessage(
-      "안녕하세요. SCM팀 FAQ 챗봇입니다.\n카테고리를 선택하면 아래에 해당 FAQ가 표시됩니다.",
+      "안녕하세요.\n문의사항을 입력부탁드립니다.",
       "bot",
       "FAQ 챗봇"
     );
