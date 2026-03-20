@@ -5,7 +5,7 @@
   const QA_KEY = "chatbot_qa";
   const HISTORY_KEY = "chatbot_history";
   const QA_VERSION_KEY = "chatbot_qa_version";
-  const QA_VERSION = "2026-03-19-faq-template-v2";
+  const QA_VERSION = "2026-03-20-final-v1";
   const MAX_HISTORY_SIZE = 500;
   const MAX_QUESTION_LENGTH = 500;
   const MAX_ANSWER_LENGTH = 5000;
@@ -418,7 +418,7 @@
     try {
       return localStorage.getItem(key) || fallback;
     } catch (e) {
-      console.error(`localStorage 읽기 실패 (${key}):`, e);
+      console.error(`[localStorage 읽기 실패] ${key}:`, e);
       return fallback;
     }
   }
@@ -429,7 +429,7 @@
       return true;
     } catch (e) {
       if (e.name === 'QuotaExceededError') {
-        console.error('localStorage 용량 초과:', e);
+        console.error('[localStorage 용량 초과]:', e);
         try {
           const history = safeParse(safeGetItem(HISTORY_KEY, "[]"), []);
           if (history.length > 100) {
@@ -438,7 +438,7 @@
           }
         } catch {}
       }
-      console.error(`localStorage 저장 실패 (${key}):`, e);
+      console.error(`[localStorage 저장 실패] ${key}:`, e);
       return false;
     }
   }
@@ -448,7 +448,7 @@
       localStorage.removeItem(key);
       return true;
     } catch (e) {
-      console.error(`localStorage 삭제 실패 (${key}):`, e);
+      console.error(`[localStorage 삭제 실패] ${key}:`, e);
       return false;
     }
   }
@@ -479,7 +479,7 @@
 
   function saveQA(items) {
     if (!Array.isArray(items)) {
-      console.error('saveQA: items는 배열이어야 합니다.');
+      console.error('[saveQA 오류] items는 배열이어야 합니다.');
       return false;
     }
 
@@ -502,7 +502,7 @@
 
   function saveHistoryItem(item) {
     if (!item || typeof item !== 'object') {
-      console.error('saveHistoryItem: 유효하지 않은 항목입니다.');
+      console.error('[saveHistoryItem 오류] 유효하지 않은 항목입니다.');
       return false;
     }
 
@@ -510,12 +510,12 @@
     
     const sanitizedItem = {
       question: sanitizeString(item.question, MAX_QUESTION_LENGTH),
-      answer: sanitizeString(item.answer, MAX_ANSWER_LENGTH),
+      answer: sanitizeString(item.answer || '', MAX_ANSWER_LENGTH),
       matched: !!item.matched,
       category: normalizeCategory(item.category || 'other'),
       createdAt: item.createdAt || new Date().toISOString(),
-      page: sanitizeString(item.page, 500),
-      userAgent: sanitizeString(item.userAgent, 500),
+      page: sanitizeString(item.page || '', 500),
+      userAgent: sanitizeString(item.userAgent || '', 500),
       source: ['faq-click', 'user-input', 'user'].includes(item.source) 
         ? item.source 
         : 'user'
@@ -549,15 +549,15 @@
 
     if (longer.length === 0) return 1.0;
 
-    const editDistance = (s1, s2) => {
-      const matrix = Array(s2.length + 1).fill(null).map(() => Array(s1.length + 1).fill(null));
+    const editDistance = (a, b) => {
+      const matrix = Array(b.length + 1).fill(null).map(() => Array(a.length + 1).fill(0));
 
-      for (let i = 0; i <= s1.length; i++) matrix[0][i] = i;
-      for (let j = 0; j <= s2.length; j++) matrix[j][0] = j;
+      for (let i = 0; i <= a.length; i++) matrix[0][i] = i;
+      for (let j = 0; j <= b.length; j++) matrix[j][0] = j;
 
-      for (let j = 1; j <= s2.length; j++) {
-        for (let i = 1; i <= s1.length; i++) {
-          const indicator = s1[i - 1] === s2[j - 1] ? 0 : 1;
+      for (let j = 1; j <= b.length; j++) {
+        for (let i = 1; i <= a.length; i++) {
+          const indicator = a[i - 1] === b[j - 1] ? 0 : 1;
           matrix[j][i] = Math.min(
             matrix[j][i - 1] + 1,
             matrix[j - 1][i] + 1,
@@ -566,7 +566,7 @@
         }
       }
 
-      return matrix[s2.length][s1.length];
+      return matrix[b.length][a.length];
     };
 
     const distance = editDistance(shorter, longer);
@@ -646,7 +646,7 @@
 
     importTemplate(payload) {
       if (!payload || typeof payload !== 'object') {
-        console.error('importTemplate: payload가 유효하지 않습니다.');
+        console.error('[importTemplate 오류] payload가 유효하지 않습니다.');
         return false;
       }
 
@@ -665,7 +665,7 @@
 
     deleteQAById(id) {
       if (!id) {
-        console.error('deleteQAById: id가 필요합니다.');
+        console.error('[deleteQAById 오류] id가 필요합니다.');
         return false;
       }
 
@@ -681,7 +681,7 @@
 
     deleteQAByIndex(index) {
       if (typeof index !== 'number' || index < 0) {
-        console.error('deleteQAByIndex: 유효하지 않은 인덱스입니다.');
+        console.error('[deleteQAByIndex 오류] 유효하지 않은 인덱스입니다.');
         return false;
       }
 
@@ -772,24 +772,57 @@
 
         return { success: true };
       } catch (error) {
-        console.error('importData 실패:', error);
+        console.error('[importData 오류]:', error);
         return { success: false, error: error.message };
       }
     }
   };
 
+  // ========== 전역 함수 (INDEX/ADMIN이 호출 가능) ✅ 수정됨 ==========
+  window.loadQAData = function() {
+    return ChatbotStore.getQA();
+  };
+
+  window.loadQuestionHistory = function() {
+    return ChatbotStore.getHistory();
+  };
+
+  window.saveHistoryItem = function(question, category, matched, source) {
+    return ChatbotStore.saveHistory({
+      question: question,
+      answer: '',
+      matched: matched,
+      category: category,
+      source: source,
+      createdAt: new Date().toISOString()
+    });
+  };
+
+  window.getCategoryLabel = function(category) {
+    const labels = {
+      all: '전체',
+      delivery: '배송',
+      documents: '문서',
+      production: '생산',
+      purchase: '구매',
+      unknown: '기타',
+      other: '기타'
+    };
+    return labels[category] || category;
+  };
+
   // ========== 전역 에러 핸들러 ==========
   window.addEventListener('error', (e) => {
     if (e.message && e.message.includes('ChatbotStore')) {
-      console.error('ChatbotStore 에러:', e.error);
+      console.error('[ChatbotStore 에러]:', e.error);
     }
   });
 
   // ========== 초기화 ==========
   try {
     ensureLatestDefaultQA();
-    console.log(`ChatbotStore 초기화 완료 (버전: ${QA_VERSION})`);
+    console.log(`✅ ChatbotStore 초기화 완료 (버전: ${QA_VERSION})`);
   } catch (error) {
-    console.error('ChatbotStore 초기화 실패:', error);
+    console.error('[ChatbotStore 초기화 실패]:', error);
   }
 })();
