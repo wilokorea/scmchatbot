@@ -3,1610 +3,490 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.azurewebsites.net; img-src 'self' data:; font-src 'self';" />
-  <meta name="description" content="SCM 업무 관련 자주 묻는 질문에 대한 빠른 답변을 제공하는 챗봇입니다." />
   <title>SCM FAQ봇</title>
   <style>
-    :root {
-      --main-tint: #009C82;
-      --main-dark: #007a66;
-      --main-light: #e6f7f4;
-      --bg-color: #f4f8f7;
-      --card-bg: #ffffff;
-      --text-primary: #1a1a1a;
-      --text-secondary: #4a4a4a;
-      --text-muted: #888;
-      --border-color: #ddd;
-      --shadow: 0 2px 8px rgba(0,0,0,0.08);
-      --shadow-hover: 0 4px 12px rgba(0,0,0,0.12);
-      --danger: #e74c3c;
-      --warning: #f39c12;
-      --info: #3498db;
+    :root{
+      --main:#009C82;
+      --main-dark:#007a66;
+      --bg:#f4f8f7;
+      --line:#d8e5e2;
+      --text:#1f2937;
+      --sub:#6b7280;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
+    *{box-sizing:border-box}
+
+    body{
+      margin:0;
+      font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif;
+      background:linear-gradient(135deg,#f4fbf9,#eef7f5);
+      color:var(--text);
     }
 
-    body {
-      font-family: 'Segoe UI', 'Malgun Gothic', sans-serif;
-      background: var(--bg-color);
-      color: var(--text-primary);
-      line-height: 1.6;
-      overflow-x: hidden;
+    .wrap{
+      max-width:500px;
+      margin:24px auto;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:24px;
+      overflow:hidden;
+      box-shadow:0 16px 40px rgba(0,0,0,.08);
+      min-height:90vh;
+      display:flex;
+      flex-direction:column;
     }
 
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 20px;
+    .header{
+      background:var(--main);
+      color:#fff;
+      padding:18px;
+      display:flex;
+      align-items:center;
+      gap:12px;
     }
 
-    /* Header */
-    .header {
-      background: var(--card-bg);
-      border-radius: 16px;
-      padding: 24px;
-      margin-bottom: 20px;
-      box-shadow: var(--shadow);
-      display: flex;
-      align-items: center;
-      gap: 16px;
+    .avatar{
+      width:46px;
+      height:46px;
+      border-radius:50%;
+      background:rgba(255,255,255,.18);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:22px;
+      flex-shrink:0;
     }
 
-    .avatar {
-      width: 56px;
-      height: 56px;
-      background: linear-gradient(135deg, var(--main-tint), var(--main-dark));
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 28px;
-      flex-shrink: 0;
+    .header h1{ margin:0; font-size:20px; }
+    .header p{ margin:6px 0 0; font-size:13px; opacity:.95; }
+
+    .notice{
+      background:#f8fbfb;
+      border-bottom:1px solid var(--line);
+      padding:10px 14px;
+      font-size:12px;
+      color:var(--sub);
+      text-align:center;
     }
 
-    .header-text h1 {
-      font-size: 1.5rem;
-      color: var(--main-dark);
-      margin-bottom: 4px;
+    .chat{
+      flex:1;
+      overflow-y:auto;
+      padding:16px;
+      background:#f8fbfb;
     }
 
-    .header-text p {
-      font-size: 0.9rem;
-      color: var(--text-muted);
+    .row{
+      display:flex;
+      gap:8px;
+      margin-bottom:14px;
+      align-items:flex-end;
     }
 
-    /* Notice */
-    .notice-bar {
-      background: var(--main-light);
-      border-left: 4px solid var(--main-tint);
-      padding: 12px 16px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      font-size: 0.9rem;
-      color: var(--main-dark);
-      display: flex;
-      align-items: center;
-      gap: 8px;
+    .row.user{ justify-content:flex-end; }
+
+    .bot-icon{
+      width:34px;
+      height:34px;
+      border-radius:50%;
+      background:#e7f7f3;
+      color:var(--main-dark);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:15px;
+      font-weight:bold;
+      flex-shrink:0;
     }
 
-    .notice-bar::before {
-      content: '📢';
-      font-size: 1.2rem;
+    .bubble-group{ max-width:78%; }
+    .sender{ font-size:12px; color:#64748b; margin:0 0 4px 4px; }
+
+    .bubble{
+      padding:12px 14px;
+      border-radius:18px;
+      line-height:1.55;
+      font-size:14px;
+      word-break:break-word;
+      white-space:pre-wrap;
     }
 
-    /* Chat area */
-    .chat-card {
-      background: var(--card-bg);
-      border-radius: 16px;
-      box-shadow: var(--shadow);
-      margin-bottom: 20px;
-      overflow: hidden;
+    .bot .bubble{
+      background:#fff;
+      border:1px solid var(--line);
+      border-bottom-left-radius:6px;
     }
 
-    .chat-area {
-      height: 400px;
-      overflow-y: auto;
-      padding: 20px;
-      scroll-behavior: smooth;
+    .user .bubble{
+      background:var(--main);
+      color:#fff;
+      border-bottom-right-radius:6px;
     }
 
-    .message {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 16px;
-      animation: fadeIn 0.3s ease;
-      position: relative;
+    .time{ font-size:11px; color:#94a3b8; margin-top:4px; padding:0 4px; }
+    .user .time{ text-align:right; }
+
+    .faq{
+      padding:12px;
+      border-top:1px solid var(--line);
+      background:#fff;
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
+    .faq-title{
+      font-size:13px;
+      font-weight:700;
+      color:#334155;
+      margin-bottom:8px;
     }
 
-    .message.user {
-      flex-direction: row-reverse;
+    .category-tabs{
+      display:flex;
+      gap:8px;
+      overflow-x:auto;
+      padding-bottom:4px;
     }
 
-    .message-avatar {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: var(--main-tint);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      flex-shrink: 0;
+    .category-tab{
+      border:none;
+      background:#e8f7f3;
+      color:#006f5c;
+      padding:9px 13px;
+      border-radius:999px;
+      cursor:pointer;
+      white-space:nowrap;
+      font-size:13px;
+      flex-shrink:0;
     }
 
-    .message.user .message-avatar {
-      background: var(--text-secondary);
+    .category-tab.active{ background:var(--main); color:#fff; }
+
+    .faq-list{ display:flex; flex-direction:column; gap:8px; }
+
+    .faq-list button{
+      width:100%;
+      border:none;
+      background:#eef7f5;
+      color:#135f53;
+      padding:12px;
+      border-radius:12px;
+      cursor:pointer;
+      font-size:14px;
+      text-align:left;
+      line-height:1.5;
     }
 
-    .message-content {
-      max-width: 70%;
-      padding: 12px 16px;
-      border-radius: 16px;
-      background: var(--main-light);
-      color: var(--text-primary);
-      word-wrap: break-word;
-      user-select: text;
-      cursor: text;
+    .faq-list button:hover{ background:#dff3ef; }
+    .faq-list button:disabled{ opacity:.65; cursor:not-allowed; }
+
+    .empty-faq{ font-size:13px; color:var(--sub); padding:8px 2px; }
+    .typing{ opacity:.8; font-style:italic; }
+
+    .input-area{
+      border-top:1px solid var(--line);
+      padding:12px;
+      background:#fff;
     }
 
-    .message.user .message-content {
-      background: var(--main-tint);
-      color: white;
+    .input-wrap{
+      display:flex;
+      gap:8px;
+      background:#f7fbfb;
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:8px;
     }
 
-    .message-content a {
-      color: var(--main-dark);
-      text-decoration: underline;
-      word-break: break-all;
+    .input-wrap input{
+      flex:1;
+      border:none;
+      outline:none;
+      background:transparent;
+      padding:10px;
+      font-size:14px;
     }
 
-    .message.user .message-content a {
-      color: white;
+    .input-wrap button{
+      border:none;
+      background:var(--main);
+      color:#fff;
+      border-radius:12px;
+      width:48px;
+      cursor:pointer;
+      font-size:18px;
     }
 
-    .typing-indicator {
-      display: flex;
-      gap: 4px;
-      padding: 12px 16px;
-      background: var(--main-light);
-      border-radius: 16px;
-      width: fit-content;
-    }
+    .input-wrap button:disabled{ opacity:.7; cursor:not-allowed; }
 
-    .typing-indicator span {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--main-tint);
-      animation: typing 1.4s infinite;
-    }
-
-    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
-    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
-
-    @keyframes typing {
-      0%, 60%, 100% { transform: translateY(0); opacity: 0.7; }
-      30% { transform: translateY(-10px); opacity: 1; }
-    }
-
-    /* FAQ Section */
-    .faq-section {
-      background: var(--card-bg);
-      border-radius: 16px;
-      padding: 24px;
-      margin-bottom: 20px;
-      box-shadow: var(--shadow);
-    }
-
-    .faq-section h2 {
-      font-size: 1.2rem;
-      color: var(--main-dark);
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .faq-section h2::before {
-      content: '💡';
-      font-size: 1.4rem;
-    }
-
-    .faq-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 12px;
-    }
-
-    .faq-btn {
-      background: var(--main-light);
-      border: 2px solid transparent;
-      padding: 12px 16px;
-      border-radius: 12px;
-      font-size: 0.9rem;
-      color: var(--main-dark);
-      cursor: pointer;
-      transition: all 0.3s ease;
-      text-align: left;
-      font-weight: 500;
-    }
-
-    .faq-btn:hover {
-      background: var(--main-tint);
-      color: white;
-      border-color: var(--main-dark);
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-hover);
-    }
-
-    .faq-btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    /* Input area */
-    .input-area {
-      background: var(--card-bg);
-      border-radius: 16px;
-      padding: 20px;
-      box-shadow: var(--shadow);
-      margin-bottom: 20px;
-    }
-
-    .input-wrapper {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 8px;
-    }
-
-    #userInput {
-      flex: 1;
-      padding: 14px 18px;
-      border: 2px solid var(--border-color);
-      border-radius: 12px;
-      font-size: 1rem;
-      transition: border-color 0.3s ease;
-      resize: none;
-      font-family: inherit;
-      line-height: 1.4;
-    }
-
-    #userInput:focus {
-      outline: none;
-      border-color: var(--main-tint);
-    }
-
-    #sendBtn {
-      padding: 14px 28px;
-      background: var(--main-tint);
-      color: white;
-      border: none;
-      border-radius: 12px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      white-space: nowrap;
-    }
-
-    #sendBtn:hover:not(:disabled) {
-      background: var(--main-dark);
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-hover);
-    }
-
-    #sendBtn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    .char-counter {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      text-align: right;
-    }
-
-    .char-counter.warning {
-      color: var(--warning);
-      font-weight: 600;
-    }
-
-    .char-counter.danger {
-      color: var(--danger);
-      font-weight: 600;
-    }
-
-    /* Scroll button */
-    .scroll-bottom-btn {
-      position: fixed;
-      bottom: 180px;
-      right: calc(50% - 380px);
-      width: 48px;
-      height: 48px;
-      background: var(--main-tint);
-      color: white;
-      border: none;
-      border-radius: 50%;
-      font-size: 1.5rem;
-      cursor: pointer;
-      box-shadow: var(--shadow-hover);
-      opacity: 0;
-      visibility: hidden;
-      transition: all 0.3s ease;
-      z-index: 100;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .scroll-bottom-btn.visible {
-      opacity: 1;
-      visibility: visible;
-    }
-
-    .scroll-bottom-btn:hover {
-      background: var(--main-dark);
-      transform: translateY(-2px);
-    }
-
-    /* Debug panel */
-    .debug-panel {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      max-height: 200px;
-      background: rgba(0, 0, 0, 0.9);
-      color: #0f0;
-      font-family: 'Courier New', monospace;
-      font-size: 11px;
-      overflow-y: auto;
-      padding: 10px;
-      border-top: 2px solid #0f0;
-      z-index: 9999;
-      display: none;
-    }
-
-    .debug-panel.active {
-      display: block;
-    }
-
-    .debug-panel .log-entry {
-      margin-bottom: 4px;
-      word-wrap: break-word;
-    }
-
-    .debug-panel .log-entry.error {
-      color: #f00;
-    }
-
-    .debug-panel .log-entry.warn {
-      color: #ff0;
-    }
-
-    /* Live region for screen readers */
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
-    }
-
-    /* Notice alert styles */
-    .notice-alert {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      padding: 16px 20px;
-      border-radius: 12px;
-      box-shadow: var(--shadow-hover);
-      background: white;
-      border-left: 4px solid var(--info);
-      max-width: 320px;
-      z-index: 1000;
-      animation: slideIn 0.3s ease;
-    }
-
-    .notice-alert.error {
-      border-left-color: var(--danger);
-    }
-
-    .notice-alert.warning {
-      border-left-color: var(--warning);
-    }
-
-    @keyframes slideIn {
-      from {
-        transform: translateX(400px);
-        opacity: 0;
-      }
-      to {
-        transform: translateX(0);
-        opacity: 1;
-      }
-    }
-
-    /* Copy hint */
-    .message-content::after {
-      content: '';
-      display: none;
-    }
-
-    .message-content.show-copy-hint::after {
-      content: '복사됨!';
-      position: absolute;
-      top: -30px;
-      right: 0;
-      background: var(--main-dark);
-      color: white;
-      padding: 4px 12px;
-      border-radius: 6px;
-      font-size: 0.8rem;
-      display: block;
-      animation: fadeOut 1.5s ease forwards;
-    }
-
-    @keyframes fadeOut {
-      0%, 50% { opacity: 1; }
-      100% { opacity: 0; }
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-      .container {
-        padding: 12px;
-      }
-
-      .header {
-        padding: 16px;
-        flex-direction: column;
-        text-align: center;
-      }
-
-      .chat-area {
-        height: 300px;
-      }
-
-      .faq-container {
-        grid-template-columns: 1fr;
-      }
-
-      .message-content {
-        max-width: 85%;
-      }
-
-      .scroll-bottom-btn {
-        right: 20px;
-        bottom: 140px;
-      }
-
-      .input-wrapper {
-        flex-direction: column;
-      }
-
-      #sendBtn {
-        width: 100%;
+    @media (max-width:520px){
+      .wrap{
+        margin:0;
+        max-width:none;
+        border-radius:0;
+        min-height:100vh;
       }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <!-- Header -->
+  <div class="wrap">
     <div class="header">
-      <div class="avatar">🤖</div>
-      <div class="header-text">
-        <h1>SCM FAQ봇</h1>
-        <p>Supply Chain Management 업무 지원 챗봇입니다</p>
+      <div class="avatar">💬</div>
+      <div>
+        <h1>SCM봇</h1>
+        <p>문의 내용을 입력하시면 등록된 답변을 안내드립니다.</p>
       </div>
     </div>
 
-    <!-- Notice -->
-    <div class="notice-bar">
-      업무 시간 내 평균 응답 시간은 5초 이내입니다. 복잡한 문의는 담당자에게 연결해 드립니다.
+    <div class="notice">아래 카테고리를 선택하면 해당 FAQ가 아래에 표시됩니다.</div>
+
+    <div class="chat" id="chatBox"></div>
+
+    <div class="faq">
+      <div class="faq-title">카테고리</div>
+      <div class="category-tabs" id="categoryTabs"></div>
+
+      <div class="faq-title" style="margin-top:12px;">자주 묻는 질문</div>
+      <div class="faq-list" id="faqList"></div>
     </div>
 
-    <!-- Chat Card -->
-    <div class="chat-card">
-      <div class="chat-area" id="chatArea" role="log" aria-live="polite" aria-label="대화 내용">
-        <div class="message bot">
-          <div class="message-avatar">🤖</div>
-          <div class="message-content">
-            안녕하세요! SCM FAQ봇입니다. 궁금하신 내용을 입력해 주세요. 😊
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- FAQ Section -->
-    <div class="faq-section">
-      <h2>자주 묻는 질문</h2>
-      <div class="faq-container" id="faqContainer" role="list" aria-label="자주 묻는 질문">
-        <p style="text-align:center;color:var(--text-muted);">인기 질문 불러오는 중...</p>
-      </div>
-    </div>
-
-    <!-- Input Area -->
     <div class="input-area">
-      <div class="input-wrapper">
-        <textarea 
-          id="userInput" 
-          placeholder="질문을 입력하세요..." 
-          rows="2"
-          maxlength="500"
-          aria-label="질문 입력"
-        ></textarea>
-        <button id="sendBtn" aria-label="전송">전송</button>
+      <div class="input-wrap">
+        <input id="userInput" type="text" placeholder="질문을 입력하세요" />
+        <button id="sendButton" onclick="sendMessage()">➤</button>
       </div>
-      <div class="char-counter" id="charCounter">0 / 500</div>
     </div>
-
-    <!-- Scroll Button -->
-    <button class="scroll-bottom-btn" id="scrollBottomBtn" aria-label="최신 메시지로 이동">
-      ↓
-    </button>
   </div>
 
-  <!-- Screen reader live region -->
-  <div class="sr-only" role="status" aria-live="polite" aria-atomic="true" id="srLive"></div>
-
-  <!-- Debug Panel -->
-  <div class="debug-panel" id="debugPanel"></div>
-
-  <!-- Shared utilities -->
-  <script src="shared.js"></script>
-
   <script>
-    'use strict';
-
-    // ========================================
-    // Configuration & Constants
-    // ========================================
-    const CONFIG = window.CHATBOT_CONFIG || {
-      logApiUrl: 'https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/logQuestion',
-      topQuestionsApiUrl: 'https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/getTopQuestions',
+    window.CHATBOT_CONFIG = Object.assign({
+      logApiUrl: "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/logQuestion",
+      topQuestionsApiUrl: "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/getTopQuestions",
       requestTimeoutMs: 10000,
-      faqButtonCount: 4,
-      maxQuestionLength: 500,
-      typingDelay: 400,
-      maxRetries: 3,
-      retryDelay: 1000
-    };
+      faqButtonCount: 4
+    }, window.CHATBOT_CONFIG || {});
+  </script>
+  <script src="shared.js"></script>
+  <script>
+    const chatBox = document.getElementById("chatBox");
+    const faqList = document.getElementById("faqList");
+    const categoryTabs = document.getElementById("categoryTabs");
+    const userInput = document.getElementById("userInput");
+    const sendButton = document.getElementById("sendButton");
 
-    const MAX_MESSAGES = 100;
-    const MAX_PENDING_LOGS = 100;
-    const LOG_EXPIRY_DAYS = 7;
-
-    // ========================================
-    // Debug Mode
-    // ========================================
-    const DEBUG_MODE = new URLSearchParams(window.location.search).get('debug') === 'true';
-    const debugLogs = [];
-    const MAX_DEBUG_LOGS = 50;
-
-    function debugLog(message, data = null) {
-      if (!DEBUG_MODE) return;
-      
-      const timestamp = new Date().toLocaleTimeString('ko-KR');
-      const logEntry = { timestamp, message, data };
-      debugLogs.push(logEntry);
-      
-      if (debugLogs.length > MAX_DEBUG_LOGS) {
-        debugLogs.shift();
-      }
-
-      console.log(`[DEBUG ${timestamp}] ${message}`, data || '');
-
-      const panel = document.getElementById('debugPanel');
-      if (panel) {
-        const entry = document.createElement('div');
-        entry.className = 'log-entry';
-        entry.textContent = `[${timestamp}] ${message}`;
-        if (data) {
-          entry.textContent += ` | ${JSON.stringify(data)}`;
-        }
-        panel.appendChild(entry);
-        panel.scrollTop = panel.scrollHeight;
-      }
-    }
-
-    function createDebugPanel() {
-      if (!DEBUG_MODE) return;
-      
-      const panel = document.getElementById('debugPanel');
-      if (panel) {
-        panel.classList.add('active');
-        debugLog('🐛 디버그 모드 활성화');
-      }
-    }
-
-    // ========================================
-    // Global State
-    // ========================================
+    let selectedCategory = (window.ChatbotStore && ChatbotStore.getCategories()[0]) || "all";
     let isSending = false;
-    let messageNodes = [];
-    let errorLog = [];
-    let typingTimeoutId = null;
 
-    // ========================================
-    // DOM Elements
-    // ========================================
-    const chatArea = document.getElementById('chatArea');
-    const faqContainer = document.getElementById('faqContainer');
-    const userInput = document.getElementById('userInput');
-    const sendBtn = document.getElementById('sendBtn');
-    const charCounter = document.getElementById('charCounter');
-    const scrollBottomBtn = document.getElementById('scrollBottomBtn');
-    const srLive = document.getElementById('srLive');
-
-    // ========================================
-    // Utility Functions
-    // ========================================
-    function normalizeText(text) {
-      if (!text) return '';
-      return text.toString().trim().toLowerCase().replace(/\s+/g, ' ');
+    function getTimeText() {
+      return new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
     }
 
-    function escapeHTML(str) {
-      if (!str) return '';
-      const div = document.createElement('div');
-      div.textContent = str;
-      return div.innerHTML;
+    function escapeHtml(text) {
+      return String(text)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
     }
 
     function formatAnswer(text) {
-      if (!text) return '';
-      
-      let escaped = escapeHTML(text);
-      
-      // URL 패턴 매칭 및 검증
-      const urlPattern = /(https?:\/\/[^\s<>"{}|\\^`\[\]]+)/gi;
-      escaped = escaped.replace(urlPattern, (url) => {
-        try {
-          const urlObj = new URL(url);
-          if (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:') {
-            return url;
-          }
-          const displayUrl = url.length > 50 ? url.substring(0, 47) + '...' : url;
-          return `<a href="${url}" target="_blank" rel="noopener noreferrer nofollow">${displayUrl}</a>`;
-        } catch (e) {
-          return url;
-        }
-      });
-
-      return escaped.replace(/\n/g, '<br>');
+      return escapeHtml(String(text)).replaceAll("\n", "<br>");
     }
 
-    function announceToScreenReader(message) {
-      if (srLive) {
-        srLive.textContent = message;
-        setTimeout(() => srLive.textContent = '', 1000);
-      }
-    }
+    function addMessage(text, sender, name = "", extraClass = "") {
+      const row = document.createElement("div");
+      row.className = `row ${sender} ${extraClass}`.trim();
 
-    // ========================================
-    // Message Management
-    // ========================================
-    function addMessage(content, isUser = false) {
-      const messageDiv = document.createElement('div');
-      messageDiv.className = `message ${isUser ? 'user' : 'bot'}`;
-      messageDiv.innerHTML = `
-        <div class="message-avatar">${isUser ? '👤' : '🤖'}</div>
-        <div class="message-content">${isUser ? escapeHTML(content) : formatAnswer(content)}</div>
-      `;
-
-      // Double-click to copy
-      const contentEl = messageDiv.querySelector('.message-content');
-      let clickCount = 0;
-      contentEl.addEventListener('click', () => {
-        clickCount++;
-        if (clickCount === 1) {
-          setTimeout(() => clickCount = 0, 300);
-        } else if (clickCount === 2) {
-          const text = contentEl.textContent;
-          navigator.clipboard.writeText(text).then(() => {
-            contentEl.classList.add('show-copy-hint');
-            setTimeout(() => contentEl.classList.remove('show-copy-hint'), 1500);
-          });
-          clickCount = 0;
-        }
-      });
-
-      chatArea.appendChild(messageDiv);
-      messageNodes.push(messageDiv);
-
-      // Limit message count
-      if (messageNodes.length > MAX_MESSAGES) {
-        const removed = messageNodes.shift();
-        if (removed && removed.parentNode) {
-          removed.remove();
-        }
-      }
-
-      scrollToBottom();
-      announceToScreenReader(`${isUser ? '사용자' : '봇'}: ${content}`);
-    }
-
-    function showTypingIndicator() {
-      if (typingTimeoutId) {
-        clearTimeout(typingTimeoutId);
-      }
-
-      let indicator = chatArea.querySelector('.typing-indicator');
-      if (!indicator) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = 'message bot';
-        messageDiv.innerHTML = `
-          <div class="message-avatar">🤖</div>
-          <div class="typing-indicator">
-            <span></span><span></span><span></span>
+      if (sender === "bot") {
+        row.innerHTML = `
+          <div class="bot-icon">Q</div>
+          <div class="bubble-group bot">
+            <div class="sender">${escapeHtml(name || "상담봇")}</div>
+            <div class="bubble"></div>
+            <div class="time">${getTimeText()}</div>
           </div>
         `;
-        chatArea.appendChild(messageDiv);
-        messageNodes.push(messageDiv);
-        scrollToBottom();
-        announceToScreenReader('봇이 입력 중입니다');
+      } else {
+        row.innerHTML = `
+          <div class="bubble-group user">
+            <div class="sender">나</div>
+            <div class="bubble"></div>
+            <div class="time">${getTimeText()}</div>
+          </div>
+        `;
       }
 
-      // Auto-remove after 30s if not cleared
-      typingTimeoutId = setTimeout(() => {
-        hideTypingIndicator();
-      }, 30000);
+      row.querySelector(".bubble").innerHTML = formatAnswer(text);
+      chatBox.appendChild(row);
+      chatBox.scrollTop = chatBox.scrollHeight;
+      return row;
     }
 
-    function hideTypingIndicator() {
-      if (typingTimeoutId) {
-        clearTimeout(typingTimeoutId);
-        typingTimeoutId = null;
+    function removeRow(row) {
+      if (row && row.parentNode) row.parentNode.removeChild(row);
+    }
+
+    function normalizeTopItems(items, fallbackQa) {
+      if (Array.isArray(items) && items.length) {
+        return items
+          .filter(item => item && item.question)
+          .slice(0, window.CHATBOT_CONFIG.faqButtonCount)
+          .map(item => ({
+            question: String(item.question).trim(),
+            category: item.category || selectedCategory
+          }));
       }
 
-      // ✅ 수정됨: typing-indicator를 직접 선택
-      const indicators = chatArea.querySelectorAll('.typing-indicator');
-      indicators.forEach(indicator => {
-        const messageDiv = indicator.closest('.message');
-        if (messageDiv) {
-          // ✅ 배열에서도 제거
-          const index = messageNodes.indexOf(messageDiv);
-          if (index > -1) {
-            messageNodes.splice(index, 1);
-          }
-          messageDiv.remove();
-        }
-      });
+      const topLocal = fallbackQa.filter(item => item.top).slice(0, window.CHATBOT_CONFIG.faqButtonCount);
+      if (topLocal.length) return topLocal;
+      return fallbackQa.slice(0, window.CHATBOT_CONFIG.faqButtonCount);
     }
 
-    function scrollToBottom() {
-      chatArea.scrollTop = chatArea.scrollHeight;
-    }
-
-    function clearOldMessages() {
-      const cutoff = MAX_MESSAGES * 0.7;
-      while (messageNodes.length > cutoff) {
-        const removed = messageNodes.shift();
-        if (removed && removed.parentNode) {
-          removed.remove();
-        }
-      }
-    }
-
-    // ========================================
-    // Notice System
-    // ========================================
-    function showNotice(message, type = 'info') {
-      const notice = document.createElement('div');
-      notice.className = `notice-alert ${type}`;
-      notice.textContent = message;
-      document.body.appendChild(notice);
-
-      // ✅ 수정됨: 스크린 리더 공지 추가
-      announceToScreenReader(message);
-
-      setTimeout(() => {
-        notice.style.animation = 'slideIn 0.3s ease reverse';
-        setTimeout(() => notice.remove(), 300);
-      }, 3000);
-    }
-
-    // ========================================
-    // Network Functions
-    // ========================================
-    async function fetchWithTimeout(url, options = {}, timeout = CONFIG.requestTimeoutMs) {
+    async function fetchWithTimeout(url, options = {}, timeoutMs = window.CHATBOT_CONFIG.requestTimeoutMs || 10000) {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeout);
-
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
       try {
-        const response = await fetch(url, {
-          ...options,
-          signal: controller.signal,
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
-            ...options.headers
-          }
+        return await fetch(url, { ...options, signal: controller.signal });
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    async function sendToServer(data) {
+      if (!window.CHATBOT_CONFIG.logApiUrl) return;
+      try {
+        const res = await fetchWithTimeout(window.CHATBOT_CONFIG.logApiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
         });
-        clearTimeout(timeoutId);
-        return response;
+        if (!res.ok) throw new Error(`log api ${res.status}`);
       } catch (err) {
-        clearTimeout(timeoutId);
-        throw err;
+        console.warn("server log error:", err);
+        const pending = JSON.parse(localStorage.getItem("chatbot_pending_logs") || "[]");
+        pending.push(data);
+        localStorage.setItem("chatbot_pending_logs", JSON.stringify(pending.slice(-100)));
       }
     }
 
-    async function fetchWithRetry(url, options = {}, retries = CONFIG.maxRetries) {
-      for (let i = 0; i < retries; i++) {
-        try {
-          const response = await fetchWithTimeout(url, options);
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-          }
-          return response;
-        } catch (err) {
-          debugLog(`⚠️ 네트워크 요청 실패 (시도 ${i + 1}/${retries})`, { url, error: err.message });
-          if (i === retries - 1) throw err;
-          await new Promise(resolve => setTimeout(resolve, CONFIG.retryDelay * (i + 1)));
-        }
-      }
-    }
-
-    // ========================================
-    // Server API
-    // ========================================
-    async function logQuestionToServer(question, category, matched, source = 'user-input') {
-      const payload = {
-        question: question.trim(),
-        category: category || 'other',
-        matched: !!matched,
-        source: source,
-        timestamp: new Date().toISOString()
-      };
-
-      debugLog('📤 서버 로그 전송', payload);
-
+    async function loadTopQuestionsFromServer(category) {
       try {
-        const response = await fetchWithRetry(CONFIG.logApiUrl, {
-          method: 'POST',
-          body: JSON.stringify(payload)
-        });
+        const res = await fetchWithTimeout(
+          `${window.CHATBOT_CONFIG.topQuestionsApiUrl}?category=${encodeURIComponent(category)}`
+        );
 
-        const result = await response.json();
-        debugLog('✅ 서버 로그 성공', result);
-        return result;
-      } catch (err) {
-        debugLog('❌ 서버 로그 실패', err);
-        savePendingLog(payload);
-        throw err;
-      }
-    }
-
-    async function fetchTopQuestionsFromServer() {
-      debugLog('📥 인기 질문 요청', CONFIG.topQuestionsApiUrl);
-
-      try {
-        const response = await fetchWithRetry(CONFIG.topQuestionsApiUrl);
-        const data = await response.json();
-        
-        if (!data || !Array.isArray(data.topQuestions)) {
-          throw new Error('Invalid server response format');
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
         }
 
-        debugLog('✅ 인기 질문 수신', data.topQuestions);
-        return data.topQuestions;
-      } catch (err) {
-        debugLog('❌ 인기 질문 실패', err);
+        const data = await res.json();
+        return Array.isArray(data.items) ? data.items : [];
+      } catch (e) {
+        console.error("top questions failed", e);
         return [];
       }
     }
 
-    // ========================================
-    // Offline Log Queue
-    // ========================================
-    function savePendingLog(logData, isRetry = false) {
-      try {
-        let pending = JSON.parse(localStorage.getItem('pendingLogs') || '[]');
-        
-        // Deduplicate
-        const key = `${logData.question}_${logData.timestamp}`;
-        const exists = pending.some(log => 
-          `${log.question}_${log.timestamp}` === key
-        );
-        
-        if (!exists) {
-          pending.push(logData);
-        }
-
-        // Remove expired logs
-        const expiryMs = LOG_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
-        const now = Date.now();
-        pending = pending.filter(log => {
-          const logTime = new Date(log.timestamp).getTime();
-          return now - logTime < expiryMs;
-        });
-
-        // Limit count
-        if (pending.length > MAX_PENDING_LOGS) {
-          pending = pending.slice(-MAX_PENDING_LOGS);
-        }
-
-        localStorage.setItem('pendingLogs', JSON.stringify(pending));
-        debugLog('💾 오프라인 로그 저장', { count: pending.length });
-      } catch (err) {
-        if (err.name === 'QuotaExceededError') {
-          if (isRetry) {
-            // ✅ 수정됨: 무한 루프 방지
-            console.error('[저장 공간 부족 - 재시도 실패]', err);
-            return;
-          }
-
-          debugLog('⚠️ 저장 공간 부족, 로그 정리 중');
-          try {
-            let pending = JSON.parse(localStorage.getItem('pendingLogs') || '[]');
-            pending = pending.slice(-Math.floor(MAX_PENDING_LOGS / 2));
-            localStorage.setItem('pendingLogs', JSON.stringify(pending));
-            savePendingLog(logData, true);  // ✅ isRetry=true로 표시
-          } catch (cleanupErr) {
-            console.error('[저장 공간 정리 실패]', cleanupErr);
-          }
-        } else {
-          console.error('[오프라인 로그 저장 실패]', err);
-        }
-      }
-    }
-
-    async function retryPendingLogs() {
-      try {
-        const pending = JSON.parse(localStorage.getItem('pendingLogs') || '[]');
-        if (!pending.length) return;
-
-        debugLog('🔄 대기 로그 재전송 시작', { count: pending.length });
-
-        const results = await Promise.allSettled(
-          pending.map(log => 
-            fetchWithRetry(CONFIG.logApiUrl, {
-              method: 'POST',
-              body: JSON.stringify(log)
-            })
-          )
-        );
-
-        const succeeded = results.filter(r => r.status === 'fulfilled').length;
-        debugLog(`✅ 대기 로그 재전송 완료: ${succeeded}/${pending.length}`);
-
-        if (succeeded === pending.length) {
-          localStorage.removeItem('pendingLogs');
-        } else {
-          const failed = pending.filter((_, i) => results[i].status === 'rejected');
-          localStorage.setItem('pendingLogs', JSON.stringify(failed));
-        }
-      } catch (err) {
-        console.error('[대기 로그 재전송 오류]', err);
-      }
-    }
-
-    // ========================================
-    // Q&A Matching
-    // ========================================
-    function findAnswer(question, category = 'all') {
-      if (!question || typeof question !== 'string') return null;
-
-      const normalized = normalizeText(question);
-      if (!normalized) return null;
-
-      const qaData = loadQAData();
-      if (!qaData || !Array.isArray(qaData) || !qaData.length) return null;
-
-      // Filter by category
-      const filtered = category === 'all' 
-        ? qaData 
-        : qaData.filter(item => item && item.category === category);
-
-      debugLog('🔍 질문 검색 시작', { question, category, filtered: filtered.length });
-
-      // 1. Exact match
-      for (const item of filtered) {
-        if (!item || !item.question || !item.answer) continue;
-        const itemNormalized = normalizeText(item.question);
-        if (itemNormalized === normalized) {
-          debugLog('✅ 정확 매칭 성공', item);
-          return { ...item, matchType: 'exact', similarity: 100 };
-        }
+    function renderCategoryTabs() {
+      const categories = ChatbotStore.getCategories();
+      const labels = ChatbotStore.getCategoryLabels();
+      if (!categories.includes(selectedCategory)) {
+        selectedCategory = categories[0] || "all";
       }
 
-      // 2. Keyword match
-      const inputKeywords = normalized.split(' ').filter(w => w.length > 1);
-      let bestKeywordMatch = null;
-      let maxKeywordScore = 0;
-
-      for (const item of filtered) {
-        if (!item || !item.keywords || !item.answer) continue;
-        const itemKeywords = (Array.isArray(item.keywords) ? item.keywords : item.keywords.split(','))
-          .map(k => normalizeText(k))
-          .filter(k => k);
-        
-        let matchCount = 0;
-        for (const kw of itemKeywords) {
-          if (inputKeywords.some(inp => inp.includes(kw) || kw.includes(inp))) {
-            matchCount++;
-          }
-        }
-
-        const score = itemKeywords.length > 0 ? (matchCount / itemKeywords.length) * 100 : 0;
-        if (score > maxKeywordScore && score >= 50) {
-          maxKeywordScore = score;
-          bestKeywordMatch = { ...item, matchType: 'keyword', similarity: Math.round(score) };
-        }
-      }
-
-      if (bestKeywordMatch) {
-        debugLog('✅ 키워드 매칭 성공', bestKeywordMatch);
-        return bestKeywordMatch;
-      }
-
-      // 3. Similarity-based partial match (Levenshtein)
-      function levenshtein(a, b) {
-        const matrix = Array(b.length + 1).fill(null).map(() => Array(a.length + 1).fill(0));
-        for (let i = 0; i <= a.length; i++) matrix[0][i] = i;
-        for (let j = 0; j <= b.length; j++) matrix[j][0] = j;
-        for (let j = 1; j <= b.length; j++) {
-          for (let i = 1; i <= a.length; i++) {
-            const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-            matrix[j][i] = Math.min(
-              matrix[j][i - 1] + 1,
-              matrix[j - 1][i] + 1,
-              matrix[j - 1][i - 1] + cost
-            );
-          }
-        }
-        return matrix[b.length][a.length];
-      }
-
-      function similarity(a, b) {
-        const maxLen = Math.max(a.length, b.length);
-        if (maxLen === 0) return 100;
-        const distance = levenshtein(a, b);
-        return ((maxLen - distance) / maxLen) * 100;
-      }
-
-      let bestSimilarMatch = null;
-      let maxSimilarity = 0;
-
-      for (const item of filtered) {
-        if (!item || !item.question || !item.answer) continue;
-        const itemNormalized = normalizeText(item.question);
-        const sim = similarity(normalized, itemNormalized);
-        if (sim > maxSimilarity && sim >= 60) {
-          maxSimilarity = sim;
-          bestSimilarMatch = { ...item, matchType: 'similar', similarity: Math.round(sim) };
-        }
-      }
-
-      if (bestSimilarMatch) {
-        debugLog('✅ 유사도 매칭 성공', bestSimilarMatch);
-        return bestSimilarMatch;
-      }
-
-      debugLog('❌ 매칭 실패');
-      return null;
-    }
-
-    // ========================================
-    // FAQ Rendering
-    // ========================================
-    function getHistoryBasedTopQuestions(limit) {
-      try {
-        const history = loadQuestionHistory();
-        if (!history.length) return [];
-
-        // Create local Q&A map
-        const localQA = loadQAData();
-        const localQAMap = new Map();
-        localQA.forEach(item => {
-          if (item && item.question && item.answer && item.answer.trim()) {
-            localQAMap.set(normalizeText(item.question), item);
-          }
-        });
-
-        debugLog('📊 히스토리 분석', { historyCount: history.length, localQACount: localQAMap.size });
-
-        // Count frequency (only items in local Q&A)
-        const freq = new Map();
-        history.forEach(entry => {
-          if (!entry || !entry.question) return;
-          const normalized = normalizeText(entry.question);
-          const localItem = localQAMap.get(normalized);
-          if (localItem) {
-            freq.set(normalized, (freq.get(normalized) || 0) + 1);
-          }
-        });
-
-        debugLog('📈 히스토리 빈도', Array.from(freq.entries()).map(([q, c]) => ({ question: q, count: c })));
-
-        // Return top N
-        const result = Array.from(freq.entries())
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, limit)
-          .map(([normalized]) => localQAMap.get(normalized))
-          .filter(Boolean);
-
-        debugLog('✅ 히스토리 기반 TOP 질문', result);
-        return result;
-      } catch (err) {
-        console.error('[히스토리 인기 질문 로드 오류]', err);
-        debugLog('❌ 히스토리 처리 오류', err);
-        return [];
-      }
-    }
-
-    function normalizeTopItems(serverItems, localQA, limit) {
-      const result = [];
-      const seen = new Set();
-
-      debugLog('🔄 FAQ 정규화 시작', { serverCount: serverItems.length, localCount: localQA.length, limit });
-
-      // ✅ 수정됨: 엄격한 필터링 함수
-      const isValidQA = (item) => 
-        item && 
-        item.question && 
-        item.question.trim().length >= 3 &&
-        item.answer && 
-        item.answer.trim().length >= 5;
-
-      // Create local Q&A map (only with answers)
-      const localQAMap = new Map();
-      localQA.forEach(item => {
-        if (item && item.question && item.answer && item.answer.trim()) {
-          localQAMap.set(normalizeText(item.question), item);
-        }
+      categoryTabs.innerHTML = "";
+      categories.forEach(category => {
+        const btn = document.createElement("button");
+        btn.className = `category-tab ${selectedCategory === category ? "active" : ""}`;
+        btn.textContent = labels[category] || category;
+        btn.onclick = async () => {
+          if (isSending) return;
+          selectedCategory = category;
+          renderCategoryTabs();
+          await renderFAQ();
+        };
+        categoryTabs.appendChild(btn);
       });
-
-      debugLog('📦 로컬 Q&A 맵', { size: localQAMap.size });
-
-      // 1. Top-flagged items
-      const topItems = localQA.filter(isValidQA);
-      debugLog('1️⃣ TOP 플래그 항목', topItems);
-
-      topItems.forEach(item => {
-        const normalized = normalizeText(item.question);
-        if (!seen.has(normalized)) {
-          result.push(item);
-          seen.add(normalized);
-        }
-      });
-
-      if (result.length >= limit) {
-        debugLog('✅ 1순위에서 완료', result);
-        return result.slice(0, limit);
-      }
-
-      // 2. Server popular questions (must match local)
-      if (serverItems && serverItems.length) {
-        debugLog('2️⃣ 서버 인기 질문 처리', serverItems);
-        serverItems.forEach(serverItem => {
-          if (result.length >= limit) return;
-          if (!serverItem || !serverItem.question) return;
-          const normalized = normalizeText(serverItem.question);
-          if (!seen.has(normalized)) {
-            const localItem = localQAMap.get(normalized);
-            if (localItem && isValidQA(localItem)) {  // ✅ 답변 검증
-              result.push(localItem);
-              seen.add(normalized);
-              debugLog('✅ 서버 질문 매칭', localItem);
-            } else {
-              debugLog('⚠️ 서버 질문 매칭 실패', serverItem.question);
-            }
-          }
-        });
-      }
-
-      if (result.length >= limit) {
-        debugLog('✅ 2순위에서 완료', result);
-        return result.slice(0, limit);
-      }
-
-      // 3. History-based (already matched with local)
-      const historyTopQuestions = getHistoryBasedTopQuestions(limit - result.length + 2);
-      debugLog('3️⃣ 히스토리 기반 질문', historyTopQuestions);
-
-      historyTopQuestions.forEach(item => {
-        if (result.length >= limit) return;
-        if (!isValidQA(item)) return;  // ✅ 답변 검증
-        const normalized = normalizeText(item.question);
-        if (!seen.has(normalized)) {
-          result.push(item);
-          seen.add(normalized);
-        }
-      });
-
-      if (result.length >= limit) {
-        debugLog('✅ 3순위에서 완료', result);
-        return result.slice(0, limit);
-      }
-
-      // 4. Remaining local Q&A (with answers)
-      debugLog('4️⃣ 나머지 로컬 Q&A 추가');
-      localQA.forEach(item => {
-        if (result.length >= limit) return;
-        if (!isValidQA(item)) return;  // ✅ 답변 검증
-        const normalized = normalizeText(item.question);
-        if (!seen.has(normalized)) {
-          result.push(item);
-          seen.add(normalized);
-        }
-      });
-
-      debugLog('✅ FAQ 정규화 완료', result);
-      return result.slice(0, limit);
     }
 
     async function renderFAQ() {
-      debugLog('📋 [FAQ 렌더링 시작]');
-      faqContainer.innerHTML = '<p style="text-align:center;color:var(--text-muted);">인기 질문 불러오는 중...</p>';
+      const qa = ChatbotStore.getQAByCategory(selectedCategory);
+      faqList.innerHTML = "";
+      const topQA = normalizeTopItems(await loadTopQuestionsFromServer(selectedCategory), qa);
 
-      try {
-        // ✅ 수정됨: 명시적 에러 처리
-        let serverTopItems = [];
-        try {
-          serverTopItems = await fetchTopQuestionsFromServer();
-          debugLog(`✅ 서버 인기 질문: ${serverTopItems.length}개`, serverTopItems);
-        } catch (err) {
-          debugLog('⚠️ 서버 API 실패, 로컬만 사용', err);
-          serverTopItems = [];
-        }
+      if (!topQA.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty-faq";
+        empty.textContent = "이 카테고리에 등록된 FAQ가 없습니다.";
+        faqList.appendChild(empty);
+        return;
+      }
 
-        // ✅ 수정됨: 로컬 Q&A 로드 검증
-        let localQA;
-        try {
-          localQA = loadQAData();
-          if (!Array.isArray(localQA)) {
-            throw new Error('localQA는 배열이어야 합니다.');
+      topQA.forEach(item => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.textContent = item.question;
+        btn.onclick = async () => {
+          if (btn.disabled || isSending) return;
+          btn.disabled = true;
+          try {
+            await sendMessage(item.question, true);
+          } finally {
+            setTimeout(() => { btn.disabled = false; }, 500);
           }
-        } catch (err) {
-          console.error('[로컬 Q&A 로드 실패]', err);
-          debugLog('❌ 로컬 Q&A 로드 실패', err);
-          faqContainer.innerHTML = '<p style="text-align:center;color:var(--danger);">Q&A 데이터를 로드할 수 없습니다.</p>';
-          return;
-        }
-
-        // ✅ 수정됨: 정규화 결과 검증
-        const topItems = normalizeTopItems(serverTopItems, localQA, CONFIG.faqButtonCount);
-        
-        if (!topItems || !Array.isArray(topItems)) {
-          throw new Error('normalizeTopItems가 유효한 배열을 반환하지 않았습니다.');
-        }
-
-        if (topItems.length === 0) {
-          faqContainer.innerHTML = '<p style="text-align:center;color:var(--text-muted);">등록된 FAQ가 없습니다.</p>';
-          debugLog('⚠️ FAQ 항목이 없습니다.');
-          return;
-        }
-
-        faqContainer.innerHTML = '';
-        topItems.forEach((item, idx) => {
-          if (!item || !item.question) return;
-          
-          const btn = document.createElement('button');
-          btn.className = 'faq-btn';
-          btn.textContent = item.question;
-          btn.dataset.category = item.category || 'other';
-          btn.dataset.debugInfo = JSON.stringify({
-            question: item.question,
-            hasAnswer: !!(item.answer && item.answer.trim()),
-            answerLength: item.answer ? item.answer.length : 0,
-            category: item.category,
-            top: item.top
-          });
-
-          btn.onclick = async () => {
-            if (btn.disabled || isSending) return;
-            btn.disabled = true;
-            debugLog(`🖱️ FAQ 클릭: ${item.question}`, { 
-              item, 
-              hasAnswer: !!(item.answer && item.answer.trim()),
-              answerPreview: item.answer ? item.answer.substring(0, 50) : 'N/A'
-            });
-            
-            try {
-              await sendFAQMessage(item);
-            } catch (e) {
-              console.error('[FAQ 전송 오류]', e);
-              showNotice('오류가 발생했습니다.', 'error');
-              logError('FAQ 전송 오류', e);
-            } finally {
-              setTimeout(() => btn.disabled = false, 500);
-            }
-          };
-
-          faqContainer.appendChild(btn);
-        });
-
-        debugLog('✅ [FAQ 렌더링 완료]');
-      } catch (err) {
-        console.error('[FAQ 렌더링 오류]', err);
-        debugLog('❌ FAQ 렌더링 오류', err);
-        faqContainer.innerHTML = '<p style="text-align:center;color:var(--danger);">FAQ를 불러올 수 없습니다.</p>';
-        logError('FAQ 렌더링 오류', err);
-      }
+        };
+        faqList.appendChild(btn);
+      });
     }
 
-    // ========================================
-    // Message Sending
-    // ========================================
-    // ✅ 수정됨: 엄격한 검증 추가
-    async function sendFAQMessage(item) {
-      if (!item || !item.question) {
-        console.error('[FAQ 메시지 오류] 유효하지 않은 항목', item);
-        debugLog('❌ 유효하지 않은 FAQ 항목', item);
-        showNotice('오류: 유효하지 않은 FAQ 항목입니다.', 'error');
-        return;
-      }
-
-      debugLog('📤 FAQ 메시지 전송', item);
-      addMessage(item.question, true);
-
-      // ✅ 수정됨: 답변 검증 후 즉시 반환
-      if (!item.answer || !item.answer.trim()) {
-        debugLog('❌ 답변 없음!', item);
-        addMessage('죄송합니다. 해당 질문에 대한 답변이 등록되어 있지 않습니다. 관리자에게 문의해 주세요.', false);
-        return;  // ✅ 반드시 반환
-      }
-
-      showTypingIndicator();
-      await new Promise(resolve => setTimeout(resolve, CONFIG.typingDelay));
-      hideTypingIndicator();
-      addMessage(item.answer, false);
-
-      // 이 이후의 코드만 실행됨
-      try {
-        saveHistoryItem(item.question, item.category || 'other', true, 'faq-click');
-      } catch (err) {
-        console.error('[히스토리 저장 오류]', err);
-      }
-
-      try {
-        await logQuestionToServer(item.question, item.category || 'other', true, 'faq-click');
-      } catch (err) {
-        console.error('[서버 로그 오류]', err);
-      }
-
-      setTimeout(() => renderFAQ(), 100);
-    }
-
-    async function sendMessage() {
-      const question = userInput.value.trim();
-      
-      if (!question) {
-        showNotice('질문을 입력해 주세요.', 'warning');
-        return;
-      }
-
-      if (question.length < 2) {
-        showNotice('최소 2자 이상 입력해 주세요.', 'warning');
-        return;
-      }
-
-      if (question.length > CONFIG.maxQuestionLength) {
-        showNotice(`질문은 ${CONFIG.maxQuestionLength}자 이내로 입력해 주세요.`, 'warning');
-        return;
-      }
-
-      if (isSending) {
-        showNotice('이전 메시지를 처리 중입니다.', 'info');
-        return;
-      }
+    async function sendMessage(customText = null, isFaqClick = false) {
+      const text = (customText ?? userInput.value).trim();
+      if (!text || isSending) return;
 
       isSending = true;
-      sendBtn.disabled = true;
+      sendButton.disabled = true;
       userInput.disabled = true;
 
-      debugLog('📝 사용자 질문 전송', question);
+      addMessage(text, "user");
+      userInput.value = "";
+      const typingRow = addMessage("답변을 찾는 중입니다...", "bot", "SCM봇", "typing");
 
       try {
-        addMessage(question, true);
-        userInput.value = '';
-        updateCharCounter();
+        const result = ChatbotStore.findAnswer(text, selectedCategory);
+        const answer = result
+          ? result.answer
+          : "등록된 답변을 찾지 못했습니다. 해당 문의 사항은 SCM팀 담당자에게 문의 부탁드립니다.";
 
-        showTypingIndicator();
+        await new Promise(resolve => setTimeout(resolve, 250));
+        removeRow(typingRow);
+        addMessage(answer, "bot", "SCM봇");
 
-        await new Promise(resolve => setTimeout(resolve, CONFIG.typingDelay));
+        const payload = {
+          question: text,
+          answer,
+          matched: !!result,
+          category: result ? result.category : selectedCategory,
+          createdAt: new Date().toISOString(),
+          page: location.href,
+          userAgent: navigator.userAgent,
+          source: isFaqClick ? "faq-click" : "user"
+        };
 
-        const result = findAnswer(question);
-
-        hideTypingIndicator();
-
-        if (result && result.answer) {
-          debugLog('✅ 답변 찾음', result);
-          addMessage(result.answer, false);
-          
-          try {
-            saveHistoryItem(question, result.category || 'other', true, 'user-input');
-          } catch (err) {
-            console.error('[히스토리 저장 오류]', err);
-          }
-
-          try {
-            await logQuestionToServer(question, result.category || 'other', true, 'user-input');
-          } catch (err) {
-            console.error('[서버 로그 오류]', err);
-          }
-
-          setTimeout(() => renderFAQ(), 100);
-        } else {
-          debugLog('❌ 답변 없음', question);
-          addMessage(
-            '죄송합니다. 해당 질문에 대한 답변을 찾을 수 없습니다. 다른 방식으로 질문하시거나 담당자에게 문의해 주세요.',
-            false
-          );
-
-          try {
-            saveHistoryItem(question, 'other', false, 'user-input');
-          } catch (err) {
-            console.error('[히스토리 저장 오류]', err);
-          }
-
-          try {
-            await logQuestionToServer(question, 'other', false, 'user-input');
-          } catch (err) {
-            console.error('[서버 로그 오류]', err);
-          }
-        }
-      } catch (err) {
-        console.error('[메시지 전송 오류]', err);
-        debugLog('❌ 메시지 전송 오류', err);
-        hideTypingIndicator();
-        showNotice('오류가 발생했습니다. 다시 시도해 주세요.', 'error');
-        logError('메시지 전송 오류', err);
+        ChatbotStore.saveHistory(payload);
+        sendToServer(payload);
       } finally {
         isSending = false;
-        sendBtn.disabled = false;
+        sendButton.disabled = false;
         userInput.disabled = false;
         userInput.focus();
       }
     }
 
-    // ========================================
-    // Error Logging
-    // ========================================
-    function logError(context, error) {
-      const errorEntry = {
-        context,
-        message: error.message || String(error),
-        stack: error.stack || '',
-        timestamp: new Date().toISOString()
-      };
-      
-      errorLog.push(errorEntry);
-      
-      if (errorLog.length > 50) {
-        errorLog.shift();
-      }
-
-      debugLog(`❌ ${context}`, errorEntry);
-    }
-
-    // ========================================
-    // UI Event Handlers
-    // ========================================
-    function updateCharCounter() {
-      const length = userInput.value.length;
-      charCounter.textContent = `${length} / ${CONFIG.maxQuestionLength}`;
-      
-      if (length >= CONFIG.maxQuestionLength) {
-        charCounter.classList.add('danger');
-        charCounter.classList.remove('warning');
-      } else if (length >= CONFIG.maxQuestionLength * 0.9) {
-        charCounter.classList.add('warning');
-        charCounter.classList.remove('danger');
-      } else {
-        charCounter.classList.remove('warning', 'danger');
-      }
-    }
-
-    function handleScroll() {
-      const isNearBottom = chatArea.scrollHeight - chatArea.scrollTop - chatArea.clientHeight < 100;
-      
-      if (isNearBottom) {
-        scrollBottomBtn.classList.remove('visible');
-      } else {
-        scrollBottomBtn.classList.add('visible');
-      }
-    }
-
-    function handleKeyDown(e) {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
-      }
-    }
-
-    // ========================================
-    // Initialization
-    // ========================================
-    function init() {
-      debugLog('🚀 챗봇 초기화 시작');
-
-      // Event listeners
-      sendBtn.addEventListener('click', sendMessage);
-      userInput.addEventListener('input', updateCharCounter);
-      userInput.addEventListener('keydown', handleKeyDown);
-      chatArea.addEventListener('scroll', handleScroll);
-      scrollBottomBtn.addEventListener('click', scrollToBottom);
-
-      // Load FAQ
-      renderFAQ();
-
-      // Retry pending logs
-      retryPendingLogs();
-
-      // Periodic cleanup
-      setInterval(clearOldMessages, 60000);
-
-      // Debug panel
-      createDebugPanel();
-
-      // Expose debug API
-      if (DEBUG_MODE) {
-        window.chatbotDebug = {
-          getState: () => ({
-            isSending,
-            messageCount: messageNodes.length,
-            pendingLogs: JSON.parse(localStorage.getItem('pendingLogs') || '[]').length,
-            qaCount: loadQAData().length,
-            historyCount: loadQuestionHistory().length
-          }),
-          getErrorLog: () => errorLog,
-          getPendingLogs: () => JSON.parse(localStorage.getItem('pendingLogs') || '[]'),
-          clearMessages: () => {
-            messageNodes.forEach(node => node.remove());
-            messageNodes = [];
-            chatArea.innerHTML = '<div class="message bot"><div class="message-avatar">🤖</div><div class="message-content">메시지가 초기화되었습니다.</div></div>';
-          },
-          getDebugLogs: () => debugLogs,
-          simulateError: () => {
-            throw new Error('Test error from debug console');
-          }
-        };
-        console.log('🐛 디버그 API 사용 가능: window.chatbotDebug');
-      }
-
-      debugLog('✅ 챗봇 초기화 완료');
-    }
-
-    // ========================================
-    // Global Error Handlers
-    // ========================================
-    window.addEventListener('error', (event) => {
-      console.error('[전역 오류]', event.error);
-      logError('전역 오류', event.error || new Error(event.message));
-      showNotice('예기치 않은 오류가 발생했습니다.', 'error');
+    userInput.addEventListener("keydown", e => {
+      if (e.key === "Enter") sendMessage();
     });
 
-    window.addEventListener('unhandledrejection', (event) => {
-      console.error('[Promise 거부]', event.reason);
-      logError('Promise 거부', event.reason instanceof Error ? event.reason : new Error(String(event.reason)));
-    });
-
-    // Start
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', init);
-    } else {
-      init();
-    }
+    addMessage("안녕하세요.\n문의사항을 입력하거나 아래 FAQ를 선택해주세요.", "bot", "SCM봇");
+    renderCategoryTabs();
+    renderFAQ();
   </script>
-  
 </body>
 </html>
