@@ -535,6 +535,71 @@
       background: #f9f9f9;
     }
 
+    /* Edit Modal */
+    .edit-modal {
+      width: 600px;
+      max-width: 90%;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+      font-size: 0.95rem;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-family: inherit;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: var(--main-tint);
+    }
+
+    .form-group textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .form-group small {
+      display: block;
+      margin-top: 4px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    .char-count {
+      text-align: right;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .char-count.warning {
+      color: var(--warning);
+      font-weight: 600;
+    }
+
+    .char-count.danger {
+      color: var(--danger);
+      font-weight: 600;
+    }
+
     /* Loading Overlay */
     .loading-overlay {
       position: fixed;
@@ -795,6 +860,70 @@
     </div>
   </div>
 
+  <!-- Edit Modal -->
+  <div class="modal-overlay" id="editModal">
+    <div class="modal edit-modal">
+      <h3>✏️ 질문/답변 수정</h3>
+      
+      <form id="editForm" onsubmit="return false;">
+        <div class="form-group">
+          <label for="editQuestion">질문 *</label>
+          <textarea 
+            id="editQuestion" 
+            required
+            maxlength="500"
+            placeholder="질문을 입력하세요"
+          ></textarea>
+          <div class="char-count" id="questionCharCount">0 / 500</div>
+        </div>
+
+        <div class="form-group">
+          <label for="editAnswer">답변 *</label>
+          <textarea 
+            id="editAnswer" 
+            required
+            maxlength="5000"
+            placeholder="답변을 입력하세요"
+          ></textarea>
+          <div class="char-count" id="answerCharCount">0 / 5000</div>
+        </div>
+
+        <div class="form-group">
+          <label for="editCategory">카테고리</label>
+          <select id="editCategory">
+            <option value="delivery">배송</option>
+            <option value="documents">서류</option>
+            <option value="production">생산</option>
+            <option value="purchase">구매</option>
+            <option value="unknown">기타</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="editKeywords">키워드</label>
+          <input 
+            type="text" 
+            id="editKeywords" 
+            placeholder="쉼표 또는 | 로 구분 (예: 배송,기간,시간)"
+          />
+          <small>검색 키워드를 입력하세요. 쉼표(,) 또는 파이프(|)로 구분합니다.</small>
+        </div>
+
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="editMatched" />
+            답변이 매칭됨으로 표시
+          </label>
+        </div>
+      </form>
+
+      <div class="modal-actions">
+        <button class="btn-primary" onclick="saveEdit()">💾 저장</button>
+        <button class="btn-secondary" onclick="closeEditModal()">취소</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Loading Overlay -->
   <div class="loading-overlay" id="loadingOverlay">
     <div class="loading-spinner"></div>
@@ -826,6 +955,7 @@
     let allQuestions = [];
     let selectedQuestions = new Set();
     let pendingCSVData = null;
+    let currentEditingQuestion = null;
 
     // ========================================
     // DOM Elements
@@ -841,6 +971,7 @@
     const autoRefresh = document.getElementById('autoRefresh');
     const loadingOverlay = document.getElementById('loadingOverlay');
     const previewModal = document.getElementById('previewModal');
+    const editModal = document.getElementById('editModal');
     const deleteBtn = document.getElementById('deleteBtn');
     const selectedCount = document.getElementById('selectedCount');
 
@@ -948,10 +1079,12 @@
     // CSV Functions
     // ========================================
     function downloadCSVTemplate() {
-      const headers = ['question', 'category', 'matched', 'source', 'timestamp'];
+      const headers = ['question', 'answer', 'category', 'keywords', 'matched', 'source', 'timestamp'];
       const exampleRow = [
         '배송은 얼마나 걸리나요?',
+        '일반적으로 주문 후 2-3 영업일 내 배송됩니다.',
         'delivery',
+        '배송,기간,시간',
         'true',
         'user-input',
         new Date().toISOString()
@@ -962,7 +1095,7 @@
         exampleRow.map(escapeCSVValue).join(',')
       ].join('\n');
 
-      downloadFile(csv, `질문_템플릿_${Date.now()}.csv`, 'text/csv');
+      downloadFile(csv, `질문_답변_템플릿_${Date.now()}.csv`, 'text/csv');
       showNotice('CSV 템플릿이 다운로드되었습니다.', 'success');
     }
 
@@ -972,10 +1105,12 @@
         return;
       }
 
-      const headers = ['question', 'category', 'matched', 'source', 'timestamp', 'count'];
+      const headers = ['question', 'answer', 'category', 'keywords', 'matched', 'source', 'timestamp', 'count'];
       const rows = allQuestions.map(q => [
         q.question,
+        q.answer || '',
         q.category,
+        Array.isArray(q.keywords) ? q.keywords.join('|') : (q.keywords || ''),
         q.matched,
         q.source,
         q.timestamp,
@@ -987,7 +1122,7 @@
         ...rows.map(row => row.map(escapeCSVValue).join(','))
       ].join('\n');
 
-      downloadFile(csv, `질문_목록_${Date.now()}.csv`, 'text/csv');
+      downloadFile(csv, `질문_답변_목록_${Date.now()}.csv`, 'text/csv');
       showNotice('CSV 파일이 다운로드되었습니다.', 'success');
     }
 
@@ -1052,9 +1187,17 @@
           row[header] = values[index] || '';
         });
 
+        // 필수 필드 검증
+        if (!row.question || !row.question.trim()) {
+          console.warn(`[CSV 라인 ${i + 1}] 질문이 비어있어 건너뜁니다.`);
+          continue;
+        }
+
         data.push({
-          question: row.question || '',
+          question: row.question.trim(),
+          answer: row.answer ? row.answer.trim() : '',
           category: row.category || 'unknown',
+          keywords: row.keywords ? row.keywords.split(/[|,]/).filter(k => k.trim()) : [],
           matched: row.matched === 'true' || row.matched === true,
           source: row.source || 'user-input',
           timestamp: row.timestamp || new Date().toISOString(),
@@ -1103,10 +1246,11 @@
       const thead = document.createElement('thead');
       thead.innerHTML = `
         <tr>
-          <th>질문</th>
+          <th style="max-width: 200px;">질문</th>
+          <th style="max-width: 300px;">답변</th>
           <th>카테고리</th>
-          <th>매칭 여부</th>
-          <th>출처</th>
+          <th>키워드</th>
+          <th>매칭</th>
         </tr>
       `;
       table.appendChild(thead);
@@ -1115,11 +1259,21 @@
       const tbody = document.createElement('tbody');
       data.slice(0, 10).forEach(item => {
         const tr = document.createElement('tr');
+        
+        const answerPreview = item.answer 
+          ? (item.answer.length > 50 ? item.answer.substring(0, 47) + '...' : item.answer)
+          : '(답변 없음)';
+        
+        const keywordsPreview = Array.isArray(item.keywords) 
+          ? item.keywords.slice(0, 3).join(', ') + (item.keywords.length > 3 ? '...' : '')
+          : item.keywords || '';
+
         tr.innerHTML = `
-          <td>${escapeHTML(item.question)}</td>
+          <td style="max-width: 200px; word-wrap: break-word;">${escapeHTML(item.question)}</td>
+          <td style="max-width: 300px; word-wrap: break-word; font-size: 0.85em; color: var(--text-secondary);">${escapeHTML(answerPreview)}</td>
           <td>${getCategoryLabel(item.category)}</td>
-          <td>${item.matched ? '✓ 있음' : '✗ 없음'}</td>
-          <td>${item.source}</td>
+          <td style="font-size: 0.85em; color: var(--text-muted);">${escapeHTML(keywordsPreview)}</td>
+          <td>${item.matched ? '✓' : '✗'}</td>
         `;
         tbody.appendChild(tr);
       });
@@ -1224,6 +1378,130 @@
     }
 
     // ========================================
+    // Edit Functions
+    // ========================================
+    function openEditModal(item) {
+      currentEditingQuestion = item;
+      
+      document.getElementById('editQuestion').value = item.question || '';
+      document.getElementById('editAnswer').value = item.answer || '';
+      document.getElementById('editCategory').value = item.category || 'unknown';
+      document.getElementById('editMatched').checked = !!item.matched;
+      
+      // 키워드 처리
+      let keywordsStr = '';
+      if (Array.isArray(item.keywords)) {
+        keywordsStr = item.keywords.join(', ');
+      } else if (typeof item.keywords === 'string') {
+        keywordsStr = item.keywords.replace(/\|/g, ', ');
+      }
+      document.getElementById('editKeywords').value = keywordsStr;
+
+      updateCharCounts();
+      editModal.classList.add('active');
+    }
+
+    function closeEditModal() {
+      editModal.classList.remove('active');
+      currentEditingQuestion = null;
+    }
+
+    function updateCharCounts() {
+      const questionInput = document.getElementById('editQuestion');
+      const answerInput = document.getElementById('editAnswer');
+      const questionCount = document.getElementById('questionCharCount');
+      const answerCount = document.getElementById('answerCharCount');
+
+      const qLen = questionInput.value.length;
+      const aLen = answerInput.value.length;
+
+      questionCount.textContent = `${qLen} / 500`;
+      answerCount.textContent = `${aLen} / 5000`;
+
+      // 경고 색상
+      if (qLen >= 500) {
+        questionCount.className = 'char-count danger';
+      } else if (qLen >= 450) {
+        questionCount.className = 'char-count warning';
+      } else {
+        questionCount.className = 'char-count';
+      }
+
+      if (aLen >= 5000) {
+        answerCount.className = 'char-count danger';
+      } else if (aLen >= 4500) {
+        answerCount.className = 'char-count warning';
+      } else {
+        answerCount.className = 'char-count';
+      }
+    }
+
+    async function saveEdit() {
+      if (!currentEditingQuestion) return;
+
+      const question = document.getElementById('editQuestion').value.trim();
+      const answer = document.getElementById('editAnswer').value.trim();
+      const category = document.getElementById('editCategory').value;
+      const keywords = document.getElementById('editKeywords').value.trim();
+      const matched = document.getElementById('editMatched').checked;
+
+      // 유효성 검증
+      if (!question) {
+        showNotice('질문을 입력해 주세요.', 'warning');
+        return;
+      }
+
+      if (!answer) {
+        showNotice('답변을 입력해 주세요.', 'warning');
+        return;
+      }
+
+      showLoading();
+
+      try {
+        // 키워드 배열로 변환
+        const keywordsArray = keywords
+          .split(/[,|]/)
+          .map(k => k.trim())
+          .filter(k => k);
+
+        const updatedItem = {
+          ...currentEditingQuestion,
+          question,
+          answer,
+          category,
+          keywords: keywordsArray,
+          matched,
+          updatedAt: new Date().toISOString()
+        };
+
+        // TODO: 실제 서버 API 호출
+        // const response = await fetch(`${ADMIN_CONFIG.apiUrl}/updateQuestion/${currentEditingQuestion.id}`, {
+        //   method: 'PUT',
+        //   headers: { 'Content-Type': 'application/json' },
+        //   body: JSON.stringify(updatedItem)
+        // });
+
+        // 임시: 로컬 시뮬레이션 (1초 대기)
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        console.log('[수정 완료]', updatedItem);
+
+        hideLoading();
+        closeEditModal();
+        showNotice('질문/답변이 수정되었습니다.', 'success');
+        
+        // 목록 새로고침
+        loadQuestionMonitor();
+
+      } catch (error) {
+        console.error('[수정 오류]', error);
+        hideLoading();
+        showNotice('수정 중 오류가 발생했습니다.', 'error');
+      }
+    }
+
+    // ========================================
     // Render Functions
     // ========================================
     function updateStats(stats) {
@@ -1250,6 +1528,22 @@
       const categoryLabel = getCategoryLabel(item.category);
       const timestamp = item.timestamp ? new Date(item.timestamp).toLocaleString('ko-KR') : '알 수 없음';
 
+      // 답변 미리보기 (최대 100자)
+      let answerPreview = '';
+      if (item.answer && item.answer.trim()) {
+        const preview = item.answer.length > 100 
+          ? item.answer.substring(0, 97) + '...' 
+          : item.answer;
+        answerPreview = `
+          <div style="margin-top: 8px; padding: 8px 12px; background: var(--main-light); border-radius: 8px; font-size: 0.85rem; color: var(--text-secondary);">
+            <strong>답변:</strong> ${escapeHTML(preview)}
+          </div>
+        `;
+      }
+
+      // JSON 문자열을 안전하게 escape
+      const itemJson = JSON.stringify(item).replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+
       div.innerHTML = `
         <input 
           type="checkbox" 
@@ -1267,13 +1561,12 @@
             ${sourceBadge}
             ${item.count > 1 ? `<span>🔁 ${item.count}회</span>` : ''}
           </div>
+          ${answerPreview}
         </div>
         <div class="question-actions">
-          ${!item.matched ? `
-            <button class="btn-add-answer" onclick="addAnswerForQuestion(\`${escapeHTML(item.question)}\`, '${item.category}')">
-              📝 답변 추가
-            </button>
-          ` : ''}
+          <button class="btn-add-answer" onclick='openEditModal(${itemJson})'>
+            ✏️ 수정
+          </button>
         </div>
       `;
 
@@ -1379,13 +1672,6 @@
     }
 
     // ========================================
-    // Action Functions
-    // ========================================
-    function addAnswerForQuestion(question, category) {
-      alert(`"${question}" 에 대한 답변을 추가하세요.\n\n카테고리: ${getCategoryLabel(category)}\n\nshared.js의 DEFAULT_QA에 항목을 추가하거나, 별도 관리 UI를 구현하세요.`);
-    }
-
-    // ========================================
     // Auto Refresh
     // ========================================
     autoRefresh.addEventListener('change', (e) => {
@@ -1447,6 +1733,7 @@
         documents: '서류',
         production: '생산',
         purchase: '구매',
+        unknown: '기타',
         other: '기타'
       };
       return labels[category] || category;
@@ -1470,6 +1757,18 @@
     document.addEventListener('DOMContentLoaded', () => {
       console.log('✅ Admin 페이지 로드 완료');
       adminPassword.focus();
+
+      // Character count 실시간 업데이트
+      const questionInput = document.getElementById('editQuestion');
+      const answerInput = document.getElementById('editAnswer');
+
+      if (questionInput) {
+        questionInput.addEventListener('input', updateCharCounts);
+      }
+
+      if (answerInput) {
+        answerInput.addEventListener('input', updateCharCounts);
+      }
     });
 
     // Cleanup on unload
