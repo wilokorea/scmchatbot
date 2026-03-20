@@ -932,91 +932,91 @@
 
     // 🆕 전체 질문 이력 조회 함수
     async function loadAllQuestions(offset = 0) {
-      const tbody = document.getElementById("allQuestionsTable");
-      tbody.innerHTML = "";
-      setStatus("allQuestionsStatus", "전체 질문 이력을 불러오는 중...");
-      document.getElementById("allQuestionsCount").textContent = "조회 중";
+  const tbody = document.getElementById("allQuestionsTable");
+  tbody.innerHTML = "";
+  setStatus("allQuestionsStatus", "전체 질문 이력을 불러오는 중...");
+  document.getElementById("allQuestionsCount").textContent = "조회 중";
 
-      const category = document.getElementById("filterCategory").value;
-      const matched = document.getElementById("filterMatched").value;
+  const category = document.getElementById("filterCategory").value;
+  const matched = document.getElementById("filterMatched").value;
 
-      try {
-        const apiUrl = window.ADMIN_CONFIG.allQuestionsApiUrl;
-        if (!apiUrl) {
-          throw new Error("allQuestionsApiUrl 설정이 없습니다.");
-        }
-
-        const params = new URLSearchParams({
-          limit: pageSize,
-          offset: offset
-        });
-
-        if (category && category !== "all") {
-          params.append("category", category);
-        }
-
-        if (matched) {
-          params.append("matched", matched);
-        }
-
-        const res = await fetchWithTimeout(`${apiUrl}?${params.toString()}`, {
-          method: "GET",
-          headers: { "Accept": "application/json" },
-          credentials: "include"
-        });
-
-        if (!res.ok) {
-          throw new Error(`서버 응답 오류 (${res.status})`);
-        }
-
-        const data = await res.json();
-        const count = Number(data.count || 0);
-        totalQuestions = Number(data.totalCount || 0);
-        const items = Array.isArray(data.items) ? data.items : [];
-
-        if (!items.length) {
-          document.getElementById("allQuestionsCount").textContent = "전체 질문 이력 0건";
-          setStatus("allQuestionsStatus", "조회된 질문 이력이 없습니다.", "ok");
-          updatePaginationButtons();
-          return;
-        }
-
-        items.forEach(item => {
-          const tr = document.createElement("tr");
-          const createdAt = item.createdAt ? new Date(item.createdAt) : null;
-          const createdText = createdAt && !Number.isNaN(createdAt.getTime())
-            ? createdAt.toLocaleString("ko-KR")
-            : "시간 정보 없음";
-
-          const matchedText = item.matched ? "Y" : "N";
-          const matchedStyle = item.matched ? "color: var(--ok);" : "color: var(--danger);";
-
-          tr.innerHTML = `
-            <td>${createdText}</td>
-            <td></td>
-            <td></td>
-            <td>${item.category || ""}</td>
-            <td style="${matchedStyle}">${matchedText}</td>
-            <td style="font-size: 11px;">${item.source || "user"}</td>
-          `;
-          tr.children[1].textContent = item.question || "";
-          tr.children[2].textContent = item.answer || "";
-          tbody.appendChild(tr);
-        });
-
-        document.getElementById("allQuestionsCount").textContent = 
-          `전체 ${totalQuestions}건 중 ${offset + 1}~${Math.min(offset + count, totalQuestions)}건 표시`;
-        setStatus("allQuestionsStatus", `조회 성공: ${count}건`, "ok");
-
-        currentPage = Math.floor(offset / pageSize);
-        updatePaginationButtons();
-
-      } catch (e) {
-        console.error("전체 질문 이력 조회 실패", e);
-        document.getElementById("allQuestionsCount").textContent = "전체 질문 이력을 불러오지 못했습니다.";
-        setStatus("allQuestionsStatus", e.message || "전체 질문 이력을 불러오지 못했습니다.", "error");
-      }
+  try {
+    const apiUrl = window.ADMIN_CONFIG.allQuestionsApiUrl;
+    if (!apiUrl) {
+      throw new Error("allQuestionsApiUrl 설정이 없습니다.");
     }
+
+    const params = new URLSearchParams({
+      limit: pageSize,
+      offset: offset
+    });
+
+    if (category && category !== "all") {
+      params.append("category", category);
+    }
+
+    if (matched) {
+      params.append("matched", matched);
+    }
+
+    const res = await fetchWithTimeout(`${apiUrl}?${params.toString()}`, {
+      method: "GET",
+      headers: { "Accept": "application/json" }
+      // credentials: "include" 제거됨
+    });
+
+    if (!res.ok) {
+      throw new Error(`서버 응답 오류 (${res.status})`);
+    }
+
+    const data = await res.json();
+    const count = Number(data.count || 0);
+    totalQuestions = Number(data.totalCount || 0);
+    const items = Array.isArray(data.items) ? data.items : [];
+
+    if (!items.length) {
+      document.getElementById("allQuestionsCount").textContent = "전체 질문 이력 0건";
+      setStatus("allQuestionsStatus", "조회된 질문 이력이 없습니다.", "ok");
+      updatePaginationButtons();
+      return;
+    }
+
+    items.forEach(item => {
+      const tr = document.createElement("tr");
+      const createdAt = item.createdAt ? new Date(item.createdAt) : null;
+      const createdText = createdAt && !Number.isNaN(createdAt.getTime())
+        ? createdAt.toLocaleString("ko-KR")
+        : "시간 정보 없음";
+
+      const matchedText = item.matched ? "Y" : "N";
+      const matchedStyle = item.matched ? "color: var(--ok);" : "color: var(--danger);";
+
+      tr.innerHTML = `
+        <td>${createdText}</td>
+        <td></td>
+        <td></td>
+        <td>${item.category || ""}</td>
+        <td style="${matchedStyle}">${matchedText}</td>
+        <td style="font-size: 11px;">${item.source || "user"}</td>
+      `;
+      tr.children[1].textContent = item.question || "";
+      tr.children[2].textContent = item.answer || "";
+      tbody.appendChild(tr);
+    });
+
+    document.getElementById("allQuestionsCount").textContent = 
+      `전체 ${totalQuestions}건 중 ${offset + 1}~${Math.min(offset + count, totalQuestions)}건 표시`;
+    setStatus("allQuestionsStatus", `조회 성공: ${count}건`, "ok");
+
+    currentPage = Math.floor(offset / pageSize);
+    updatePaginationButtons();
+
+  } catch (e) {
+    console.error("전체 질문 이력 조회 실패", e);
+    document.getElementById("allQuestionsCount").textContent = "전체 질문 이력을 불러오지 못했습니다.";
+    setStatus("allQuestionsStatus", e.message || "전체 질문 이력을 불러오지 못했습니다.", "error");
+  }
+}
 
     function updatePaginationButtons() {
       const prevBtn = document.getElementById("prevPageBtn");
@@ -1112,69 +1112,69 @@
         setStatus("allQuestionsStatus", "다운로드 실패: " + e.message, "error");
       }
     }
+async function loadUnmatchedFromServer() {
+  const tbody = document.getElementById("historyTable");
+  tbody.innerHTML = "";
+  setStatus("serverStatus", "서버 미매칭 질문을 불러오는 중...");
+  document.getElementById("historyCount").textContent = "조회 중";
 
-    async function loadUnmatchedFromServer() {
-      const tbody = document.getElementById("historyTable");
-      tbody.innerHTML = "";
-      setStatus("serverStatus", "서버 미매칭 질문을 불러오는 중...");
-      document.getElementById("historyCount").textContent = "조회 중";
-
-      try {
-        const apiUrl = window.ADMIN_CONFIG.unmatchedApiUrl;
-        if (!apiUrl) {
-          throw new Error("unmatchedApiUrl 설정이 없습니다.");
-        }
-
-        const res = await fetchWithTimeout(apiUrl, {
-          method: "GET",
-          headers: { "Accept": "application/json" },
-          credentials: "include"
-        });
-
-        if (!res.ok) {
-          throw new Error(`서버 응답 오류 (${res.status})`);
-        }
-
-        const data = await res.json();
-        const count = Number(data.count || 0);
-        const items = Array.isArray(data.items) ? data.items : [];
-
-        document.getElementById("statUnmatched").textContent = count;
-
-        if (!items.length) {
-          document.getElementById("historyCount").textContent = "미매칭 총 0건";
-          setStatus("serverStatus", "미매칭 질문이 없습니다.", "ok");
-          return;
-        }
-
-        items.forEach(item => {
-          const tr = document.createElement("tr");
-          const createdAt = item.createdAt ? new Date(item.createdAt) : null;
-          const createdText = createdAt && !Number.isNaN(createdAt.getTime())
-            ? createdAt.toLocaleString("ko-KR")
-            : "시간 정보 없음";
-
-          tr.innerHTML = `
-            <td>${createdText}</td>
-            <td></td>
-            <td></td>
-            <td>${item.category || ""}</td>
-            <td>N</td>
-          `;
-          tr.children[1].textContent = item.question || "";
-          tr.children[2].textContent = item.answer || "";
-          tbody.appendChild(tr);
-        });
-
-        document.getElementById("historyCount").textContent = `미매칭 총 ${count}건`;
-        setStatus("serverStatus", `조회 성공: ${count}건`, "ok");
-      } catch (e) {
-        console.error("load unmatched failed", e);
-        document.getElementById("statUnmatched").textContent = "0";
-        document.getElementById("historyCount").textContent = "서버 미매칭 질문을 불러오지 못했습니다.";
-        setStatus("serverStatus", e.message || "서버 미매칭 질문을 불러오지 못했습니다.", "error");
-      }
+  try {
+    const apiUrl = window.ADMIN_CONFIG.unmatchedApiUrl;
+    if (!apiUrl) {
+      throw new Error("unmatchedApiUrl 설정이 없습니다.");
     }
+
+    const res = await fetchWithTimeout(apiUrl, {
+      method: "GET",
+      headers: { "Accept": "application/json" }
+      // credentials: "include" 제거됨
+    });
+
+    if (!res.ok) {
+      throw new Error(`서버 응답 오류 (${res.status})`);
+    }
+
+    const data = await res.json();
+    const count = Number(data.count || 0);
+    const items = Array.isArray(data.items) ? data.items : [];
+
+    document.getElementById("statUnmatched").textContent = count;
+
+    if (!items.length) {
+      document.getElementById("historyCount").textContent = "미매칭 총 0건";
+      setStatus("serverStatus", "미매칭 질문이 없습니다.", "ok");
+      return;
+    }
+
+    items.forEach(item => {
+      const tr = document.createElement("tr");
+      const createdAt = item.createdAt ? new Date(item.createdAt) : null;
+      const createdText = createdAt && !Number.isNaN(createdAt.getTime())
+        ? createdAt.toLocaleString("ko-KR")
+        : "시간 정보 없음";
+
+      tr.innerHTML = `
+        <td>${createdText}</td>
+        <td></td>
+        <td></td>
+        <td>${item.category || ""}</td>
+        <td>N</td>
+      `;
+      tr.children[1].textContent = item.question || "";
+      tr.children[2].textContent = item.answer || "";
+      tbody.appendChild(tr);
+    });
+
+    document.getElementById("historyCount").textContent = `미매칭 총 ${count}건`;
+    setStatus("serverStatus", `조회 성공: ${count}건`, "ok");
+  } catch (e) {
+    console.error("load unmatched failed", e);
+    document.getElementById("statUnmatched").textContent = "0";
+    document.getElementById("historyCount").textContent = "서버 미매칭 질문을 불러오지 못했습니다.";
+    setStatus("serverStatus", e.message || "서버 미매칭 질문을 불러오지 못했습니다.", "error");
+  }
+}
+
 
     checkLogin();
   </script>
