@@ -77,13 +77,19 @@
       gap:16px;
     }
 
-    input, select{
+    input, select, textarea{
       width:100%;
       padding:12px;
       border:1px solid var(--line);
       border-radius:10px;
       margin-top:8px;
       font-size:14px;
+      font-family:inherit;
+    }
+
+    textarea{
+      min-height:120px;
+      resize:vertical;
     }
 
     button{
@@ -232,6 +238,73 @@
       font-size:12px;
     }
 
+    /* 🆕 모달 스타일 */
+    .modal{
+      display:none;
+      position:fixed;
+      z-index:1000;
+      left:0;
+      top:0;
+      width:100%;
+      height:100%;
+      background:rgba(0,0,0,0.5);
+      align-items:center;
+      justify-content:center;
+    }
+
+    .modal.show{
+      display:flex;
+    }
+
+    .modal-content{
+      background:#fff;
+      border-radius:18px;
+      padding:24px;
+      max-width:600px;
+      width:90%;
+      max-height:80vh;
+      overflow-y:auto;
+      box-shadow:0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    .modal-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:16px;
+    }
+
+    .modal-header h3{
+      margin:0;
+    }
+
+    .modal-close{
+      background:none;
+      border:none;
+      font-size:24px;
+      cursor:pointer;
+      color:var(--sub);
+      padding:0;
+      margin:0;
+      width:30px;
+      height:30px;
+    }
+
+    .modal-close:hover{
+      color:var(--text);
+    }
+
+    .form-group{
+      margin-bottom:16px;
+    }
+
+    .form-group label{
+      display:block;
+      font-size:13px;
+      color:var(--sub);
+      margin-bottom:4px;
+    }
+
     @media (max-width:960px){
       .grid{ grid-template-columns:1fr; }
       .stats{ grid-template-columns:1fr 1fr; }
@@ -243,6 +316,7 @@
   </style>
 </head>
 <body>
+  <!-- 로그인 화면 -->
   <div id="loginView" class="login-box">
     <h1>관리자 페이지</h1>
     <p class="muted">서버 인증 또는 개발용 로컬 비밀번호로 로그인합니다.</p>
@@ -255,55 +329,51 @@
     <div id="loginStatus" class="status-box">대기 중</div>
   </div>
 
+  <!-- 관리자 화면 -->
   <div id="adminView" class="container hidden">
+    <!-- 헤더 -->
     <div class="card">
       <h1>SCM 업무 도우미 관리자</h1>
-      <p class="muted">CSV 업로드, Q&A 삭제, 질문 이력 조회를 수행합니다.</p>
+      <p class="muted">CSV 업로드, Q&A 관리, 질문 이력 조회를 수행합니다.</p>
       <div class="toolbar">
         <button class="sub" onclick="logout()">로그아웃</button>
       </div>
     </div>
 
+    <!-- 현황 통계 -->
     <div class="card">
       <h2>현황</h2>
       <div class="stats">
         <div class="stat"><strong id="statQA">0</strong><span>Q&A 수</span></div>
-        <div class="stat"><strong id="statHistory">0</strong><span>로컬 이력</span></div>
-        <div class="stat"><strong id="statMatched">0</strong><span>로컬 매칭</span></div>
+        <div class="stat"><strong id="statServerTotal">-</strong><span>서버 전체</span></div>
+        <div class="stat"><strong id="statServerMatched">-</strong><span>서버 매칭</span></div>
         <div class="stat"><strong id="statUnmatched">0</strong><span>서버 미매칭</span></div>
       </div>
     </div>
 
-    <div class="grid">
-      <div class="card">
-        <h2>CSV 업로드</h2>
-        <p class="muted">헤더 형식: category, question, keywords, answer, top</p>
-        <input type="file" id="csvFileInput" accept=".csv" />
-        <select id="csvMode">
-          <option value="append">기존 데이터에 추가</option>
-          <option value="replace">기존 데이터 전체 교체</option>
-        </select>
-        <div class="toolbar">
-          <button onclick="importCSV()">CSV 업로드</button>
-          <button class="sub" onclick="downloadCSVTemplate()">CSV 템플릿 다운로드</button>
-        </div>
-        <div id="csvStatus" class="status-box">업로드 대기 중</div>
+    <!-- CSV 업로드 -->
+    <div class="card">
+      <h2>CSV 업로드</h2>
+      <p class="muted">헤더 형식: category, question, keywords, answer, top</p>
+      <input type="file" id="csvFileInput" accept=".csv" />
+      <select id="csvMode">
+        <option value="append">기존 데이터에 추가</option>
+        <option value="replace">기존 데이터 전체 교체</option>
+      </select>
+      <div class="toolbar">
+        <button onclick="importCSV()">CSV 업로드</button>
+        <button class="sub" onclick="downloadCSVTemplate()">CSV 템플릿 다운로드</button>
       </div>
-
-      <div class="card">
-        <h2>로컬 질문 이력 관리</h2>
-        <p class="muted">이 영역은 현재 브라우저의 localStorage 기준입니다.</p>
-        <div class="toolbar">
-          <button onclick="exportHistory()">질문 이력 다운로드(JSON)</button>
-          <button class="danger" onclick="clearHistory()">질문 이력 초기화</button>
-        </div>
-      </div>
+      <div id="csvStatus" class="status-box">업로드 대기 중</div>
     </div>
 
-    <!-- 🆕 전체 질문 이력 섹션 추가 -->
+    <!-- 🆕 전체 질문 이력 관리 (통합) -->
     <div class="card">
-      <h2>전체 질문 이력 (모든 사용자)</h2>
-      <p class="muted">서버에 저장된 모든 사용자의 질문 이력을 조회합니다.</p>
+      <h2>📊 전체 질문 이력 관리</h2>
+      <p class="muted">
+        서버에 저장된 <strong>모든 사용자</strong>의 질문 이력을 조회합니다. (다른 브라우저, 다른 기기, 다른 사람 포함)<br>
+        시간은 <strong>대한민국 표준시(GMT+9)</strong> 기준입니다.
+      </p>
       
       <div class="grid" style="margin-top: 16px;">
         <div>
@@ -328,25 +398,47 @@
       </div>
 
       <div class="toolbar">
-        <button onclick="loadAllQuestions()">조회</button>
-        <button class="sub" onclick="exportAllQuestions()">전체 이력 다운로드 (Excel)</button>
-        <button class="sub" onclick="loadPreviousPage()" id="prevPageBtn" disabled>이전 페이지</button>
-        <button class="sub" onclick="loadNextPage()" id="nextPageBtn" disabled>다음 페이지</button>
+        <button onclick="loadAllQuestions()">🔍 조회</button>
+        <button class="sub" onclick="exportAllQuestions()">📥 Excel 다운로드</button>
+        <button class="sub" onclick="loadPreviousPage()" id="prevPageBtn" disabled>◀ 이전</button>
+        <button class="sub" onclick="loadNextPage()" id="nextPageBtn" disabled>다음 ▶</button>
       </div>
 
       <div id="allQuestionsStatus" class="status-box">조회 대기 중</div>
-      <div id="allQuestionsCount" class="muted"></div>
+      
+      <!-- 🆕 통계 요약 -->
+      <div class="stats" style="margin-top: 16px;">
+        <div class="stat">
+          <strong id="totalQuestionsCount">0</strong>
+          <span>전체 질문</span>
+        </div>
+        <div class="stat">
+          <strong id="matchedQuestionsCount">0</strong>
+          <span>매칭됨</span>
+        </div>
+        <div class="stat">
+          <strong id="unmatchedQuestionsCount">0</strong>
+          <span>미매칭</span>
+        </div>
+        <div class="stat">
+          <strong id="currentPageDisplay">-</strong>
+          <span>현재 페이지</span>
+        </div>
+      </div>
+
+      <div id="allQuestionsCount" class="muted" style="margin-top: 10px;"></div>
 
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
-              <th style="min-width:160px;">시간</th>
-              <th style="min-width:220px;">질문</th>
-              <th style="min-width:260px;">답변</th>
-              <th style="min-width:100px;">카테고리</th>
-              <th style="min-width:80px;">매칭</th>
-              <th style="min-width:100px;">출처</th>
+              <th style="min-width:180px;">🕐 시간 (GMT+9)</th>
+              <th style="min-width:240px;">💬 질문</th>
+              <th style="min-width:280px;">💡 답변</th>
+              <th style="min-width:100px;">📂 카테고리</th>
+              <th style="min-width:80px;">✅ 매칭</th>
+              <th style="min-width:120px;">👤 출처</th>
+              <th style="min-width:180px;">🌐 브라우저</th>
             </tr>
           </thead>
           <tbody id="allQuestionsTable"></tbody>
@@ -354,11 +446,13 @@
       </div>
     </div>
 
+    <!-- 저장된 Q&A -->
     <div class="card">
       <h2>저장된 Q&A</h2>
-      <p class="muted">카테고리 탭으로 필터링 후 개별 삭제 또는 전체 삭제가 가능합니다.</p>
+      <p class="muted">카테고리 탭으로 필터링 후 개별 추가/편집/삭제가 가능합니다.</p>
 
       <div class="toolbar">
+        <button onclick="showAddQAModal()">➕ 새 Q&A 추가</button>
         <button class="danger" onclick="clearAllQA()">전체 Q&A 삭제</button>
       </div>
 
@@ -374,7 +468,7 @@
               <th style="min-width:180px;">키워드</th>
               <th style="min-width:260px;">답변</th>
               <th style="min-width:70px;">TOP</th>
-              <th style="min-width:90px;">삭제</th>
+              <th style="min-width:140px;">작업</th>
             </tr>
           </thead>
           <tbody id="qaTable"></tbody>
@@ -382,6 +476,7 @@
       </div>
     </div>
 
+    <!-- 서버 미매칭 질문 -->
     <div class="card">
       <h2>서버 미매칭 질문</h2>
       <div id="historyCount" class="muted"></div>
@@ -403,6 +498,55 @@
     </div>
   </div>
 
+  <!-- 🆕 Q&A 추가/편집 모달 -->
+  <div id="qaModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modalTitle">새 Q&A 추가</h3>
+        <button class="modal-close" onclick="closeQAModal()">×</button>
+      </div>
+      
+      <div class="form-group">
+        <label>카테고리 *</label>
+        <select id="modalCategory">
+          <option value="delivery">배송</option>
+          <option value="documents">문서</option>
+          <option value="production">생산</option>
+          <option value="purchase">구매</option>
+          <option value="other">기타</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>질문 *</label>
+        <input type="text" id="modalQuestion" placeholder="질문을 입력하세요" />
+      </div>
+
+      <div class="form-group">
+        <label>키워드 (| 로 구분)</label>
+        <input type="text" id="modalKeywords" placeholder="예: 배송|리드타임|기간" />
+      </div>
+
+      <div class="form-group">
+        <label>답변 *</label>
+        <textarea id="modalAnswer" placeholder="답변을 입력하세요"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label style="display: flex; align-items: center; gap: 8px;">
+          <input type="checkbox" id="modalTop" style="width: auto; margin: 0;" />
+          <span>TOP 질문으로 표시</span>
+        </label>
+      </div>
+
+      <div class="toolbar">
+        <button onclick="saveQA()">💾 저장</button>
+        <button class="sub" onclick="closeQAModal()">취소</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 설정 -->
   <script>
     window.ADMIN_CONFIG = Object.assign({
       authMode: "dev",
@@ -410,17 +554,20 @@
       verifyApiUrl: "",
       logoutApiUrl: "",
       unmatchedApiUrl: "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/getUnmatched",
-      allQuestionsApiUrl: "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/getAllQuestions", // 🆕 여기가 추가된 부분!
+      allQuestionsApiUrl: "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/getAllQuestions",
       requestTimeoutMs: 12000,
       devPassword: "wpkscm"
     }, window.ADMIN_CONFIG || {});
   </script>
+  
   <script src="shared.js"></script>
+  
   <script>
     let adminSelectedCategory = "all";
     let currentPage = 0;
     let pageSize = 50;
     let totalQuestions = 0;
+    let editingQAId = null;  // 🆕 편집 중인 Q&A ID
 
     const CATEGORY_WHITELIST = new Set([
       "all",
@@ -624,7 +771,7 @@
       document.getElementById("adminView").classList.remove("hidden");
       renderAll();
       loadUnmatchedFromServer();
-      loadAllQuestions(); // 🆕 전체 질문 이력 자동 로드
+      loadAllQuestions();
     }
 
     async function checkLogin() {
@@ -653,23 +800,11 @@
       renderStats();
       renderAdminCategoryTabs();
       renderQA();
-      renderLocalHistoryStats();
     }
 
     function renderStats() {
       const qa = getAllQA();
-      const history = ChatbotStore.getHistory() || [];
-      const matched = history.filter(x => x.matched).length;
-
       document.getElementById("statQA").textContent = qa.length;
-      document.getElementById("statHistory").textContent = history.length;
-      document.getElementById("statMatched").textContent = matched;
-    }
-
-    function renderLocalHistoryStats() {
-      const history = ChatbotStore.getHistory() || [];
-      document.getElementById("statHistory").textContent = history.length;
-      document.getElementById("statMatched").textContent = history.filter(x => x.matched).length;
     }
 
     function renderAdminCategoryTabs() {
@@ -713,29 +848,140 @@
           <td></td>
           <td></td>
           <td></td>
-          <td><button class="danger small-btn">삭제</button></td>
+          <td>
+            <button class="sub small-btn" onclick='editQA("${item.__id}")'>✏️ 편집</button>
+            <button class="danger small-btn" onclick='deleteQAById("${item.__id}")'>🗑️ 삭제</button>
+          </td>
         `;
         tr.children[0].textContent = item.category || "";
         tr.children[1].textContent = item.question || "";
         tr.children[2].textContent = (item.keywords || []).join(" | ");
         tr.children[3].textContent = item.answer || "";
         tr.children[4].textContent = item.top ? "Y" : "-";
-        tr.querySelector("button").onclick = () => deleteQAById(item.__id);
         tbody.appendChild(tr);
       });
     }
 
+    // 🆕 Q&A 추가 모달 열기
+    function showAddQAModal() {
+      editingQAId = null;
+      document.getElementById("modalTitle").textContent = "새 Q&A 추가";
+      document.getElementById("modalCategory").value = "delivery";
+      document.getElementById("modalQuestion").value = "";
+      document.getElementById("modalKeywords").value = "";
+      document.getElementById("modalAnswer").value = "";
+      document.getElementById("modalTop").checked = false;
+      document.getElementById("qaModal").classList.add("show");
+    }
+
+    // 🆕 Q&A 편집 모달 열기
+    function editQA(id) {
+      const allQa = getAllQA();
+      const item = allQa.find(qa => qa.__id === id);
+      
+      if (!item) {
+        alert("Q&A를 찾을 수 없습니다.");
+        return;
+      }
+
+      editingQAId = id;
+      document.getElementById("modalTitle").textContent = "Q&A 편집";
+      document.getElementById("modalCategory").value = item.category;
+      document.getElementById("modalQuestion").value = item.question;
+      document.getElementById("modalKeywords").value = (item.keywords || []).join(" | ");
+      document.getElementById("modalAnswer").value = item.answer;
+      document.getElementById("modalTop").checked = item.top;
+      document.getElementById("qaModal").classList.add("show");
+    }
+
+    // 🆕 모달 닫기
+    function closeQAModal() {
+      document.getElementById("qaModal").classList.remove("show");
+      editingQAId = null;
+    }
+
+    // 🆕 Q&A 저장 (추가 또는 편집)
+    function saveQA() {
+      const category = document.getElementById("modalCategory").value;
+      const question = document.getElementById("modalQuestion").value.trim();
+      const keywords = document.getElementById("modalKeywords").value;
+      const answer = document.getElementById("modalAnswer").value.trim();
+      const top = document.getElementById("modalTop").checked;
+
+      if (!question) {
+        alert("질문을 입력해주세요.");
+        return;
+      }
+
+      if (!answer) {
+        alert("답변을 입력해주세요.");
+        return;
+      }
+
+      const allQa = getAllQA();
+
+      if (editingQAId) {
+        // 편집 모드
+        const index = allQa.findIndex(item => item.__id === editingQAId);
+        if (index >= 0) {
+          allQa[index] = {
+            __id: editingQAId,
+            category: normalizeCategory(category),
+            question: question,
+            keywords: normalizeKeywords(keywords),
+            answer: answer,
+            top: top
+          };
+          ChatbotStore.importTemplate({ mode: "replace", data: allQa });
+          alert("Q&A가 수정되었습니다.");
+        } else {
+          alert("편집 대상을 찾을 수 없습니다.");
+          closeQAModal();
+          return;
+        }
+      } else {
+        // 추가 모드
+        const newQA = {
+          __id: createQAId(),
+          category: normalizeCategory(category),
+          question: question,
+          keywords: normalizeKeywords(keywords),
+          answer: answer,
+          top: top
+        };
+
+        // 중복 확인
+        const duplicate = allQa.find(item => 
+          item.question.toLowerCase() === question.toLowerCase()
+        );
+
+        if (duplicate) {
+          if (!confirm("동일한 질문이 이미 존재합니다. 그래도 추가하시겠습니까?")) {
+            return;
+          }
+        }
+
+        allQa.push(newQA);
+        ChatbotStore.importTemplate({ mode: "replace", data: allQa });
+        alert("새 Q&A가 추가되었습니다.");
+      }
+
+      closeQAModal();
+      renderAll();
+    }
+
     function deleteQAById(id) {
       const allQa = getAllQA();
-      const index = allQa.findIndex(item => item.__id === id);
+      const item = allQa.find(qa => qa.__id === id);
 
-      if (index < 0) {
+      if (!item) {
         alert("삭제 대상을 찾지 못했습니다.");
         return;
       }
-      if (!confirm("이 Q&A를 삭제할까요?")) return;
 
-      const ok = ChatbotStore.deleteQAByIndex(index);
+      if (!confirm(`"${item.question}" 을(를) 삭제할까요?`)) return;
+
+      const ok = ChatbotStore.deleteQAById(id);
       if (!ok) {
         alert("삭제에 실패했습니다.");
         return;
@@ -758,29 +1004,6 @@
       alert("전체 삭제되었습니다.");
     }
 
-    function clearHistory() {
-      const check = prompt("질문 이력을 모두 삭제하려면 DELETE 를 입력하세요.");
-      if (check !== "DELETE") {
-        alert("취소되었습니다.");
-        return;
-      }
-
-      ChatbotStore.clearHistory();
-      renderAll();
-      alert("질문 이력이 초기화되었습니다.");
-    }
-
-    function exportHistory() {
-      const history = ChatbotStore.getHistory() || [];
-      const blob = new Blob([JSON.stringify(history, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "question_history.json";
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
     function csvEscape(value) {
       const s = String(value ?? "");
       if (s.includes(",") || s.includes('"') || s.includes("\n")) {
@@ -792,11 +1015,8 @@
     function downloadCSVTemplate() {
       const csv = [
         ["category", "question", "keywords", "answer", "top"],
-        ["delivery", "독일 및 프랑스 본사로부터 해상 선적 기간은 얼마나 되나요?", "해상|선적|배송|리드타임|유럽", "생산 리드타임 + 해상 운송 기준, 출하일부터 공장 입고까지는 총 약 2~3개월 소요됩니다.\n\n현재 수에즈 운하 및 호르무즈 해협의 지정학적 리스크로 인해, 유럽 출발 해상 화물은 출항 → 부산항 도착까지 약 60~70일이 소요되고 있습니다.\n\n이는 수에즈 운하를 경유하지 않고, 아프리카 희망봉을 우회하는 항로로 운영되기 때문이며, 기존 대비 약 15~20일 정도 운송 기간이 증가한 상태입니다.\n\n또한 부산항 입항 후 항만 혼잡, 통관 및 내륙 운송 일정에 따라 추가 지연이 발생할 수 있음을 참고 부탁드립니다.", "true"],
-        ["documents", "고객이 수입신고필증을 요구합니다. 수입신고필증 제공이 가능한가요?", "수입신고필증|제공|발급", "수입신고필증 제공은 가능합니다.\n단, 아래 사항을 반드시 확인해 주시기 바랍니다.\n\n1. 가격 정보 삭제 필수\n단가, 총액, 세금 등 가격 관련 항목은 반드시 삭제 후 제공해야 합니다.\n삭제 작업은 요청자가 직접 진행해야 하며, 삭제 누락으로 발생하는 모든 이슈에 대해서는 SCM에서 책임지지 않습니다.\n\n2. 제공 가능 품목 제한\n모든 부품에 대해 제공되지 않습니다.\n펌프 제품은 하이드로 부품(모터, 케이싱, 샤프트, 임펠러, 스테이지)에 한해 제공 가능\nB급, C급 부품은 제공 불가\n\n3. 적출국 정보 수정 불가\n수입신고필증 상 적출국 정보는 수정이 불가능합니다.\n제품이 독일산이라 하더라도, 유럽 내 물류 운영에 따라 네덜란드·벨기에 등으로 표기될 수 있습니다.\n\n4. 일부 항목 수정 요청 불가\n수입신고필증 내 일부 항목에 대한 수정 요청은 불가합니다.\n기타 요청사항은 SCM팀 한민정 프로에게 문의 부탁드립니다.", "false"],
-        ["production", "MVI 90, 125제품은 단종되었나요?", "MVI|단종|90|125|10인치", "MVI 10인치 제품(90, 125 시리즈)은 2025년 11월 14일 기준으로, 라발 공장으로부터 오더 접수 중단 공문이 접수되어 현재 추가 오더 접수가 불가합니다.\n\n해당 내용은 BD팀을 통해 공유 완료되었으며, 현재 WPK 사내 재고 또한 없는 상태입니다.\n\n이에 따라 대체 모델로 Helix First 제품으로 모델 변경을 진행 중입니다.\n\n자세한 사항은 R&D 센터 김기식 팀장 또는 신민종 프로에게 문의 부탁드립니다.", "false"],
-        ["purchase", "해외 도입 제품의 표준 리드타임이 어떻게 되나요?", "도입|리드타임|납기|기간", "도입 업체별로 리드타임이 상이하므로, 정확한 일정은 해당 업체 담당자에게 확인 부탁드립니다.\n유럽발 : 항공 2~3주, 해상 2.5개월~3.5개월\n중국발 : 항공 1~2주, 해상 2~3주", "true"],
-        ["other", "우리회사의 펌프 HS코드에 대해서 알려주세요", "HS코드|HScode|관세|품목분류", "윌로펌프에서 취급하는 펌프 완제품 및 부품의 기본 HS CODE는 아래와 같습니다.\n\n- 원심펌프 기타 (Other Centrifugal Pump) : 8413.70-9090\n- 터빈펌프 (Turbine Pump) : 8413.70-9010\n- 볼류트펌프 (Volute Pump) : 8413.70-9020\n- 펌프 부분품 (Of Centrifugal Pump) : 8413.91-4000\n\n펌프의 종류는 원심펌프를 기준으로 터빈형 또는 볼류트형으로 구분되며, 제품 구조에 대한 상세 사항은 R&D 센터 담당자에게 문의해 주시기 바랍니다.\n\nHS Code에 대한 추가 정보는 관세청 유니패스(Unipass)에서 확인 가능합니다.\nhttps://unipass.customs.go.kr/clip/index.do", "true"]
+        ["delivery", "독일 및 프랑스 본사로부터 해상 선적 기간은 얼마나 되나요?", "해상|선적|배송", "약 2~3개월 소요됩니다.", "true"],
+        ["documents", "원산지 증명서 발급 가능한가요?", "원산지|증명서", "발급 가능합니다.", "false"]
       ].map(row => row.map(csvEscape).join(",")).join("\n");
 
       const bom = "\uFEFF";
@@ -930,109 +1150,149 @@
       return rows;
     }
 
-    // 🆕 전체 질문 이력 조회 함수
-async function loadAllQuestions(offset = 0) {
-  const tbody = document.getElementById("allQuestionsTable");
-  tbody.innerHTML = "";
-  setStatus("allQuestionsStatus", "전체 질문 이력을 불러오는 중...");
-  document.getElementById("allQuestionsCount").textContent = "조회 중";
+    // 🆕 전체 질문 이력 조회 (GMT+9)
+    async function loadAllQuestions(offset = 0) {
+      const tbody = document.getElementById("allQuestionsTable");
+      tbody.innerHTML = "";
+      setStatus("allQuestionsStatus", "전체 질문 이력을 불러오는 중...");
+      document.getElementById("allQuestionsCount").textContent = "조회 중";
 
-  const category = document.getElementById("filterCategory")?.value || "all";
-  const matched = document.getElementById("filterMatched")?.value || "";
+      const category = document.getElementById("filterCategory")?.value || "all";
+      const matched = document.getElementById("filterMatched")?.value || "";
 
-  try {
-    const apiUrl = window.ADMIN_CONFIG.allQuestionsApiUrl;
-    if (!apiUrl) {
-      throw new Error("allQuestionsApiUrl 설정이 없습니다.");
+      try {
+        const apiUrl = window.ADMIN_CONFIG.allQuestionsApiUrl;
+        if (!apiUrl) {
+          throw new Error("allQuestionsApiUrl 설정이 없습니다.");
+        }
+
+        const params = new URLSearchParams({
+          limit: pageSize,
+          offset: offset
+        });
+
+        if (category && category !== "all") {
+          params.append("category", category);
+        }
+
+        if (matched) {
+          params.append("matched", matched);
+        }
+
+        const res = await fetchWithTimeout(`${apiUrl}?${params.toString()}`, {
+          method: "GET",
+          headers: { "Accept": "application/json" }
+        });
+
+        if (!res.ok) {
+          throw new Error(`서버 응답 오류 (${res.status})`);
+        }
+
+        const data = await res.json();
+        const count = Number(data.count || 0);
+        totalQuestions = Number(data.totalCount || 0);
+        const items = Array.isArray(data.items) ? data.items : [];
+
+        if (!items.length) {
+          document.getElementById("allQuestionsCount").textContent = "전체 질문 이력 0건";
+          setStatus("allQuestionsStatus", "조회된 질문 이력이 없습니다.", "ok");
+          updateStats(0, 0, 0);
+          updatePaginationButtons();
+          return;
+        }
+
+        let matchedCount = 0;
+        let unmatchedCount = 0;
+
+        items.forEach(item => {
+          const tr = document.createElement("tr");
+          
+          // 🆕 GMT+9 시간 변환
+          const createdAt = item.createdAt ? new Date(item.createdAt) : null;
+          let createdText = "시간 정보 없음";
+          
+          if (createdAt && !Number.isNaN(createdAt.getTime())) {
+            createdText = createdAt.toLocaleString("ko-KR", {
+              timeZone: "Asia/Seoul",
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+              hour12: false
+            });
+          }
+
+          const matchedText = item.matched ? "Y" : "N";
+          const matchedStyle = item.matched ? "color: var(--ok);" : "color: var(--danger);";
+          
+          if (item.matched) {
+            matchedCount++;
+          } else {
+            unmatchedCount++;
+          }
+
+          const userAgentShort = item.userAgent 
+            ? item.userAgent.split(" ").slice(0, 3).join(" ") + "..." 
+            : "알 수 없음";
+
+          tr.innerHTML = `
+            <td style="font-size: 12px;">${createdText}</td>
+            <td></td>
+            <td></td>
+            <td><span style="background: var(--bg); padding: 4px 8px; border-radius: 6px; font-size: 11px;">${item.category || ""}</span></td>
+            <td style="${matchedStyle}"><strong>${matchedText}</strong></td>
+            <td style="font-size: 11px; color: var(--sub);">${item.source || "user"}</td>
+            <td style="font-size: 10px; color: var(--sub);" title="${item.userAgent || ''}">${userAgentShort}</td>
+          `;
+          tr.children[1].textContent = item.question || "";
+          tr.children[2].textContent = item.answer || "";
+          tbody.appendChild(tr);
+        });
+
+        document.getElementById("allQuestionsCount").textContent = 
+          `전체 ${totalQuestions.toLocaleString()}건 중 ${(offset + 1).toLocaleString()}~${Math.min(offset + count, totalQuestions).toLocaleString()}건 표시`;
+        
+        setStatus("allQuestionsStatus", `조회 성공: ${count}건`, "ok");
+
+        currentPage = Math.floor(offset / pageSize);
+        
+        // 🆕 상단 통계 업데이트
+        document.getElementById("statServerTotal").textContent = totalQuestions.toLocaleString();
+        document.getElementById("statServerMatched").textContent = matchedCount.toLocaleString();
+        
+        updateStats(totalQuestions, matchedCount, unmatchedCount);
+        updatePaginationButtons();
+
+      } catch (e) {
+        console.warn("전체 질문 이력 조회 실패", e);
+        
+        document.getElementById("allQuestionsCount").textContent = "전체 질문 이력 0건 (서버 오류)";
+        
+        if (e.message.includes("500")) {
+          setStatus("allQuestionsStatus", 
+            "서버에서 데이터를 불러올 수 없습니다. Azure Functions의 getAllQuestions 함수 및 Cosmos DB 연결을 확인해주세요.", 
+            "error");
+        } else if (e.message.includes("Failed to fetch")) {
+          setStatus("allQuestionsStatus", 
+            "getAllQuestions API가 존재하지 않습니다. Azure Portal에서 함수를 생성해주세요.", 
+            "error");
+        } else {
+          setStatus("allQuestionsStatus", e.message || "전체 질문 이력을 불러오지 못했습니다.", "error");
+        }
+        
+        updateStats(0, 0, 0);
+        updatePaginationButtons();
+      }
     }
 
-    const params = new URLSearchParams({
-      limit: pageSize,
-      offset: offset
-    });
-
-    if (category && category !== "all") {
-      params.append("category", category);
+    function updateStats(total, matched, unmatched) {
+      document.getElementById("totalQuestionsCount").textContent = total.toLocaleString();
+      document.getElementById("matchedQuestionsCount").textContent = matched.toLocaleString();
+      document.getElementById("unmatchedQuestionsCount").textContent = unmatched.toLocaleString();
+      document.getElementById("currentPageDisplay").textContent = currentPage >= 0 ? `${currentPage + 1}페이지` : "-";
     }
-
-    if (matched) {
-      params.append("matched", matched);
-    }
-
-    const res = await fetchWithTimeout(`${apiUrl}?${params.toString()}`, {
-      method: "GET",
-      headers: { "Accept": "application/json" }
-    });
-
-    if (!res.ok) {
-      throw new Error(`서버 응답 오류 (${res.status})`);
-    }
-
-    const data = await res.json();
-    const count = Number(data.count || 0);
-    totalQuestions = Number(data.totalCount || 0);
-    const items = Array.isArray(data.items) ? data.items : [];
-
-    if (!items.length) {
-      document.getElementById("allQuestionsCount").textContent = "전체 질문 이력 0건";
-      setStatus("allQuestionsStatus", "조회된 질문 이력이 없습니다.", "ok");
-      updatePaginationButtons();
-      return;
-    }
-
-    items.forEach(item => {
-      const tr = document.createElement("tr");
-      const createdAt = item.createdAt ? new Date(item.createdAt) : null;
-      const createdText = createdAt && !Number.isNaN(createdAt.getTime())
-        ? createdAt.toLocaleString("ko-KR")
-        : "시간 정보 없음";
-
-      const matchedText = item.matched ? "Y" : "N";
-      const matchedStyle = item.matched ? "color: var(--ok);" : "color: var(--danger);";
-
-      tr.innerHTML = `
-        <td>${createdText}</td>
-        <td></td>
-        <td></td>
-        <td>${item.category || ""}</td>
-        <td style="${matchedStyle}">${matchedText}</td>
-        <td style="font-size: 11px;">${item.source || "user"}</td>
-      `;
-      tr.children[1].textContent = item.question || "";
-      tr.children[2].textContent = item.answer || "";
-      tbody.appendChild(tr);
-    });
-
-    document.getElementById("allQuestionsCount").textContent = 
-      `전체 ${totalQuestions}건 중 ${offset + 1}~${Math.min(offset + count, totalQuestions)}건 표시`;
-    setStatus("allQuestionsStatus", `조회 성공: ${count}건`, "ok");
-
-    currentPage = Math.floor(offset / pageSize);
-    updatePaginationButtons();
-
-  } catch (e) {
-    console.warn("전체 질문 이력 조회 실패", e);
-    
-    // 🆕 에러 발생해도 0건으로 표시하고 계속 진행
-    document.getElementById("allQuestionsCount").textContent = "전체 질문 이력 0건 (서버 오류)";
-    
-    // 🆕 상세 에러 메시지
-    if (e.message.includes("500")) {
-      setStatus("allQuestionsStatus", 
-        "서버에서 데이터를 불러올 수 없습니다. Azure Functions의 getAllQuestions 함수 및 Cosmos DB 연결을 확인해주세요.", 
-        "error");
-    } else if (e.message.includes("Failed to fetch")) {
-      setStatus("allQuestionsStatus", 
-        "getAllQuestions API가 존재하지 않습니다. Azure Portal에서 함수를 생성해주세요.", 
-        "error");
-    } else {
-      setStatus("allQuestionsStatus", e.message || "전체 질문 이력을 불러오지 못했습니다.", "error");
-    }
-    
-    updatePaginationButtons();
-  }
-}
-
 
     function updatePaginationButtons() {
       const prevBtn = document.getElementById("prevPageBtn");
@@ -1088,18 +1348,19 @@ async function loadAllQuestions(offset = 0) {
         const items = data.items || [];
 
         const csvRows = [
-          ["시간", "질문", "답변", "카테고리", "매칭", "출처"]
+          ["시간 (GMT+9)", "질문", "답변", "카테고리", "매칭", "출처", "브라우저"]
         ];
 
         items.forEach(item => {
-          const createdAt = item.createdAt ? new Date(item.createdAt).toLocaleString("ko-KR") : "";
+          const createdAt = item.createdAt ? new Date(item.createdAt).toLocaleString("ko-KR", {timeZone: "Asia/Seoul"}) : "";
           csvRows.push([
             createdAt,
             item.question || "",
             item.answer || "",
             item.category || "",
             item.matched ? "Y" : "N",
-            item.source || "user"
+            item.source || "user",
+            item.userAgent || ""
           ]);
         });
 
@@ -1128,79 +1389,78 @@ async function loadAllQuestions(offset = 0) {
         setStatus("allQuestionsStatus", "다운로드 실패: " + e.message, "error");
       }
     }
-async function loadUnmatchedFromServer() {
-  const tbody = document.getElementById("historyTable");
-  tbody.innerHTML = "";
-  setStatus("serverStatus", "서버 미매칭 질문을 불러오는 중...");
-  document.getElementById("historyCount").textContent = "조회 중";
 
-  try {
-    const apiUrl = window.ADMIN_CONFIG.unmatchedApiUrl;
-    if (!apiUrl) {
-      throw new Error("unmatchedApiUrl 설정이 없습니다.");
+    async function loadUnmatchedFromServer() {
+      const tbody = document.getElementById("historyTable");
+      tbody.innerHTML = "";
+      setStatus("serverStatus", "서버 미매칭 질문을 불러오는 중...");
+      document.getElementById("historyCount").textContent = "조회 중";
+
+      try {
+        const apiUrl = window.ADMIN_CONFIG.unmatchedApiUrl;
+        if (!apiUrl) {
+          throw new Error("unmatchedApiUrl 설정이 없습니다.");
+        }
+
+        const res = await fetchWithTimeout(apiUrl, {
+          method: "GET",
+          headers: { "Accept": "application/json" }
+        });
+
+        if (!res.ok) {
+          console.warn(`서버 응답 오류 (${res.status}), 빈 데이터로 처리`);
+          throw new Error(`서버 응답 오류 (${res.status})`);
+        }
+
+        const data = await res.json();
+        const count = Number(data.count || 0);
+        const items = Array.isArray(data.items) ? data.items : [];
+
+        document.getElementById("statUnmatched").textContent = count;
+
+        if (!items.length) {
+          document.getElementById("historyCount").textContent = "미매칭 총 0건";
+          setStatus("serverStatus", "미매칭 질문이 없습니다.", "ok");
+          return;
+        }
+
+        items.forEach(item => {
+          const tr = document.createElement("tr");
+          const createdAt = item.createdAt ? new Date(item.createdAt) : null;
+          const createdText = createdAt && !Number.isNaN(createdAt.getTime())
+            ? createdAt.toLocaleString("ko-KR", {timeZone: "Asia/Seoul"})
+            : "시간 정보 없음";
+
+          tr.innerHTML = `
+            <td>${createdText}</td>
+            <td></td>
+            <td></td>
+            <td>${item.category || ""}</td>
+            <td>N</td>
+          `;
+          tr.children[1].textContent = item.question || "";
+          tr.children[2].textContent = item.answer || "";
+          tbody.appendChild(tr);
+        });
+
+        document.getElementById("historyCount").textContent = `미매칭 총 ${count}건`;
+        setStatus("serverStatus", `조회 성공: ${count}건`, "ok");
+        
+      } catch (e) {
+        console.warn("load unmatched failed", e);
+        
+        document.getElementById("statUnmatched").textContent = "0";
+        document.getElementById("historyCount").textContent = "미매칭 질문 0건 (서버 오류)";
+        
+        if (e.message.includes("500")) {
+          setStatus("serverStatus", 
+            "서버에서 데이터를 불러올 수 없습니다. Azure Functions의 getUnmatched 함수를 확인해주세요.", 
+            "error");
+        } else {
+          setStatus("serverStatus", e.message || "서버 미매칭 질문을 불러오지 못했습니다.", "error");
+        }
+      }
     }
-
-    const res = await fetchWithTimeout(apiUrl, {
-      method: "GET",
-      headers: { "Accept": "application/json" }
-    });
-
-if (!res.ok) {
-  console.warn(`서버 응답 오류 (${res.status}), 빈 데이터로 처리`);  // ✅
-  throw new Error(`서버 응답 오류 (${res.status})`);
-}
-    const data = await res.json();
-    const count = Number(data.count || 0);
-    const items = Array.isArray(data.items) ? data.items : [];
-
-    document.getElementById("statUnmatched").textContent = count;
-
-    if (!items.length) {
-      document.getElementById("historyCount").textContent = "미매칭 총 0건";
-      setStatus("serverStatus", "미매칭 질문이 없습니다.", "ok");
-      return;
-    }
-
-    items.forEach(item => {
-      const tr = document.createElement("tr");
-      const createdAt = item.createdAt ? new Date(item.createdAt) : null;
-      const createdText = createdAt && !Number.isNaN(createdAt.getTime())
-        ? createdAt.toLocaleString("ko-KR")
-        : "시간 정보 없음";
-
-      tr.innerHTML = `
-        <td>${createdText}</td>
-        <td></td>
-        <td></td>
-        <td>${item.category || ""}</td>
-        <td>N</td>
-      `;
-      tr.children[1].textContent = item.question || "";
-      tr.children[2].textContent = item.answer || "";
-      tbody.appendChild(tr);
-    });
-
-    document.getElementById("historyCount").textContent = `미매칭 총 ${count}건`;
-    setStatus("serverStatus", `조회 성공: ${count}건`, "ok");
-    
-  } catch (e) {
-    console.warn("load unmatched failed", e);
-    
-    // 🆕 에러 발생해도 0건으로 표시하고 계속 진행
-    document.getElementById("statUnmatched").textContent = "0";
-    document.getElementById("historyCount").textContent = "미매칭 질문 0건 (서버 오류)";
-    
-    // 🆕 에러 메시지 개선
-    if (e.message.includes("500")) {
-      setStatus("serverStatus", 
-        "서버에서 데이터를 불러올 수 없습니다. Azure Functions의 getUnmatched 함수를 확인해주세요.", 
-        "error");
-    } else {
-      setStatus("serverStatus", e.message || "서버 미매칭 질문을 불러오지 못했습니다.", "error");
-    }
-  }
-}
-
 
     checkLogin();
   </script>
