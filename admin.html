@@ -4,1690 +4,979 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.azurewebsites.net; img-src 'self' data:; font-src 'self';" />
-  <title>SCM 업무 도우미 관리자</title>
+  <title>SCM 챗봇 관리자</title>
   <style>
-    :root{
-      --main:#009C82;
-      --main-dark:#007a66;
-      --bg:#f4f8f7;
-      --line:#d8e5e2;
-      --text:#1f2937;
-      --sub:#6b7280;
-      --danger:#dc2626;
-      --warning:#b45309;
-      --warning-bg:#fff7ed;
-      --ok:#166534;
-      --ok-bg:#f0fdf4;
+    :root {
+      --main-tint: #009C82;
+      --main-dark: #007a66;
+      --main-light: #e6f7f4;
+      --bg-color: #f4f8f7;
+      --card-bg: #ffffff;
+      --text-primary: #1a1a1a;
+      --text-secondary: #4a4a4a;
+      --text-muted: #888;
+      --border-color: #ddd;
+      --shadow: 0 2px 8px rgba(0,0,0,0.08);
+      --shadow-hover: 0 4px 12px rgba(0,0,0,0.12);
+      --danger: #e74c3c;
+      --warning: #f39c12;
+      --success: #27ae60;
+      --info: #3498db;
     }
 
-    *{box-sizing:border-box}
-
-    body{
-      margin:0;
-      font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif;
-      background:var(--bg);
-      color:var(--text);
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
 
-    .login-box{
-      max-width:420px;
-      margin:90px auto;
-      background:#fff;
-      border:1px solid var(--line);
-      border-radius:20px;
-      padding:24px;
-      box-shadow:0 14px 30px rgba(0,0,0,.06);
+    body {
+      font-family: 'Segoe UI', 'Malgun Gothic', sans-serif;
+      background: var(--bg-color);
+      color: var(--text-primary);
+      line-height: 1.6;
+      overflow-x: hidden;
     }
 
-    .login-box h1{
-      margin-top:0;
-      margin-bottom:10px;
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
     }
 
-    .container{
-      max-width:1200px;
-      margin:24px auto;
-      padding:0 16px;
+    /* Header */
+    .header {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      gap: 16px;
     }
 
-    .card{
-      background:#fff;
-      border:1px solid var(--line);
-      border-radius:18px;
-      padding:18px;
-      margin-bottom:16px;
-      box-shadow:0 8px 24px rgba(0,0,0,.05);
+    .avatar {
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, var(--main-tint), var(--main-dark));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      flex-shrink: 0;
     }
 
-    h1,h2{
-      margin-top:0;
+    .header-text h1 {
+      font-size: 1.5rem;
+      color: var(--main-dark);
+      margin-bottom: 4px;
     }
 
-    .muted{
-      color:var(--sub);
-      font-size:13px;
+    .header-text p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
     }
 
-    .hidden{
-      display:none;
+    /* Login Section */
+    .login-section {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 40px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow);
+      text-align: center;
+      max-width: 400px;
+      margin: 40px auto;
     }
 
-    .grid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:16px;
+    .login-section h2 {
+      color: var(--main-dark);
+      margin-bottom: 24px;
     }
 
-    input, select, textarea{
-      width:100%;
-      padding:12px;
-      border:1px solid var(--line);
-      border-radius:10px;
-      margin-top:8px;
-      font-size:14px;
-      font-family:inherit;
+    .login-section input {
+      width: 100%;
+      padding: 14px 18px;
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
+      font-size: 1rem;
+      margin-bottom: 16px;
     }
 
-    textarea{
-      resize:vertical;
-      min-height:60px;
+    .login-section input:focus {
+      outline: none;
+      border-color: var(--main-tint);
     }
 
-    input.edit-field, select.edit-field, textarea.edit-field{
-      margin-top:0;
-      padding:8px;
-      font-size:13px;
+    .login-section button {
+      width: 100%;
+      padding: 14px;
+      background: var(--main-tint);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
     }
 
-    button{
-      border:none;
-      background:var(--main);
-      color:#fff;
-      padding:11px 14px;
-      border-radius:10px;
-      cursor:pointer;
-      margin-top:10px;
-      font-size:14px;
-      transition:background 0.2s;
+    .login-section button:hover {
+      background: var(--main-dark);
+      transform: translateY(-2px);
     }
 
-    button:hover{ background:var(--main-dark); }
-    button:disabled{ opacity:.6; cursor:not-allowed; }
-
-    .sub{
-      background:#e8f3f1;
-      color:var(--text);
+    /* Question Monitor Section */
+    .question-monitor-section {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow);
     }
 
-    .sub:hover{ background:#dcecea; }
-
-    .danger{
-      background:var(--danger);
-      color:#fff;
+    .question-monitor-section h2 {
+      color: var(--main-dark);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
-    .danger:hover{ background:#b91c1c; }
-
-    .toolbar{
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-      margin:10px 0;
+    .question-monitor-section h2::before {
+      content: '📊';
+      font-size: 1.5rem;
     }
 
-    .stats{
-      display:grid;
-      grid-template-columns:repeat(4,1fr);
-      gap:12px;
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
     }
 
-    .stat{
-      background:#f8fbfb;
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:14px;
-      text-align:center;
+    .stat-card {
+      background: var(--main-light);
+      padding: 16px;
+      border-radius: 12px;
+      text-align: center;
+      border: 2px solid var(--main-tint);
     }
 
-    .stat strong{
-      display:block;
-      font-size:20px;
-      color:var(--main-dark);
-      margin-bottom:4px;
+    .stat-card .value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--main-dark);
+      display: block;
+      margin-bottom: 4px;
     }
 
-    .category-tabs{
-      display:flex;
-      gap:8px;
-      overflow-x:auto;
-      padding:6px 0 10px;
+    .stat-card .label {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
     }
 
-    .category-tab{
-      border:none;
-      background:#e8f7f3;
-      color:#006f5c;
-      padding:9px 13px;
-      border-radius:999px;
-      cursor:pointer;
-      white-space:nowrap;
-      font-size:13px;
-      margin-top:0;
-      flex-shrink:0;
+    .filter-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      align-items: center;
     }
 
-    .category-tab.active{
-      background:var(--main);
-      color:#fff;
+    .filter-bar select,
+    .filter-bar input {
+      padding: 10px 14px;
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      flex: 1;
+      min-width: 150px;
     }
 
-    .table-wrap{ 
-      overflow:auto;
-      max-height:600px;
+    .filter-bar button {
+      padding: 10px 20px;
+      background: var(--main-tint);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      white-space: nowrap;
     }
 
-    table{
-      width:100%;
-      border-collapse:collapse;
-      font-size:13px;
-      margin-top:10px;
+    .filter-bar button:hover {
+      background: var(--main-dark);
+      transform: translateY(-2px);
     }
 
-    th, td{
-      border-bottom:1px solid var(--line);
-      padding:10px;
-      text-align:left;
-      vertical-align:top;
+    .auto-refresh {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
     }
 
-    th{ 
-      background:#f8fbfb;
-      position:sticky;
-      top:0;
-      z-index:10;
+    .auto-refresh input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
     }
 
-    .small-btn{
-      margin:0;
-      padding:7px 10px;
-      font-size:12px;
-      border-radius:8px;
+    .question-list {
+      max-height: 500px;
+      overflow-y: auto;
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
     }
 
-    .notice{
-      border:1px solid #fed7aa;
-      background:var(--warning-bg);
-      color:var(--warning);
-      padding:12px 14px;
-      border-radius:12px;
-      font-size:13px;
-      margin-top:10px;
+    .question-item {
+      padding: 16px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.2s ease;
     }
 
-    .status-box{
-      border:1px solid var(--line);
-      background:#f8fbfb;
-      border-radius:12px;
-      padding:10px 12px;
-      margin-top:10px;
-      font-size:13px;
-      color:var(--sub);
-      white-space:pre-wrap;
+    .question-item:hover {
+      background: var(--main-light);
     }
 
-    .status-box.ok{
-      border-color:#bbf7d0;
-      background:var(--ok-bg);
-      color:var(--ok);
+    .question-item:last-child {
+      border-bottom: none;
     }
 
-    .status-box.error{
-      border-color:#fecaca;
-      background:#fef2f2;
-      color:var(--danger);
+    .question-content {
+      flex: 1;
     }
 
-    code{
-      background:#f3f4f6;
-      padding:1px 5px;
-      border-radius:6px;
-      font-family:Consolas, monospace;
-      font-size:12px;
+    .question-text {
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
     }
 
-    .pagination{
-      display:flex;
-      gap:6px;
-      justify-content:center;
-      margin-top:16px;
-      flex-wrap:wrap;
+    .question-meta {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
     }
 
-    .pagination button{
-      min-width:40px;
-      margin-top:0;
+    .question-meta span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .badge.matched {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .badge.unmatched {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .badge.faq {
+      background: #d1ecf1;
+      color: #0c5460;
+    }
+
+    .question-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .question-actions button {
+      padding: 8px 14px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      white-space: nowrap;
+    }
+
+    .btn-add-answer {
+      background: var(--main-tint);
+      color: white;
+    }
+
+    .btn-add-answer:hover {
+      background: var(--main-dark);
+    }
+
+    .btn-ignore {
+      background: var(--text-muted);
+      color: white;
+    }
+
+    .btn-ignore:hover {
+      background: var(--text-secondary);
+    }
+
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .pagination button {
+      padding: 8px 14px;
+      border: 2px solid var(--main-tint);
+      background: white;
+      color: var(--main-dark);
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .pagination button:hover:not(:disabled) {
+      background: var(--main-tint);
+      color: white;
+    }
+
+    .pagination button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .pagination button.active {
+      background: var(--main-tint);
+      color: white;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+    }
+
+    .empty-state::before {
+      content: '📭';
+      display: block;
+      font-size: 4rem;
+      margin-bottom: 16px;
+    }
+
+    /* Loading Overlay */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .loading-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .loading-spinner {
+      width: 60px;
+      height: 60px;
+      border: 6px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
     }
 
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
 
-    .loading-overlay{
-      position:fixed;
-      top:0;
-      left:0;
-      right:0;
-      bottom:0;
-      background:rgba(0,0,0,0.5);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      z-index:9999;
+    /* Notice Alert */
+    .notice-alert {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 16px 20px;
+      border-radius: 12px;
+      box-shadow: var(--shadow-hover);
+      background: white;
+      border-left: 4px solid var(--info);
+      max-width: 320px;
+      z-index: 1000;
+      animation: slideIn 0.3s ease;
     }
 
-    .loading-content{
-      background:#fff;
-      padding:24px;
-      border-radius:12px;
-      box-shadow:0 8px 24px rgba(0,0,0,0.2);
-      text-align:center;
+    .notice-alert.error {
+      border-left-color: var(--danger);
     }
 
-    .spinner{
-      width:40px;
-      height:40px;
-      border:4px solid var(--line);
-      border-top-color:var(--main);
-      border-radius:50%;
-      animation:spin 1s linear infinite;
-      margin:0 auto 12px;
+    .notice-alert.success {
+      border-left-color: var(--success);
     }
 
-    @media (max-width:960px){
-      .grid{ grid-template-columns:1fr; }
-      .stats{ grid-template-columns:1fr 1fr; }
+    .notice-alert.warning {
+      border-left-color: var(--warning);
     }
 
-    @media (max-width:640px){
-      .stats{ grid-template-columns:1fr; }
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    /* Hidden class */
+    .hidden {
+      display: none !important;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .container {
+        padding: 12px;
+      }
+
+      .header {
+        padding: 16px;
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .filter-bar {
+        flex-direction: column;
+      }
+
+      .filter-bar select,
+      .filter-bar input,
+      .filter-bar button {
+        width: 100%;
+      }
+
+      .question-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      .question-actions {
+        width: 100%;
+      }
+
+      .question-actions button {
+        flex: 1;
+      }
     }
   </style>
 </head>
 <body>
-  <div id="loginView" class="login-box">
-    <h1>관리자 페이지</h1>
-    <p class="muted">서버 인증 또는 개발용 로컬 비밀번호로 로그인합니다.</p>
-    <input type="password" id="adminPassword" placeholder="비밀번호 입력" />
-    <button id="loginButton" onclick="login()">로그인</button>
-    <div class="notice">
-      운영 환경에서는 HTML 안에 비밀번호를 직접 넣지 말고 서버 인증을 연결하세요.<br>
-      아래 스크립트는 <code>window.ADMIN_CONFIG</code>에 설정된 서버 로그인 API를 우선 사용합니다.
-    </div>
-    <div id="loginStatus" class="status-box">대기 중</div>
+  <!-- Login Section -->
+  <div class="login-section" id="loginSection">
+    <h2>🔐 관리자 로그인</h2>
+    <input 
+      type="password" 
+      id="adminPassword" 
+      placeholder="비밀번호 입력" 
+      aria-label="관리자 비밀번호"
+    />
+    <button onclick="login()">로그인</button>
   </div>
 
-  <div id="adminView" class="container hidden">
-    <div class="card">
-      <h1>SCM 업무 도우미 관리자</h1>
-      <p class="muted">CSV 업로드, Q&A 삭제, 질문 이력 조회를 수행합니다.</p>
-      <div class="toolbar">
-        <button class="sub" onclick="logout()">로그아웃</button>
-        <button id="undoBtn" class="sub" onclick="undo()" disabled>실행 취소</button>
+  <!-- Main Content (Hidden until logged in) -->
+  <div class="container hidden" id="mainContent">
+    <!-- Header -->
+    <div class="header">
+      <div class="avatar">⚙️</div>
+      <div class="header-text">
+        <h1>SCM 챗봇 관리자</h1>
+        <p>질문 & 답변 관리 시스템</p>
       </div>
     </div>
 
-    <div class="card">
-      <h2>현황</h2>
-      <div class="stats">
-        <div class="stat"><strong id="statQA">0</strong><span>Q&A 수</span></div>
-        <div class="stat"><strong id="statHistory">0</strong><span>로컬 이력</span></div>
-        <div class="stat"><strong id="statMatched">0</strong><span>로컬 매칭</span></div>
-        <div class="stat"><strong id="statUnmatched">0</strong><span>서버 미매칭</span></div>
-      </div>
-    </div>
+    <!-- Question Monitor Section -->
+    <div class="question-monitor-section">
+      <h2>실시간 질문 모니터링</h2>
 
-    <div class="grid">
-      <div class="card">
-        <h2>CSV 업로드</h2>
-        <p class="muted">헤더 형식: category, question, keywords, answer, top</p>
-        <input type="file" id="csvFileInput" accept=".csv,text/csv,application/vnd.ms-excel" />
-        <select id="csvMode">
-          <option value="append">기존 데이터에 추가</option>
-          <option value="replace">기존 데이터 전체 교체</option>
+      <!-- Stats Grid -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <span class="value" id="totalQuestionsCount">0</span>
+          <span class="label">전체 질문</span>
+        </div>
+        <div class="stat-card">
+          <span class="value" id="matchedCount">0</span>
+          <span class="label">답변 매칭됨</span>
+        </div>
+        <div class="stat-card">
+          <span class="value" id="unmatchedCount">0</span>
+          <span class="label">답변 없음</span>
+        </div>
+        <div class="stat-card">
+          <span class="value" id="matchRate">0%</span>
+          <span class="label">매칭률</span>
+        </div>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="filter-bar">
+        <select id="matchedFilter" aria-label="답변 상태 필터">
+          <option value="all">전체</option>
+          <option value="matched">답변 있음</option>
+          <option value="unmatched">답변 없음</option>
         </select>
-        <div class="toolbar">
-          <button onclick="importCSV()">CSV 업로드</button>
-          <button class="sub" onclick="downloadCSVTemplate()">CSV 템플릿 다운로드</button>
-        </div>
-        <div id="csvStatus" class="status-box">업로드 대기 중</div>
-      </div>
 
-      <div class="card">
-        <h2>로컬 질문 이력 관리</h2>
-        <p class="muted">이 영역은 현재 브라우저의 localStorage 기준입니다.</p>
-        <div class="toolbar">
-          <button onclick="previewHistory()">질문 이력 미리보기</button>
-          <button onclick="exportHistory()">이력 다운로드(JSON)</button>
-          <button class="sub" onclick="exportHistoryAsCSV()">이력 다운로드(CSV)</button>
-          <button class="danger" onclick="clearHistory()">질문 이력 초기화</button>
-        </div>
-        
-        <div id="historyPreview" class="hidden" style="margin-top:16px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <h3 style="margin:0;font-size:15px;">질문 이력 미리보기</h3>
-            <button class="small-btn sub" onclick="closeHistoryPreview()">닫기</button>
-          </div>
-          <div class="table-wrap" style="max-height:400px;">
-            <table>
-              <thead>
-                <tr>
-                  <th style="min-width:140px;">시간</th>
-                  <th style="min-width:200px;">질문</th>
-                  <th style="min-width:220px;">답변</th>
-                  <th style="min-width:90px;">카테고리</th>
-                  <th style="min-width:70px;">매칭</th>
-                  <th style="min-width:80px;">소스</th>
-                </tr>
-              </thead>
-              <tbody id="historyPreviewTable"></tbody>
-            </table>
-          </div>
-          <div id="historyPreviewCount" class="muted" style="margin-top:8px;"></div>
+        <select id="categoryFilter" aria-label="카테고리 필터">
+          <option value="all">전체 카테고리</option>
+          <option value="delivery">배송</option>
+          <option value="documents">서류</option>
+          <option value="production">생산</option>
+          <option value="purchase">구매</option>
+          <option value="unknown">기타</option>
+        </select>
+
+        <input 
+          type="text" 
+          id="searchQuestion" 
+          placeholder="질문 검색..." 
+          aria-label="질문 검색"
+        />
+
+        <button onclick="loadQuestionMonitor()">🔄 새로고침</button>
+
+        <div class="auto-refresh">
+          <input type="checkbox" id="autoRefresh" />
+          <label for="autoRefresh">자동 갱신 (30초)</label>
         </div>
       </div>
-    </div>
 
-    <div class="card">
-      <h2>저장된 Q&A</h2>
-      <p class="muted">카테고리 탭으로 필터링 후 개별 삭제 또는 전체 삭제가 가능합니다.</p>
-
-      <input type="text" id="qaSearchInput" placeholder="질문 또는 답변 검색..." 
-             style="margin-bottom:12px;" oninput="handleQASearch()" 
-             aria-label="Q&A 검색" role="searchbox" />
-
-      <div class="toolbar">
-        <button class="danger" onclick="clearAllQA()">전체 Q&A 삭제</button>
-        <button class="sub" onclick="exportQAToCSV()">Q&A CSV 내보내기</button>
-        <button id="editModeBtn" class="sub" onclick="toggleEditMode()">일괄 편집 모드</button>
+      <!-- Question List -->
+      <div class="question-list" id="questionList">
+        <div class="empty-state">데이터를 불러오는 중...</div>
       </div>
 
-      <div class="category-tabs" id="adminCategoryTabs"></div>
-      <div id="qaCount" class="muted"></div>
-
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th style="min-width:100px;">카테고리</th>
-              <th style="min-width:220px;">질문</th>
-              <th style="min-width:180px;">키워드</th>
-              <th style="min-width:260px;">답변</th>
-              <th style="min-width:70px;">TOP</th>
-              <th style="min-width:90px;">작업</th>
-            </tr>
-          </thead>
-          <tbody id="qaTable"></tbody>
-        </table>
-      </div>
-
-      <div id="qaPagination" class="pagination"></div>
-    </div>
-
-    <div class="card">
-      <h2>서버 미매칭 질문</h2>
-      <div id="historyCount" class="muted"></div>
-      <div id="serverStatus" class="status-box">서버 상태 확인 전</div>
-      <button class="sub" onclick="loadUnmatchedFromServer()">새로고침</button>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th style="min-width:160px;">시간</th>
-              <th style="min-width:220px;">질문</th>
-              <th style="min-width:260px;">답변</th>
-              <th style="min-width:100px;">카테고리</th>
-              <th style="min-width:80px;">매칭</th>
-            </tr>
-          </thead>
-          <tbody id="historyTable"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>시스템 설정</h2>
-      <div class="grid">
-        <div>
-          <label for="itemsPerPageSetting">페이지당 항목 수</label>
-          <input type="number" id="itemsPerPageSetting" value="50" min="10" max="200" />
-        </div>
-        <div>
-          <label for="autoSaveSetting">
-            <input type="checkbox" id="autoSaveSetting" checked style="width:auto;margin-right:8px;" />
-            변경 사항 자동 저장
-          </label>
-        </div>
-      </div>
-      <button onclick="saveSettings()">설정 저장</button>
+      <!-- Pagination -->
+      <div class="pagination" id="questionPagination"></div>
     </div>
   </div>
 
-  <script>
-    window.ADMIN_CONFIG = Object.assign({
-      authMode: "dev",
-      loginApiUrl: "",
-      verifyApiUrl: "",
-      logoutApiUrl: "",
-      unmatchedApiUrl: "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/getUnmatched",
-      requestTimeoutMs: 12000,
-      devPassword: "wpkscm"
-    }, window.ADMIN_CONFIG || {});
-  </script>
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+  </div>
+
   <script src="shared.js"></script>
   <script>
-    // ========== 전역 변수 ==========
-    let adminSelectedCategory = "all";
-    let qaSearchTerm = "";
-    let currentPage = 1;
-    let itemsPerPage = 50;
-    let editMode = false;
-    const historyStack = [];
-    const MAX_HISTORY = 50;
+    'use strict';
 
-    const CATEGORY_WHITELIST = new Set([
-      "all",
-      "delivery",
-      "documents",
-      "production",
-      "other",
-      "purchase"
-    ]);
-
-    const API_RETRY_CONFIG = {
-      maxRetries: 3,
-      retryDelay: 1000,
-      backoffMultiplier: 2
+    // ========================================
+    // Configuration
+    // ========================================
+    const ADMIN_CONFIG = {
+      authMode: 'dev',
+      devPassword: 'wpkscm',
+      allQuestionsApiUrl: 'https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/getAllQuestions',
+      statsApiUrl: 'https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/getQuestionStats',
+      unmatchedApiUrl: 'https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/getUnmatched',
+      requestTimeoutMs: 12000
     };
 
-    // ========== 유틸리티 함수 ==========
-    function sanitizeHTML(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
+    // ========================================
+    // Global State
+    // ========================================
+    let currentPage = 1;
+    const itemsPerPage = 20;
+    let autoRefreshInterval = null;
+    let isLoggedIn = false;
 
-    function sanitizeForAttribute(text) {
-      return String(text || '')
-        .replace(/[&<>"']/g, char => {
-          const entities = {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#39;'
-          };
-          return entities[char];
-        });
-    }
+    // ========================================
+    // DOM Elements
+    // ========================================
+    const loginSection = document.getElementById('loginSection');
+    const mainContent = document.getElementById('mainContent');
+    const adminPassword = document.getElementById('adminPassword');
+    const questionList = document.getElementById('questionList');
+    const questionPagination = document.getElementById('questionPagination');
+    const matchedFilter = document.getElementById('matchedFilter');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const searchQuestion = document.getElementById('searchQuestion');
+    const autoRefresh = document.getElementById('autoRefresh');
+    const loadingOverlay = document.getElementById('loadingOverlay');
 
-    function sanitizeCSVCell(value) {
-      const str = String(value || "").trim();
-      if (/^[=+\-@\t\r]/.test(str)) {
-        return `'${str}`;
-      }
-      return str;
-    }
+    // Stats elements
+    const totalQuestionsCount = document.getElementById('totalQuestionsCount');
+    const matchedCount = document.getElementById('matchedCount');
+    const unmatchedCount = document.getElementById('unmatchedCount');
+    const matchRate = document.getElementById('matchRate');
 
-    function debounce(func, wait) {
-      let timeout;
-      return function executedFunction(...args) {
-        const later = () => {
-          clearTimeout(timeout);
-          func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-      };
-    }
+    // ========================================
+    // Authentication
+    // ========================================
+    function login() {
+      const password = adminPassword.value.trim();
 
-    function showLoadingOverlay(message = "처리 중...") {
-      hideLoadingOverlay();
-      const overlay = document.createElement('div');
-      overlay.id = 'loadingOverlay';
-      overlay.className = 'loading-overlay';
-      overlay.innerHTML = `
-        <div class="loading-content">
-          <div class="spinner"></div>
-          <p style="margin:0;color:var(--text);font-weight:600;">${sanitizeHTML(message)}</p>
-        </div>
-      `;
-      document.body.appendChild(overlay);
-    }
-
-    function hideLoadingOverlay() {
-      const overlay = document.getElementById('loadingOverlay');
-      if (overlay) overlay.remove();
-    }
-
-    function setStatus(id, message, type = "") {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.className = `status-box${type ? ` ${type}` : ""}`;
-      el.textContent = message;
-    }
-
-    function logActivity(action, details = {}) {
-      try {
-        const log = {
-          timestamp: new Date().toISOString(),
-          action,
-          details,
-          user: sessionStorage.getItem('admin_user') || 'unknown'
-        };
-
-        const logs = JSON.parse(localStorage.getItem('adminLogs') || '[]');
-        logs.push(log);
-        
-        if (logs.length > 1000) {
-          logs.shift();
-        }
-        
-        localStorage.setItem('adminLogs', JSON.stringify(logs));
-      } catch (e) {
-        console.warn('로그 저장 실패:', e);
-      }
-    }
-
-    function safeSetLocalStorage(key, value) {
-      try {
-        localStorage.setItem(key, value);
-        return true;
-      } catch (e) {
-        if (e.name === 'QuotaExceededError') {
-          alert('브라우저 저장 공간이 부족합니다. 질문 이력을 정리해 주세요.');
-          return false;
-        }
-        console.error('localStorage 저장 실패:', e);
-        return false;
-      }
-    }
-
-    // ========== 데이터 정규화 ==========
-    function normalizeCategory(category) {
-      const value = String(category || "").trim().toLowerCase();
-      return CATEGORY_WHITELIST.has(value) && value !== "all" ? value : "other";
-    }
-
-    function normalizeKeywords(value) {
-      if (Array.isArray(value)) {
-        return [...new Set(value.map(v => sanitizeCSVCell(String(v || "").trim())).filter(Boolean))];
-      }
-      return [...new Set(String(value || "")
-        .split(/\||,|;/)
-        .map(v => sanitizeCSVCell(v.trim()))
-        .filter(Boolean))];
-    }
-
-    function normalizeBoolean(value) {
-      const v = String(value || "").trim().toLowerCase();
-      return ["true", "1", "y", "yes"].includes(v);
-    }
-
-    function createQAId() {
-      return `qa_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
-    }
-
-    function normalizeQAItem(item) {
-      return {
-        __id: item.__id || createQAId(),
-        category: normalizeCategory(item.category),
-        question: sanitizeCSVCell(String(item.question || "").trim()),
-        keywords: normalizeKeywords(item.keywords),
-        answer: sanitizeCSVCell(String(item.answer || "").trim()),
-        top: !!item.top || normalizeBoolean(item.top)
-      };
-    }
-
-    function validateQAItem(item, rowNumber) {
-      const errors = [];
-
-      if (!item.question || item.question.length < 3) {
-        errors.push(`${rowNumber}행: 질문은 최소 3자 이상이어야 합니다.`);
-      }
-
-      if (item.question && item.question.length > 500) {
-        errors.push(`${rowNumber}행: 질문은 500자를 초과할 수 없습니다.`);
-      }
-
-      if (!item.answer || item.answer.length < 5) {
-        errors.push(`${rowNumber}행: 답변은 최소 5자 이상이어야 합니다.`);
-      }
-
-      if (item.answer && item.answer.length > 5000) {
-        errors.push(`${rowNumber}행: 답변은 5000자를 초과할 수 없습니다.`);
-      }
-
-      if (!item.keywords || item.keywords.length === 0) {
-        errors.push(`${rowNumber}행: 최소 1개 이상의 키워드가 필요합니다.`);
-      }
-
-      if (item.keywords && item.keywords.length > 20) {
-        errors.push(`${rowNumber}행: 키워드는 20개를 초과할 수 없습니다.`);
-      }
-
-      return errors;
-    }
-
-    // ========== Q&A 데이터 관리 ==========
-    function getAllQA() {
-      return (ChatbotStore.getQA() || []).map(normalizeQAItem);
-    }
-
-    function syncQAIdsIfNeeded() {
-      const current = ChatbotStore.getQA() || [];
-      if (!current.length) return;
-      const normalized = current.map(normalizeQAItem);
-      const changed = normalized.some((item, idx) => {
-        const origin = current[idx] || {};
-        return !origin.__id
-          || origin.category !== item.category
-          || String(origin.question || "").trim() !== item.question
-          || String(origin.answer || "").trim() !== item.answer
-          || JSON.stringify(normalizeKeywords(origin.keywords)) !== JSON.stringify(item.keywords)
-          || !!origin.top !== item.top;
-      });
-
-      if (changed) {
-        ChatbotStore.importTemplate({ mode: "replace", data: normalized });
-      }
-    }
-
-    function upsertQAs(data, mode) {
-      const base = mode === "replace" ? [] : getAllQA();
-      const map = new Map();
-
-      base.forEach(item => {
-        const normalized = normalizeQAItem(item);
-        map.set(normalized.question.toLowerCase(), normalized);
-      });
-
-      let inserted = 0;
-      let updated = 0;
-      let skipped = 0;
-
-      data.forEach(item => {
-        const normalized = normalizeQAItem(item);
-        if (!normalized.question || !normalized.answer) {
-          skipped++;
-          return;
-        }
-
-        const key = normalized.question.toLowerCase();
-        if (map.has(key)) {
-          const existing = map.get(key);
-          map.set(key, { ...existing, ...normalized, __id: existing.__id || normalized.__id });
-          updated++;
-        } else {
-          map.set(key, normalized);
-          inserted++;
-        }
-      });
-
-      ChatbotStore.importTemplate({ mode: "replace", data: Array.from(map.values()) });
-      return { inserted, updated, skipped, total: Array.from(map.values()).length };
-    }
-
-    // ========== 네트워크 함수 ==========
-    async function fetchWithTimeout(url, options = {}, timeoutMs = window.ADMIN_CONFIG.requestTimeoutMs || 12000) {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), timeoutMs);
-      try {
-        const res = await fetch(url, { ...options, signal: controller.signal });
-        return res;
-      } finally {
-        clearTimeout(timer);
-      }
-    }
-
-    async function fetchWithRetry(url, options = {}, retryCount = 0) {
-      try {
-        return await fetchWithTimeout(url, options);
-      } catch (error) {
-        if (retryCount < API_RETRY_CONFIG.maxRetries) {
-          const delay = API_RETRY_CONFIG.retryDelay * Math.pow(API_RETRY_CONFIG.backoffMultiplier, retryCount);
-          await new Promise(resolve => setTimeout(resolve, delay));
-          return fetchWithRetry(url, options, retryCount + 1);
-        }
-        throw error;
-      }
-    }
-
-    async function sha256(text) {
-      const encoder = new TextEncoder();
-      const data = encoder.encode(text);
-      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-      return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
-    }
-
-    // ========== 인증 ==========
-    async function login() {
-      const pw = document.getElementById("adminPassword").value;
-      const btn = document.getElementById("loginButton");
-
-      if (!pw) {
-        setStatus("loginStatus", "비밀번호를 입력해 주세요.", "error");
+      if (!password) {
+        showNotice('비밀번호를 입력해 주세요.', 'warning');
         return;
       }
 
-      btn.disabled = true;
-      setStatus("loginStatus", "로그인 확인 중...");
-
-      try {
-        if (window.ADMIN_CONFIG.authMode === "server" && window.ADMIN_CONFIG.loginApiUrl) {
-          const hashedPassword = await sha256(pw);
-          const res = await fetchWithTimeout(window.ADMIN_CONFIG.loginApiUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({ password: pw, passwordHash: hashedPassword })
-          });
-
-          if (!res.ok) {
-            let message = `로그인 실패 (${res.status})`;
-            try {
-              const data = await res.json();
-              if (data && data.message) message = data.message;
-            } catch {}
-            throw new Error(message);
-          }
-
-          sessionStorage.setItem("admin_login", "true");
-          setStatus("loginStatus", "서버 인증 성공", "ok");
-          logActivity('LOGIN', { method: 'server' });
-          showAdmin();
-          return;
-        }
-
-        if (window.ADMIN_CONFIG.authMode === "dev" && window.ADMIN_CONFIG.devPassword) {
-          if (pw !== window.ADMIN_CONFIG.devPassword) {
-            throw new Error("비밀번호가 올바르지 않습니다.");
-          }
-          sessionStorage.setItem("admin_login", "true");
-          setStatus("loginStatus", "개발용 로그인 성공", "ok");
-          logActivity('LOGIN', { method: 'dev' });
-          showAdmin();
-          return;
-        }
-
-        throw new Error("로그인 설정이 없습니다. window.ADMIN_CONFIG를 설정해 주세요.");
-      } catch (error) {
-        console.error(error);
-        sessionStorage.removeItem("admin_login");
-        setStatus("loginStatus", error.message || "로그인 중 오류가 발생했습니다.", "error");
-      } finally {
-        btn.disabled = false;
-      }
-    }
-
-    async function logout() {
-      sessionStorage.removeItem("admin_login");
-      logActivity('LOGOUT', {});
-      if (window.ADMIN_CONFIG.logoutApiUrl) {
-        try {
-          await fetchWithTimeout(window.ADMIN_CONFIG.logoutApiUrl, { 
-            method: "POST", 
-            credentials: "include" 
-          });
-        } catch (e) {
-          console.warn("logout api failed", e);
-        }
-      }
-      location.reload();
-    }
-
-    function showAdmin() {
-      syncQAIdsIfNeeded();
-      loadSettings();
-      document.getElementById("loginView").classList.add("hidden");
-      document.getElementById("adminView").classList.remove("hidden");
-      renderAll();
-      loadUnmatchedFromServer();
-    }
-
-    async function checkLogin() {
-      if (sessionStorage.getItem("admin_login") !== "true") return;
-
-      if (window.ADMIN_CONFIG.authMode === "server" && window.ADMIN_CONFIG.verifyApiUrl) {
-        try {
-          const res = await fetchWithTimeout(window.ADMIN_CONFIG.verifyApiUrl, {
-            method: "GET",
-            credentials: "include"
-          });
-          if (!res.ok) {
-            sessionStorage.removeItem("admin_login");
-            return;
-          }
-        } catch {
-          sessionStorage.removeItem("admin_login");
-          return;
-        }
-      }
-
-      showAdmin();
-    }
-
-    // ========== 렌더링 ==========
-    function renderAll() {
-      renderStats();
-      renderAdminCategoryTabs();
-      renderQA();
-      renderLocalHistoryStats();
-    }
-
-    function renderStats() {
-      const qa = getAllQA();
-      const history = ChatbotStore.getHistory() || [];
-      const matched = history.filter(x => x.matched).length;
-
-      document.getElementById("statQA").textContent = qa.length;
-      document.getElementById("statHistory").textContent = history.length;
-      document.getElementById("statMatched").textContent = matched;
-    }
-
-    function renderLocalHistoryStats() {
-      const history = ChatbotStore.getHistory() || [];
-      document.getElementById("statHistory").textContent = history.length;
-      document.getElementById("statMatched").textContent = history.filter(x => x.matched).length;
-    }
-
-    function renderAdminCategoryTabs() {
-      const categories = ChatbotStore.getCategories() || [];
-      const labels = ChatbotStore.getCategoryLabels() || {};
-      const tabs = document.getElementById("adminCategoryTabs");
-      tabs.innerHTML = "";
-
-      categories.forEach(category => {
-        const btn = document.createElement("button");
-        btn.className = `category-tab ${adminSelectedCategory === category ? "active" : ""}`;
-        btn.textContent = labels[category] || category;
-        btn.onclick = () => {
-          adminSelectedCategory = category;
-          currentPage = 1;
-          renderAdminCategoryTabs();
-          renderQA();
-        };
-        tabs.appendChild(btn);
-      });
-    }
-
-    const handleQASearch = debounce(function() {
-      qaSearchTerm = document.getElementById("qaSearchInput").value.toLowerCase().trim();
-      currentPage = 1;
-      renderQA();
-    }, 300);
-
-    function renderQA() {
-      const allQa = getAllQA();
-      let filtered = adminSelectedCategory === "all"
-        ? allQa
-        : allQa.filter(item => item.category === adminSelectedCategory);
-
-      if (qaSearchTerm) {
-        const searchLower = qaSearchTerm.toLowerCase();
-        
-        filtered = filtered.filter(item => {
-          const questionMatch = item.question.toLowerCase().includes(searchLower);
-          if (questionMatch) return true;
-          
-          const answerMatch = item.answer.toLowerCase().includes(searchLower);
-          if (answerMatch) return true;
-          
-          return item.keywords.some(k => k.toLowerCase().includes(searchLower));
-        });
-      }
-
-      const totalPages = Math.ceil(filtered.length / itemsPerPage);
-      const startIdx = (currentPage - 1) * itemsPerPage;
-      const endIdx = startIdx + itemsPerPage;
-      const pageItems = filtered.slice(startIdx, endIdx);
-
-      const categoryLabel = (ChatbotStore.getCategoryLabels() || {})[adminSelectedCategory] || adminSelectedCategory;
-      document.getElementById("qaCount").textContent =
-        adminSelectedCategory === "all"
-          ? `총 ${filtered.length}건 ${qaSearchTerm ? `(검색 결과)` : ''} ${totalPages > 1 ? `(${currentPage}/${totalPages} 페이지)` : ''}`
-          : `${categoryLabel} 카테고리 ${filtered.length}건 ${totalPages > 1 ? `(${currentPage}/${totalPages} 페이지)` : ''}`;
-
-      const tbody = document.getElementById("qaTable");
-      tbody.innerHTML = "";
-
-      if (pageItems.length === 0) {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td colspan="6" style="text-align:center;padding:24px;color:var(--sub);">표시할 Q&A가 없습니다.</td>`;
-        tbody.appendChild(tr);
+      if (password === ADMIN_CONFIG.devPassword) {
+        isLoggedIn = true;
+        loginSection.classList.add('hidden');
+        mainContent.classList.remove('hidden');
+        showNotice('로그인 성공!', 'success');
+        loadQuestionMonitor();
       } else {
-        pageItems.forEach(item => {
-          const tr = document.createElement("tr");
-          
-          if (editMode) {
-            const categories = ChatbotStore.getCategories() || [];
-            const labels = ChatbotStore.getCategoryLabels() || {};
-            const categoryOptions = categories
-              .filter(c => c !== 'all')
-              .map(c => `<option value="${c}" ${item.category === c ? 'selected' : ''}>${labels[c] || c}</option>`)
-              .join('');
-
-            tr.innerHTML = `
-              <td><select class="edit-field edit-category">${categoryOptions}</select></td>
-              <td><input type="text" class="edit-field edit-question" value="${sanitizeForAttribute(item.question)}" /></td>
-              <td><input type="text" class="edit-field edit-keywords" value="${sanitizeForAttribute(item.keywords.join(' | '))}" /></td>
-              <td><textarea class="edit-field edit-answer" rows="3">${sanitizeForAttribute(item.answer)}</textarea></td>
-              <td><input type="checkbox" class="edit-top" ${item.top ? 'checked' : ''} style="width:auto;margin:0;" /></td>
-              <td><button class="small-btn" data-id="${item.__id}">저장</button></td>
-            `;
-            tr.querySelector('button').onclick = (e) => saveQAEdit(e.target.dataset.id, tr);
-          } else {
-            tr.innerHTML = `
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td><button class="danger small-btn" data-id="${item.__id}">삭제</button></td>
-            `;
-            tr.children[0].textContent = item.category || "";
-            tr.children[1].textContent = item.question || "";
-            tr.children[2].textContent = (item.keywords || []).join(" | ");
-            tr.children[3].textContent = item.answer || "";
-            tr.children[4].textContent = item.top ? "Y" : "-";
-            tr.querySelector("button").onclick = (e) => deleteQAById(e.target.dataset.id);
-          }
-          
-          tbody.appendChild(tr);
-        });
-      }
-
-      renderPagination(totalPages);
-    }
-
-    function renderPagination(totalPages) {
-      const container = document.getElementById("qaPagination");
-      container.innerHTML = "";
-      if (totalPages <= 1) return;
-
-      const maxButtons = 7;
-      let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
-      let endPage = Math.min(totalPages, startPage + maxButtons - 1);
-
-      if (endPage - startPage + 1 < maxButtons) {
-        startPage = Math.max(1, endPage - maxButtons + 1);
-      }
-
-      if (currentPage > 1) {
-        const btn = document.createElement("button");
-        btn.className = "small-btn sub";
-        btn.textContent = "이전";
-        btn.onclick = () => {
-          currentPage--;
-          renderQA();
-        };
-        container.appendChild(btn);
-      }
-
-      for (let i = startPage; i <= endPage; i++) {
-        const btn = document.createElement("button");
-        btn.className = `small-btn ${i === currentPage ? '' : 'sub'}`;
-        btn.textContent = i;
-        btn.onclick = () => {
-          currentPage = i;
-          renderQA();
-        };
-        container.appendChild(btn);
-      }
-
-      if (currentPage < totalPages) {
-        const btn = document.createElement("button");
-        btn.className = "small-btn sub";
-        btn.textContent = "다음";
-        btn.onclick = () => {
-          currentPage++;
-          renderQA();
-        };
-        container.appendChild(btn);
+        showNotice('비밀번호가 올바르지 않습니다.', 'error');
+        adminPassword.value = '';
       }
     }
 
-    function toggleEditMode() {
-      editMode = !editMode;
-      renderQA();
-      document.getElementById("editModeBtn").textContent = 
-        editMode ? "편집 모드 종료" : "일괄 편집 모드";
-      
-      if (editMode) {
-        logActivity('EDIT_MODE_ENABLED', {});
-      } else {
-        logActivity('EDIT_MODE_DISABLED', {});
-      }
-    }
-
-    function saveQAEdit(id, row) {
-      const allQa = getAllQA();
-      const index = allQa.findIndex(item => item.__id === id);
-      if (index < 0) {
-        alert("수정 대상을 찾지 못했습니다.");
-        return;
-      }
-
-      const updatedItem = normalizeQAItem({
-        __id: id,
-        category: row.querySelector('.edit-category').value,
-        question: row.querySelector('.edit-question').value,
-        keywords: row.querySelector('.edit-keywords').value,
-        answer: row.querySelector('.edit-answer').value,
-        top: row.querySelector('.edit-top').checked
-      });
-
-      const errors = validateQAItem(updatedItem, index + 1);
-      if (errors.length > 0) {
-        alert(`유효성 검사 실패:\n${errors.join('\n')}`);
-        return;
-      }
-
-      saveToHistory();
-      allQa[index] = updatedItem;
-      ChatbotStore.importTemplate({ mode: "replace", data: allQa });
-      logActivity('UPDATE_QA', { id, question: updatedItem.question });
-      renderAll();
-      alert("저장되었습니다.");
-    }
-
-    function deleteQAById(id) {
-      const allQa = getAllQA();
-      const index = allQa.findIndex(item => item.__id === id);
-
-      if (index < 0) {
-        alert("삭제 대상을 찾지 못했습니다.");
-        return;
-      }
-      if (!confirm("이 Q&A를 삭제할까요?")) return;
-
-      saveToHistory();
-      const ok = ChatbotStore.deleteQAByIndex(index);
-      if (!ok) {
-        alert("삭제에 실패했습니다.");
-        return;
-      }
-
-      logActivity('DELETE_QA', { id, question: allQa[index].question });
-      renderAll();
-      alert("삭제되었습니다.");
-    }
-
-    function clearAllQA() {
-      const check = prompt("전체 삭제를 하려면 DELETE 를 입력하세요.");
-      if (check !== "DELETE") {
-        alert("취소되었습니다.");
-        return;
-      }
-
-      saveToHistory();
-      const count = getAllQA().length;
-      ChatbotStore.clearQA();
-      adminSelectedCategory = "all";
-      currentPage = 1;
-      logActivity('DELETE_ALL_QA', { count });
-      renderAll();
-      alert("전체 삭제되었습니다.");
-    }
-
-    function clearHistory() {
-      const check = prompt("질문 이력을 모두 삭제하려면 DELETE 를 입력하세요.");
-      if (check !== "DELETE") {
-        alert("취소되었습니다.");
-        return;
-      }
-
-      const count = (ChatbotStore.getHistory() || []).length;
-      ChatbotStore.clearHistory();
-      logActivity('CLEAR_HISTORY', { count });
-      renderAll();
-      alert("질문 이력이 초기화되었습니다.");
-    }
-
-    // ========== CSV 관련 함수 ==========
-    function parseCSVLine(line) {
-      const result = [];
-      let current = '';
-      let inQuotes = false;
-      let i = 0;
-
-      while (i < line.length) {
-        const char = line[i];
-        const nextChar = line[i + 1];
-
-        if (char === '"') {
-          if (inQuotes && nextChar === '"') {
-            current += '"';
-            i += 2;
-            continue;
-          } else {
-            inQuotes = !inQuotes;
-            i++;
-            continue;
-          }
-        }
-
-        if (char === ',' && !inQuotes) {
-          result.push(current);
-          current = '';
-          i++;
-          continue;
-        }
-
-        current += char;
-        i++;
-      }
-
-      result.push(current);
-
-      return result.map(field => {
-        let trimmed = field.trim();
-        if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
-          trimmed = trimmed.slice(1, -1);
-        }
-        return trimmed;
-      });
-    }
-
-    function downloadCSVTemplate() {
-      const template = `category,question,keywords,answer,top
-delivery,독일 및 프랑스 본사로부터 해상 선적 기간은 얼마나 되나요?,해상|선적|기간|리드타임,"생산 리드타임 + 해상 운송 기준, 출하일부터 공장 입고까지는 총 약 2~3개월 소요됩니다.",TRUE
-documents,원산지 증명서 발급 가능한가요?,원산지증명서|발급|가능,원산지증명서는 요청 제품이 해당 FTA 협정의 원산지 기준을 충족하는 경우에 한하여 발급 가능합니다.,FALSE`;
-
-      const bom = "\uFEFF";
-      const blob = new Blob([bom + template], { 
-        type: "text/csv;charset=utf-8;" 
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "qa_template.csv";
-      a.click();
-      URL.revokeObjectURL(url);
-      
-      logActivity('DOWNLOAD_CSV_TEMPLATE', {});
-    }
-
-    function importCSV() {
-      const fileInput = document.getElementById("csvFileInput");
-      const file = fileInput.files[0];
-      
-      if (!file) {
-        setStatus("csvStatus", "파일을 선택해 주세요.", "error");
-        return;
-      }
-
-      const mode = document.getElementById("csvMode").value;
-      
-      showLoadingOverlay("CSV 파일 처리 중...");
-      
-      const reader = new FileReader();
-      
-      reader.onload = function(e) {
-        try {
-          const text = e.target.result;
-          const lines = text.split(/\r?\n/).filter(line => line.trim());
-          
-          if (lines.length < 2) {
-            throw new Error("CSV 파일이 비어 있거나 형식이 올바르지 않습니다.\n파일을 확인하고 다시 시도해 주세요.");
-          }
-
-          const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/^"(.*)"$/, '$1'));
-          const requiredHeaders = ['category', 'question', 'keywords', 'answer'];
-          
-          const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
-          if (missingHeaders.length > 0) {
-            throw new Error(`필수 컬럼이 누락되었습니다: ${missingHeaders.join(', ')}\n\nCSV 템플릿을 다운로드하여 형식을 확인해 주세요.`);
-          }
-
-          const data = [];
-          const errors = [];
-
-          for (let i = 1; i < lines.length; i++) {
-            const line = lines[i];
-            if (!line.trim()) continue;
-
-            const values = parseCSVLine(line);
-            
-            const item = {
-              category: values[headers.indexOf('category')] || '',
-              question: values[headers.indexOf('question')] || '',
-              keywords: values[headers.indexOf('keywords')] || '',
-              answer: values[headers.indexOf('answer')] || '',
-              top: values[headers.indexOf('top')] || 'FALSE'
-            };
-
-            const normalized = normalizeQAItem(item);
-            const itemErrors = validateQAItem(normalized, i + 1);
-            
-            if (itemErrors.length > 0) {
-              errors.push(...itemErrors);
-            } else {
-              data.push(normalized);
-            }
-          }
-
-          if (errors.length > 0) {
-            hideLoadingOverlay();
-            const proceed = confirm(
-              `${errors.length}개의 유효성 오류가 발견되었습니다.\n\n` +
-              `${errors.slice(0, 5).join('\n')}\n` +
-              `${errors.length > 5 ? `\n... 외 ${errors.length - 5}개\n` : ''}\n` +
-              `유효한 데이터만 가져오시겠습니까?`
-            );
-            
-            if (!proceed) {
-              setStatus("csvStatus", "CSV 업로드가 취소되었습니다.", "error");
-              return;
-            }
-          }
-
-          if (data.length === 0) {
-            hideLoadingOverlay();
-            setStatus("csvStatus", "가져올 유효한 데이터가 없습니다.", "error");
-            return;
-          }
-
-          saveToHistory();
-          const result = upsertQAs(data, mode);
-          
-          hideLoadingOverlay();
-          renderAll();
-          
-          setStatus(
-            "csvStatus",
-            `${mode === 'replace' ? '전체 교체' : '추가'} 완료: ` +
-            `삽입 ${result.inserted}건, 업데이트 ${result.updated}건, ` +
-            `건너뜀 ${result.skipped}건`,
-            "ok"
-          );
-          
-          logActivity('IMPORT_CSV', { 
-            mode, 
-            inserted: result.inserted, 
-            updated: result.updated, 
-            skipped: result.skipped 
-          });
-          
-          fileInput.value = "";
-          
-        } catch (error) {
-          hideLoadingOverlay();
-          console.error('CSV 가져오기 오류:', error);
-          setStatus("csvStatus", `오류: ${error.message}`, "error");
-        }
-      };
-
-      reader.onerror = function() {
-        hideLoadingOverlay();
-        setStatus("csvStatus", "파일 읽기 실패", "error");
-      };
-
-      reader.readAsText(file);
-    }
-
-    // ========== 내보내기 함수 ==========
-    function exportHistory() {
-      const history = ChatbotStore.getHistory ? ChatbotStore.getHistory() : [];
-      
-      if (!history || history.length === 0) {
-        alert('내보낼 질문 이력이 없습니다.');
-        return;
-      }
-
-      const blob = new Blob([JSON.stringify(history, null, 2)], { 
-        type: "application/json" 
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `question_history_${new Date().toISOString().slice(0, 10)}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      
-      logActivity('EXPORT_HISTORY', { count: history.length });
-      alert(`질문 이력 ${history.length}건을 다운로드했습니다.`);
-    }
-
-    function exportHistoryAsCSV() {
-      const history = ChatbotStore.getHistory ? ChatbotStore.getHistory() : [];
-      
-      if (!history || history.length === 0) {
-        alert('내보낼 질문 이력이 없습니다.');
-        return;
-      }
-
-      function csvEscape(value) {
-        const str = String(value || "");
-        if (/[",\n\r]/.test(str)) {
-          return `"${str.replace(/"/g, '""')}"`;
-        }
-        return str;
-      }
-
-      const csvRows = [
-        ['시간', '질문', '답변', '카테고리', '매칭여부', '소스', '페이지', 'UserAgent']
-      ];
-
-      history.forEach(item => {
-        const createdAt = item.createdAt 
-          ? new Date(item.createdAt).toLocaleString("ko-KR") 
-          : '';
-        const matched = item.matched ? 'Y' : 'N';
-        const source = item.source === 'faq-click' ? 'FAQ 클릭' : '직접 입력';
-        
-        csvRows.push([
-          createdAt,
-          item.question || '',
-          item.answer || '',
-          item.category || '',
-          matched,
-          source,
-          item.page || '',
-          item.userAgent || ''
-        ]);
-      });
-
-      const csv = csvRows.map(row => 
-        row.map(csvEscape).join(',')
-      ).join('\n');
-      
-      const bom = "\uFEFF";
-      const blob = new Blob([bom + csv], { 
-        type: "text/csv;charset=utf-8;" 
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `question_history_${new Date().toISOString().slice(0, 10)}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
-      
-      logActivity('EXPORT_HISTORY_CSV', { count: history.length });
-      alert(`질문 이력 ${history.length}건을 CSV로 다운로드했습니다.`);
-    }
-
-    function exportQAToCSV() {
-      const allQa = getAllQA();
-      
-      if (!allQa || allQa.length === 0) {
-        alert('내보낼 Q&A가 없습니다.');
-        return;
-      }
-
-      function csvEscape(value) {
-        const str = String(value || "");
-        if (/[",\n\r]/.test(str)) {
-          return `"${str.replace(/"/g, '""')}"`;
-        }
-        return str;
-      }
-
-      const csvRows = [
-        ['category', 'question', 'keywords', 'answer', 'top']
-      ];
-
-      allQa.forEach(item => {
-        csvRows.push([
-          item.category || '',
-          item.question || '',
-          (item.keywords || []).join(' | '),
-          item.answer || '',
-          item.top ? 'TRUE' : 'FALSE'
-        ]);
-      });
-
-      const csv = csvRows.map(row => 
-        row.map(csvEscape).join(',')
-      ).join('\n');
-      
-      const bom = "\uFEFF";
-      const blob = new Blob([bom + csv], { 
-        type: "text/csv;charset=utf-8;" 
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `qa_export_${new Date().toISOString().slice(0, 10)}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
-      
-      logActivity('EXPORT_QA_CSV', { count: allQa.length });
-      alert(`Q&A ${allQa.length}건을 CSV로 다운로드했습니다.`);
-    }
-
-    // ========== 미리보기 함수 ==========
-    function previewHistory() {
-      const history = ChatbotStore.getHistory ? ChatbotStore.getHistory() : [];
-      const previewSection = document.getElementById('historyPreview');
-      const tbody = document.getElementById('historyPreviewTable');
-      const countDiv = document.getElementById('historyPreviewCount');
-
-      if (!history || history.length === 0) {
-        alert('질문 이력이 없습니다.');
-        return;
-      }
-
-      tbody.innerHTML = '';
-      
-      const displayItems = history.slice(0, 100);
-
-      displayItems.forEach((item) => {
-        const tr = document.createElement('tr');
-        
-        const createdAt = item.createdAt ? new Date(item.createdAt) : null;
-        const createdText = createdAt && !Number.isNaN(createdAt.getTime())
-          ? createdAt.toLocaleString("ko-KR")
-          : "시간 정보 없음";
-
-        const matchedText = item.matched ? 'Y' : 'N';
-        const matchedColor = item.matched ? '#059669' : '#dc2626';
-        
-        const sourceText = item.source === 'faq-click' ? 'FAQ 클릭' : '직접 입력';
-        const sourceColor = item.source === 'faq-click' ? '#2563eb' : '#64748b';
-
-        tr.innerHTML = `
-          <td style="font-size:12px;">${createdText}</td>
-          <td></td>
-          <td style="font-size:12px;"></td>
-          <td style="font-size:12px;">${item.category || 'N/A'}</td>
-          <td style="color:${matchedColor};font-weight:600;">${matchedText}</td>
-          <td style="color:${sourceColor};font-size:12px;">${sourceText}</td>
-        `;
-
-        tr.children[1].textContent = item.question || '';
-        tr.children[2].textContent = (item.answer || '').substring(0, 100) + 
-          (item.answer && item.answer.length > 100 ? '...' : '');
-
-        tbody.appendChild(tr);
-      });
-
-      countDiv.textContent = `전체 ${history.length}건 중 ${displayItems.length}건 표시`;
-      previewSection.classList.remove('hidden');
-      previewSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      
-      logActivity('PREVIEW_HISTORY', { count: displayItems.length });
-    }
-
-    function closeHistoryPreview() {
-      document.getElementById('historyPreview').classList.add('hidden');
-    }
-
-    // ========== 실행 취소 ==========
-    function saveToHistory() {
-      if (historyStack.length >= MAX_HISTORY) {
-        historyStack.shift();
-      }
-      
-      const snapshot = {
-        timestamp: Date.now(),
-        data: JSON.parse(JSON.stringify(getAllQA()))
-      };
-      
-      historyStack.push(snapshot);
-      document.getElementById("undoBtn").disabled = false;
-    }
-
-    function undo() {
-      if (historyStack.length === 0) {
-        alert("실행 취소할 작업이 없습니다.");
-        return;
-      }
-
-      const snapshot = historyStack.pop();
-      
-      if (snapshot && snapshot.data) {
-        ChatbotStore.importTemplate({ 
-          mode: "replace", 
-          data: snapshot.data 
-        });
-        renderAll();
-        logActivity('UNDO', { timestamp: snapshot.timestamp });
-        alert("실행 취소되었습니다.");
-      }
-
-      if (historyStack.length === 0) {
-        document.getElementById("undoBtn").disabled = true;
-      }
-    }
-
-    // ========== 서버 미매칭 질문 ==========
-    async function loadUnmatchedFromServer() {
-      if (!window.ADMIN_CONFIG.unmatchedApiUrl) {
-        setStatus("serverStatus", "서버 API가 설정되지 않았습니다.", "error");
-        return;
-      }
-
-      setStatus("serverStatus", "서버에서 미매칭 질문을 불러오는 중...");
-
-      try {
-        const res = await fetchWithRetry(window.ADMIN_CONFIG.unmatchedApiUrl);
-
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`);
-        }
-
-        const data = await res.json();
-        const items = Array.isArray(data.items) ? data.items : [];
-
-        document.getElementById("statUnmatched").textContent = items.length;
-        document.getElementById("historyCount").textContent = 
-          `서버 미매칭 질문: ${items.length}건`;
-
-        const tbody = document.getElementById("historyTable");
-        tbody.innerHTML = "";
-
-        if (items.length === 0) {
-          tbody.innerHTML = `
-            <tr>
-              <td colspan="5" style="text-align:center;padding:24px;color:var(--sub);">
-                미매칭 질문이 없습니다.
-              </td>
-            </tr>
-          `;
-          setStatus("serverStatus", "미매칭 질문이 없습니다.", "ok");
-          return;
-        }
-
-        items.forEach(item => {
-          const tr = document.createElement("tr");
-          
-          const createdAt = item.createdAt 
-            ? new Date(item.createdAt).toLocaleString("ko-KR")
-            : "시간 정보 없음";
-          
-          tr.innerHTML = `
-            <td style="font-size:12px;"></td>
-            <td></td>
-            <td style="font-size:12px;"></td>
-            <td style="font-size:12px;"></td>
-            <td style="color:var(--danger);font-weight:600;"></td>
-          `;
-
-          tr.children[0].textContent = createdAt;
-          tr.children[1].textContent = item.question || '';
-          tr.children[2].textContent = item.answer || '';
-          tr.children[3].textContent = item.category || 'N/A';
-          tr.children[4].textContent = item.matched ? 'Y' : 'N';
-
-          tbody.appendChild(tr);
-        });
-
-        setStatus("serverStatus", `미매칭 질문 ${items.length}건을 불러왔습니다.`, "ok");
-
-      } catch (error) {
-        console.error('서버 미매칭 질문 로드 실패:', error);
-        setStatus("serverStatus", `오류: ${error.message}`, "error");
-      }
-    }
-
-    // ========== 설정 ==========
-    function saveSettings() {
-      const itemsPerPageValue = parseInt(
-        document.getElementById("itemsPerPageSetting").value
-      );
-      
-      if (itemsPerPageValue >= 10 && itemsPerPageValue <= 200) {
-        itemsPerPage = itemsPerPageValue;
-        safeSetLocalStorage('admin_items_per_page', itemsPerPageValue);
-      }
-
-      const autoSave = document.getElementById("autoSaveSetting").checked;
-      safeSetLocalStorage('admin_auto_save', autoSave);
-
-      logActivity('SAVE_SETTINGS', { 
-        itemsPerPage: itemsPerPageValue, 
-        autoSave 
-      });
-      
-      alert('설정이 저장되었습니다.');
-      renderQA();
-    }
-
-    function loadSettings() {
-      try {
-        const storedItemsPerPage = localStorage.getItem('admin_items_per_page');
-        if (storedItemsPerPage) {
-          const value = parseInt(storedItemsPerPage);
-          if (value >= 10 && value <= 200) {
-            itemsPerPage = value;
-            document.getElementById("itemsPerPageSetting").value = value;
-          }
-        }
-
-        const storedAutoSave = localStorage.getItem('admin_auto_save');
-        if (storedAutoSave !== null) {
-          document.getElementById("autoSaveSetting").checked = 
-            storedAutoSave === 'true';
-        }
-      } catch (e) {
-        console.error('설정 로드 실패:', e);
-      }
-    }
-
-    // ========== Enter 키 이벤트 ==========
-    document.getElementById('adminPassword')?.addEventListener('keydown', (e) => {
+    // Enter key login
+    adminPassword.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
-        e.preventDefault();
         login();
       }
     });
 
-    // ========== 페이지 로드 시 자동 실행 ==========
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', checkLogin);
-    } else {
-      checkLogin();
+    // ========================================
+    // Network Functions
+    // ========================================
+    async function fetchWithTimeout(url, options = {}, timeout = ADMIN_CONFIG.requestTimeoutMs) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+      try {
+        const response = await fetch(url, {
+          ...options,
+          signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+          }
+        });
+        clearTimeout(timeoutId);
+        return response;
+      } catch (err) {
+        clearTimeout(timeoutId);
+        throw err;
+      }
     }
+
+    // ========================================
+    // API Functions
+    // ========================================
+    async function fetchQuestionStats() {
+      try {
+        const response = await fetchWithTimeout(ADMIN_CONFIG.statsApiUrl);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        const data = await response.json();
+        return data.ok !== false ? data : null;
+      } catch (err) {
+        console.error('[통계 조회 오류]', err);
+        return null;
+      }
+    }
+
+    async function fetchAllQuestions(matched = 'all', limit = 20, offset = 0, category = 'all', search = '') {
+      try {
+        const params = new URLSearchParams({
+          matched,
+          limit: limit.toString(),
+          offset: offset.toString()
+        });
+        
+        if (category !== 'all') params.append('category', category);
+        if (search) params.append('search', search);
+
+        const url = `${ADMIN_CONFIG.allQuestionsApiUrl}?${params.toString()}`;
+        const response = await fetchWithTimeout(url);
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const data = await response.json();
+        return data.ok !== false ? data : { total: 0, questions: [] };
+      } catch (err) {
+        console.error('[질문 조회 오류]', err);
+        return { total: 0, questions: [] };
+      }
+    }
+
+    // ========================================
+    // Render Functions
+    // ========================================
+    function updateStats(stats) {
+      if (!stats) return;
+
+      totalQuestionsCount.textContent = stats.totalQuestions || 0;
+      matchedCount.textContent = stats.matchedCount || 0;
+      unmatchedCount.textContent = stats.unmatchedCount || 0;
+      matchRate.textContent = (stats.matchRate || '0') + '%';
+    }
+
+    function renderQuestionItem(item) {
+      const div = document.createElement('div');
+      div.className = 'question-item';
+
+      const matchedBadge = item.matched 
+        ? '<span class="badge matched">✓ 답변 있음</span>' 
+        : '<span class="badge unmatched">✗ 답변 없음</span>';
+
+      const sourceBadge = item.source === 'faq-click' 
+        ? '<span class="badge faq">FAQ 클릭</span>' 
+        : '';
+
+      const categoryLabel = getCategoryLabel(item.category);
+      const timestamp = item.timestamp ? new Date(item.timestamp).toLocaleString('ko-KR') : '알 수 없음';
+
+      div.innerHTML = `
+        <div class="question-content">
+          <div class="question-text">${escapeHTML(item.question)}</div>
+          <div class="question-meta">
+            <span>🕒 ${timestamp}</span>
+            <span>📁 ${categoryLabel}</span>
+            ${matchedBadge}
+            ${sourceBadge}
+            ${item.count > 1 ? `<span>🔁 ${item.count}회</span>` : ''}
+          </div>
+        </div>
+        <div class="question-actions">
+          ${!item.matched ? `
+            <button class="btn-add-answer" onclick="addAnswerForQuestion(\`${escapeHTML(item.question)}\`, '${item.category}')">
+              📝 답변 추가
+            </button>
+          ` : ''}
+        </div>
+      `;
+
+      return div;
+    }
+
+    function renderQuestionList(questions) {
+      questionList.innerHTML = '';
+
+      if (!questions || questions.length === 0) {
+        questionList.innerHTML = '<div class="empty-state">표시할 질문이 없습니다.</div>';
+        return;
+      }
+
+      questions.forEach(item => {
+        questionList.appendChild(renderQuestionItem(item));
+      });
+    }
+
+    function renderPagination(total) {
+      questionPagination.innerHTML = '';
+
+      const totalPages = Math.ceil(total / itemsPerPage);
+      if (totalPages <= 1) return;
+
+      // Previous button
+      const prevBtn = document.createElement('button');
+      prevBtn.textContent = '◀';
+      prevBtn.disabled = currentPage === 1;
+      prevBtn.onclick = () => {
+        currentPage--;
+        loadQuestionMonitor();
+      };
+      questionPagination.appendChild(prevBtn);
+
+      // Page numbers
+      const startPage = Math.max(1, currentPage - 2);
+      const endPage = Math.min(totalPages, currentPage + 2);
+
+      for (let i = startPage; i <= endPage; i++) {
+        const pageBtn = document.createElement('button');
+        pageBtn.textContent = i;
+        pageBtn.className = i === currentPage ? 'active' : '';
+        pageBtn.onclick = () => {
+          currentPage = i;
+          loadQuestionMonitor();
+        };
+        questionPagination.appendChild(pageBtn);
+      }
+
+      // Next button
+      const nextBtn = document.createElement('button');
+      nextBtn.textContent = '▶';
+      nextBtn.disabled = currentPage === totalPages;
+      nextBtn.onclick = () => {
+        currentPage++;
+        loadQuestionMonitor();
+      };
+      questionPagination.appendChild(nextBtn);
+    }
+
+    // ========================================
+    // Main Load Function
+    // ========================================
+    async function loadQuestionMonitor() {
+      if (!isLoggedIn) return;
+
+      showLoading();
+
+      try {
+        // Load stats
+        const stats = await fetchQuestionStats();
+        updateStats(stats);
+
+        // Load questions
+        const matchedValue = matchedFilter.value;
+        const categoryValue = categoryFilter.value;
+        const searchValue = searchQuestion.value.trim();
+        const offset = (currentPage - 1) * itemsPerPage;
+
+        const result = await fetchAllQuestions(
+          matchedValue,
+          itemsPerPage,
+          offset,
+          categoryValue,
+          searchValue
+        );
+
+        renderQuestionList(result.questions);
+        renderPagination(result.total);
+
+      } catch (err) {
+        console.error('[모니터링 로드 오류]', err);
+        showNotice('질문 목록을 불러올 수 없습니다.', 'error');
+      } finally {
+        hideLoading();
+      }
+    }
+
+    // ========================================
+    // Action Functions
+    // ========================================
+    function addAnswerForQuestion(question, category) {
+      // TODO: Q&A 관리 섹션으로 스크롤 및 자동 입력 (향후 구현)
+      alert(`"${question}" 에 대한 답변을 추가하세요.\n\n카테고리: ${getCategoryLabel(category)}\n\n로컬 Q&A 데이터(shared.js)에 직접 추가하거나, 별도 관리 UI를 구현하세요.`);
+    }
+
+    // ========================================
+    // Auto Refresh
+    // ========================================
+    autoRefresh.addEventListener('change', (e) => {
+      if (e.target.checked) {
+        autoRefreshInterval = setInterval(loadQuestionMonitor, 30000);
+        showNotice('자동 갱신이 활성화되었습니다.', 'success');
+      } else {
+        if (autoRefreshInterval) {
+          clearInterval(autoRefreshInterval);
+          autoRefreshInterval = null;
+        }
+        showNotice('자동 갱신이 비활성화되었습니다.', 'info');
+      }
+    });
+
+    // Filter change events
+    matchedFilter.addEventListener('change', () => {
+      currentPage = 1;
+      loadQuestionMonitor();
+    });
+
+    categoryFilter.addEventListener('change', () => {
+      currentPage = 1;
+      loadQuestionMonitor();
+    });
+
+    // Search with debounce
+    let searchTimeout;
+    searchQuestion.addEventListener('input', () => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        currentPage = 1;
+        loadQuestionMonitor();
+      }, 500);
+    });
+
+    // ========================================
+    // Utility Functions
+    // ========================================
+    function showLoading() {
+      loadingOverlay.classList.add('active');
+    }
+
+    function hideLoading() {
+      loadingOverlay.classList.remove('active');
+    }
+
+    function escapeHTML(str) {
+      if (!str) return '';
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function getCategoryLabel(category) {
+      const labels = {
+        all: '전체',
+        delivery: '배송',
+        documents: '서류',
+        production: '생산',
+        purchase: '구매',
+        unknown: '기타',
+        other: '기타'
+      };
+      return labels[category] || category;
+    }
+
+    function showNotice(message, type = 'info') {
+      const notice = document.createElement('div');
+      notice.className = `notice-alert ${type}`;
+      notice.textContent = message;
+      document.body.appendChild(notice);
+
+      setTimeout(() => {
+        notice.style.animation = 'slideIn 0.3s ease reverse';
+        setTimeout(() => notice.remove(), 300);
+      }, 3000);
+    }
+
+    // ========================================
+    // Initialization
+    // ========================================
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('✅ Admin 페이지 로드 완료');
+      adminPassword.focus();
+    });
+
+    // Cleanup on unload
+    window.addEventListener('beforeunload', () => {
+      if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+      }
+    });
   </script>
 </body>
 </html>
