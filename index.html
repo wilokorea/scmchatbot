@@ -409,32 +409,40 @@
 
     async function renderFAQ() {
       const qa = ChatbotStore.getQAByCategory(selectedCategory);
-      faqList.innerHTML = "";
-      const topQA = normalizeTopItems(await loadTopQuestionsFromServer(selectedCategory), qa);
+      faqList.innerHTML = '<div class="empty-faq">로딩 중...</div>';
+      
+      try {
+        const topQA = normalizeTopItems(await loadTopQuestionsFromServer(selectedCategory), qa);
 
-      if (!topQA.length) {
-        const empty = document.createElement("div");
-        empty.className = "empty-faq";
-        empty.textContent = "이 카테고리에 등록된 FAQ가 없습니다.";
-        faqList.appendChild(empty);
-        return;
+        faqList.innerHTML = "";
+
+        if (!topQA.length) {
+          const empty = document.createElement("div");
+          empty.className = "empty-faq";
+          empty.textContent = "이 카테고리에 등록된 FAQ가 없습니다.";
+          faqList.appendChild(empty);
+          return;
+        }
+
+        topQA.forEach(item => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.textContent = item.question;
+          btn.onclick = async () => {
+            if (btn.disabled || isSending) return;
+            btn.disabled = true;
+            try {
+              await sendMessage(item.question, true);
+            } finally {
+              setTimeout(() => { btn.disabled = false; }, 500);
+            }
+          };
+          faqList.appendChild(btn);
+        });
+      } catch (error) {
+        console.error("FAQ 로딩 오류:", error);
+        faqList.innerHTML = '<div class="empty-faq">FAQ를 불러오는 중 오류가 발생했습니다.</div>';
       }
-
-      topQA.forEach(item => {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.textContent = item.question;
-        btn.onclick = async () => {
-          if (btn.disabled || isSending) return;
-          btn.disabled = true;
-          try {
-            await sendMessage(item.question, true);
-          } finally {
-            setTimeout(() => { btn.disabled = false; }, 500);
-          }
-        };
-        faqList.appendChild(btn);
-      });
     }
 
     async function sendMessage(customText = null, isFaqClick = false) {
@@ -465,13 +473,23 @@
           matched: !!result,
           category: result ? result.category : selectedCategory,
           createdAt: new Date().toISOString(),
+          timestamp: Date.now(),
           page: location.href,
           userAgent: navigator.userAgent,
           source: isFaqClick ? "faq-click" : "user"
         };
 
         ChatbotStore.saveHistory(payload);
-        sendToServer(payload);
+        
+        try {
+          await sendToServer(payload);
+        } catch (err) {
+          console.warn("서버 로깅 실패:", err);
+        }
+      } catch (error) {
+        console.error("메시지 전송 오류:", error);
+        removeRow(typingRow);
+        addMessage("죄송합니다. 일시적인 오류가 발생했습니다. 다시 시도해 주세요.", "bot", "SCM봇");
       } finally {
         isSending = false;
         sendButton.disabled = false;
