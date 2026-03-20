@@ -1145,12 +1145,10 @@ async function loadUnmatchedFromServer() {
       headers: { "Accept": "application/json" }
     });
 
-    if (!res.ok) {
-      // 🆕 500 에러 시 빈 데이터로 처리
-      context.log.warn(`서버 응답 오류 (${res.status}), 빈 데이터로 처리`);
-      throw new Error(`서버 응답 오류 (${res.status})`);
-    }
-
+if (!res.ok) {
+  console.warn(`서버 응답 오류 (${res.status}), 빈 데이터로 처리`);  // ✅
+  throw new Error(`서버 응답 오류 (${res.status})`);
+}
     const data = await res.json();
     const count = Number(data.count || 0);
     const items = Array.isArray(data.items) ? data.items : [];
