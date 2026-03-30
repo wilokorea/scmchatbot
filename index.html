@@ -423,22 +423,45 @@
       });
     }
 
-    async function renderFAQ() {
-      const qa = ChatbotStore.getQAByCategory(selectedCategory);
-      faqList.innerHTML = '<div class="empty-faq">로딩 중...</div>';
-      
+  // ✅ 서버 API 호출 함수는 그대로 두되, renderFAQ만 수정
+
+async function renderFAQ() {
+  const qa = ChatbotStore.getQAByCategory(selectedCategory);
+  faqList.innerHTML = "";
+
+  if (!qa.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty-faq";
+    empty.textContent = "이 카테고리에 등록된 FAQ가 없습니다.";
+    faqList.appendChild(empty);
+    return;
+  }
+
+  // ✅ admin에서 등록한 QA(ChatbotStore) 중 top=true인 것 우선, 없으면 앞에서부터
+  let topQA = qa.filter(item => item.top);
+  if (!topQA.length) {
+    topQA = qa;
+  }
+  topQA = topQA.slice(0, window.CHATBOT_CONFIG.faqButtonCount);
+
+  topQA.forEach(item => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = item.question;
+
+    btn.onclick = async () => {
+      if (btn.disabled || isSending) return;
+      btn.disabled = true;
       try {
-        const topQA = normalizeTopItems(await loadTopQuestionsFromServer(selectedCategory), qa);
+        await sendMessage(item.question, true, item.category);
+      } finally {
+        setTimeout(() => { btn.disabled = false; }, 500);
+      }
+    };
+    faqList.appendChild(btn);
+  });
+}
 
-        faqList.innerHTML = "";
-
-        if (!topQA.length) {
-          const empty = document.createElement("div");
-          empty.className = "empty-faq";
-          empty.textContent = "이 카테고리에 등록된 FAQ가 없습니다.";
-          faqList.appendChild(empty);
-          return;
-        }
 
 topQA.forEach(item => {
   const btn = document.createElement("button");
