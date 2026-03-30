@@ -2,7 +2,7 @@
   const QA_KEY = "chatbot_qa";
   const HISTORY_KEY = "chatbot_history";
   const QA_VERSION_KEY = "chatbot_qa_version";
-  const QA_VERSION = "2026-03-20-faq-template-v2";
+  const QA_VERSION = "2026-03-20-faq-template-v3"; // ✅ 버전 업 (매칭 로직 개선)
 
   const DEFAULT_QA = [
   {
@@ -397,14 +397,35 @@
     return String(value || "").trim().toLowerCase();
   }
 
+  // ✅ 핵심 수정: 매칭 로직 대폭 개선
+  function stripText(value) {
+    // 공백, 물음표, 마침표, 특수문자 모두 제거하여 순수 텍스트만 비교
+    return String(value || "").replace(/[\s?!.,·…\-_()（）「」『』""''~]/g, "").toLowerCase();
+  }
+
   function matchesQuestion(item, text) {
     const q = normalizeText(text);
     const itemQuestion = normalizeText(item.question);
 
     if (!q) return false;
-    if (q === itemQuestion) return true;
-    if (itemQuestion && q.includes(itemQuestion)) return true;
 
+    // 1단계: 완전 일치
+    if (q === itemQuestion) return true;
+
+    // 2단계: 특수문자/공백 제거 후 완전 일치 (FAQ 버튼 클릭 시 미세한 차이 해결)
+    const strippedQ = stripText(text);
+    const strippedItem = stripText(item.question);
+    if (strippedQ && strippedItem && strippedQ === strippedItem) return true;
+
+    // 3단계: 한쪽이 다른 쪽을 포함 (양방향)
+    if (itemQuestion && q.includes(itemQuestion)) return true;
+    if (q && itemQuestion.includes(q) && q.length >= 4) return true;
+
+    // 4단계: 특수문자 제거 후 포함 관계 (양방향)
+    if (strippedItem && strippedQ.includes(strippedItem)) return true;
+    if (strippedQ && strippedItem.includes(strippedQ) && strippedQ.length >= 4) return true;
+
+    // 5단계: 키워드 매칭
     return item.keywords.some(keyword => {
       const kw = normalizeText(keyword);
       return kw && q.includes(kw);
