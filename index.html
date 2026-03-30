@@ -178,6 +178,18 @@
     .faq-list button:hover{ background:#dff3ef; }
     .faq-list button:disabled{ opacity:.65; cursor:not-allowed; }
 
+    /* ✅ 수정: 클릭 횟수 뱃지 스타일 추가 */
+    .freq-badge{
+      display:inline-block;
+      background:var(--main);
+      color:#fff;
+      font-size:11px;
+      padding:2px 7px;
+      border-radius:999px;
+      margin-left:6px;
+      vertical-align:middle;
+    }
+
     .empty-faq{ font-size:13px; color:var(--sub); padding:8px 2px; }
     .typing{ opacity:.8; font-style:italic; }
 
@@ -324,20 +336,24 @@
       if (row && row.parentNode) row.parentNode.removeChild(row);
     }
 
+    // ✅ 수정: frequency 기준으로 내림차순 정렬 추가
     function normalizeTopItems(items, fallbackQa) {
       if (Array.isArray(items) && items.length) {
         return items
           .filter(item => item && item.question)
+          .sort((a, b) => (b.frequency || 0) - (a.frequency || 0))  // ✅ frequency 내림차순 정렬
           .slice(0, window.CHATBOT_CONFIG.faqButtonCount)
           .map(item => ({
             question: String(item.question).trim(),
-            category: item.category || selectedCategory
+            category: item.category || selectedCategory,
+            frequency: item.frequency || 0  // ✅ frequency 보존
           }));
       }
 
+      // fallback: 로컬 QA에서 top 우선, 없으면 앞에서부터
       const topLocal = fallbackQa.filter(item => item.top).slice(0, window.CHATBOT_CONFIG.faqButtonCount);
-      if (topLocal.length) return topLocal;
-      return fallbackQa.slice(0, window.CHATBOT_CONFIG.faqButtonCount);
+      if (topLocal.length) return topLocal.map(item => ({ ...item, frequency: 0 }));
+      return fallbackQa.slice(0, window.CHATBOT_CONFIG.faqButtonCount).map(item => ({ ...item, frequency: 0 }));
     }
 
     async function fetchWithTimeout(url, options = {}, timeoutMs = window.CHATBOT_CONFIG.requestTimeoutMs || 10000) {
@@ -427,12 +443,23 @@
         topQA.forEach(item => {
           const btn = document.createElement("button");
           btn.type = "button";
-          btn.textContent = item.question;
+
+          // ✅ 수정: 질문 텍스트 + 클릭 횟수 뱃지 표시
+          const questionText = document.createTextNode(item.question);
+          btn.appendChild(questionText);
+          if (item.frequency > 0) {
+            const badge = document.createElement("span");
+            badge.className = "freq-badge";
+            badge.textContent = `${item.frequency}회`;
+            btn.appendChild(badge);
+          }
+
           btn.onclick = async () => {
             if (btn.disabled || isSending) return;
             btn.disabled = true;
             try {
-              await sendMessage(item.question, true);
+              // ✅ 수정: FAQ의 고유 카테고리를 함께 전달
+              await sendMessage(item.question, true, item.category);
             } finally {
               setTimeout(() => { btn.disabled = false; }, 500);
             }
@@ -445,7 +472,8 @@
       }
     }
 
-    async function sendMessage(customText = null, isFaqClick = false) {
+    // ✅ 수정: faqCategory 파라미터 추가 + 매칭 로직 개선
+    async function sendMessage(customText = null, isFaqClick = false, faqCategory = null) {
       const text = (customText ?? userInput.value).trim();
       if (!text || isSending) return;
 
@@ -458,7 +486,21 @@
       const typingRow = addMessage("답변을 찾는 중입니다...", "bot", "SCM봇", "typing");
 
       try {
-        const result = ChatbotStore.findAnswer(text, selectedCategory);
+        // ✅ 수정: FAQ 클릭인 경우 해당 항목의 카테고리에서 먼저 검색,
+        //          없으면 전체(all)에서도 검색하여 매칭률 향상
+        const searchCategory = faqCategory || selectedCategory;
+        let result = ChatbotStore.findAnswer(text, searchCategory);
+
+        // 카테고리 한정 검색에서 못 찾으면 전체에서 재검색
+        if (!result && searchCategory !== "all") {
+          result = ChatbotStore.findAnswer(text, "all");
+        }
+
+        // ✅ 수정: 그래도 못 찾으면 부분 매칭(키워드 기반) 시도
+        if (!result) {
+          result = fuzzyFindAnswer(text);
+        }
+
         const answer = result
           ? result.answer
           : "등록된 답변을 찾지 못했습니다. 해당 문의 사항은 SCM팀 담당자에게 문의 부탁드립니다.";
@@ -471,7 +513,7 @@
           question: text,
           answer,
           matched: !!result,
-          category: result ? result.category : selectedCategory,
+          category: result ? result.category : searchCategory,
           createdAt: new Date().toISOString(),
           timestamp: Date.now(),
           page: location.href,
@@ -496,6 +538,44 @@
         userInput.disabled = false;
         userInput.focus();
       }
+    }
+
+    // ✅ 신규 추가: 부분 매칭(fuzzy) 함수 - 질문 텍스트가 약간 달라도 매칭
+    function fuzzyFindAnswer(query) {
+      if (!window.ChatbotStore) return null;
+
+      const normalizedQuery = query.replace(/\s+/g, "").toLowerCase();
+      const allQA = ChatbotStore.getQAByCategory("all") || [];
+      
+      let bestMatch = null;
+      let bestScore = 0;
+
+      for (const item of allQA) {
+        const normalizedQ = (item.question || "").replace(/\s+/g, "").toLowerCase();
+
+        // 방법 1: 한쪽이 다른 한쪽을 포함하는 경우
+        if (normalizedQuery.includes(normalizedQ) || normalizedQ.includes(normalizedQuery)) {
+          const score = Math.min(normalizedQuery.length, normalizedQ.length) 
+                      / Math.max(normalizedQuery.length, normalizedQ.length);
+          if (score > bestScore) {
+            bestScore = score;
+            bestMatch = item;
+          }
+        }
+
+        // 방법 2: 공통 키워드 비율
+        const queryChars = new Set(normalizedQuery);
+        const itemChars = new Set(normalizedQ);
+        const intersection = [...queryChars].filter(c => itemChars.has(c));
+        const charScore = intersection.length / Math.max(queryChars.size, itemChars.size);
+        if (charScore > 0.7 && charScore > bestScore) {
+          bestScore = charScore;
+          bestMatch = item;
+        }
+      }
+
+      // 최소 60% 이상 매칭되어야 결과 반환
+      return bestScore >= 0.6 ? bestMatch : null;
     }
 
     userInput.addEventListener("keydown", e => {
