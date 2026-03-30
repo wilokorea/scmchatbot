@@ -440,19 +440,10 @@
           return;
         }
 
-        topQA.forEach(item => {
-          const btn = document.createElement("button");
-          btn.type = "button";
-
-          // ✅ 수정: 질문 텍스트 + 클릭 횟수 뱃지 표시
-          const questionText = document.createTextNode(item.question);
-          btn.appendChild(questionText);
-          if (item.frequency > 0) {
-            const badge = document.createElement("span");
-            badge.className = "freq-badge";
-            badge.textContent = `${item.frequency}회`;
-            btn.appendChild(badge);
-          }
+topQA.forEach(item => {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.textContent = item.question;  }
 
           btn.onclick = async () => {
             if (btn.disabled || isSending) return;
