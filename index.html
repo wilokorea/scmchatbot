@@ -463,29 +463,6 @@ async function renderFAQ() {
 }
 
 
-topQA.forEach(item => {
-  const btn = document.createElement("button");
-  btn.type = "button";
-  btn.textContent = item.question;  }
-
-          btn.onclick = async () => {
-            if (btn.disabled || isSending) return;
-            btn.disabled = true;
-            try {
-              // ✅ 수정: FAQ의 고유 카테고리를 함께 전달
-              await sendMessage(item.question, true, item.category);
-            } finally {
-              setTimeout(() => { btn.disabled = false; }, 500);
-            }
-          };
-          faqList.appendChild(btn);
-        });
-      } catch (error) {
-        console.error("FAQ 로딩 오류:", error);
-        faqList.innerHTML = '<div class="empty-faq">FAQ를 불러오는 중 오류가 발생했습니다.</div>';
-      }
-    }
-
     // ✅ 수정: faqCategory 파라미터 추가 + 매칭 로직 개선
     async function sendMessage(customText = null, isFaqClick = false, faqCategory = null) {
       const text = (customText ?? userInput.value).trim();
