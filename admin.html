@@ -844,7 +844,7 @@
 
     // ========== 저장된 Q&A 관리 ==========
     function loadSavedQA() {
-      const saved = JSON.parse(localStorage.getItem('faqData') || '[]');
+      const saved = JSON.parse(localStorage.getItem('chatbot_qa') || '[]');
       displaySavedQA(saved);
       updateStats();
     }
@@ -853,7 +853,7 @@
       const tbody = document.getElementById('savedQAList');
       if (!tbody) return;
 
-      const qaData = data || JSON.parse(localStorage.getItem('faqData') || '[]');
+      const qaData = data || JSON.parse(localStorage.getItem('chatbot_qa') || '[]');
       const category = document.getElementById('qaCategory')?.value || 'all';
       
       let filtered = qaData;
@@ -933,7 +933,7 @@
         return;
       }
 
-      const qaData = JSON.parse(localStorage.getItem('faqData') || '[]');
+      const qaData = JSON.parse(localStorage.getItem('chatbot_qa') || '[]');
       const existingIndex = qaData.findIndex(item => item.id === id);
 
       const newItem = {
@@ -960,7 +960,7 @@
         qaData.push(newItem);
       }
 
-      localStorage.setItem('faqData', JSON.stringify(qaData));
+      localStorage.setItem('chatbot_qa', JSON.stringify(qaData));
       closeQAModal();
       loadSavedQA();
       alert('저장되었습니다.');
@@ -969,17 +969,17 @@
     function deleteQAById(id) {
       if (!confirm('정말 삭제하시겠습니까?')) return;
 
-      const qaData = JSON.parse(localStorage.getItem('faqData') || '[]');
+      const qaData = JSON.parse(localStorage.getItem('chatbot_qa') || '[]');
       const filtered = qaData.filter(item => item.id !== id);
       
-      localStorage.setItem('faqData', JSON.stringify(filtered));
+      localStorage.setItem('chatbot_qa', JSON.stringify(filtered));
       loadSavedQA();
     }
 
     function clearAllQA() {
       if (!confirm('모든 Q&A 데이터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return;
       
-      localStorage.setItem('faqData', '[]');
+      localStorage.setItem('chatbot_qa', '[]');
       loadSavedQA();
       alert('모든 데이터가 삭제되었습니다.');
     }
@@ -1011,7 +1011,7 @@
             return;
           }
 
-          localStorage.setItem('faqData', JSON.stringify(qaData));
+          localStorage.setItem('chatbot_qa', JSON.stringify(qaData));
           loadSavedQA();
           alert(`${qaData.length}개의 Q&A가 업로드되었습니다.`);
           fileInput.value = '';
@@ -1023,7 +1023,7 @@
     }
 
     function downloadCSV() {
-      const qaData = JSON.parse(localStorage.getItem('faqData') || '[]');
+      const qaData = JSON.parse(localStorage.getItem('chatbot_qa') || '[]');
       if (qaData.length === 0) {
         alert('다운로드할 데이터가 없습니다.');
         return;
@@ -1187,7 +1187,7 @@
 
     // ========== 통계 업데이트 ==========
     function updateStats() {
-      const qaData = JSON.parse(localStorage.getItem('faqData') || '[]');
+      const qaData = JSON.parse(localStorage.getItem('chatbot_qa') || '[]');
       document.getElementById('totalQACount').textContent = qaData.length;
     }
 
