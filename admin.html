@@ -5,12 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>챗봇 관리자 페이지</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -34,10 +30,7 @@
       text-align: center;
     }
 
-    header h1 {
-      font-size: 2.5em;
-      margin-bottom: 10px;
-    }
+    header h1 { font-size: 2.5em; margin-bottom: 10px; }
 
     .login-section {
       padding: 40px;
@@ -54,14 +47,9 @@
       box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
 
-    .login-box h2 {
-      margin-bottom: 20px;
-      color: #333;
-    }
+    .login-box h2 { margin-bottom: 20px; color: #333; }
 
-    .form-group {
-      margin-bottom: 20px;
-    }
+    .form-group { margin-bottom: 20px; }
 
     .form-group label {
       display: block;
@@ -80,10 +68,7 @@
       transition: border-color 0.3s;
     }
 
-    .form-group input:focus {
-      outline: none;
-      border-color: #667eea;
-    }
+    .form-group input:focus { outline: none; border-color: #667eea; }
 
     .btn {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -96,19 +81,10 @@
       transition: transform 0.2s, box-shadow 0.2s;
     }
 
-    .btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-    }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); }
+    .btn:active { transform: translateY(0); }
 
-    .btn:active {
-      transform: translateY(0);
-    }
-
-    .admin-panel {
-      display: none;
-      padding: 30px;
-    }
+    .admin-panel { display: none; padding: 30px; }
 
     .stats {
       display: grid;
@@ -125,16 +101,8 @@
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
 
-    .stat-card h3 {
-      font-size: 0.9em;
-      opacity: 0.9;
-      margin-bottom: 10px;
-    }
-
-    .stat-card .number {
-      font-size: 2.5em;
-      font-weight: bold;
-    }
+    .stat-card h3 { font-size: 0.9em; opacity: 0.9; margin-bottom: 10px; }
+    .stat-card .number { font-size: 2.5em; font-weight: bold; }
 
     .content-section {
       background: #f8f9fa;
@@ -167,16 +135,8 @@
       background: white;
     }
 
-    .file-input-wrapper {
-      position: relative;
-      display: inline-block;
-      margin-right: 10px;
-    }
-
-    .file-input-wrapper input[type="file"] {
-      position: absolute;
-      left: -9999px;
-    }
+    .file-input-wrapper { position: relative; display: inline-block; margin-right: 10px; }
+    .file-input-wrapper input[type="file"] { position: absolute; left: -9999px; }
 
     .file-input-wrapper label {
       display: inline-block;
@@ -188,9 +148,7 @@
       transition: background 0.3s;
     }
 
-    .file-input-wrapper label:hover {
-      background: #5568d3;
-    }
+    .file-input-wrapper label:hover { background: #5568d3; }
 
     table {
       width: 100%;
@@ -206,20 +164,9 @@
       color: white;
     }
 
-    th {
-      padding: 15px;
-      text-align: left;
-      font-weight: 600;
-    }
-
-    td {
-      padding: 12px 15px;
-      border-bottom: 1px solid #e1e8ed;
-    }
-
-    tr:hover {
-      background: #f8f9fa;
-    }
+    th { padding: 15px; text-align: left; font-weight: 600; }
+    td { padding: 12px 15px; border-bottom: 1px solid #e1e8ed; }
+    tr:hover { background: #f8f9fa; }
 
     .category-badge {
       display: inline-block;
@@ -238,10 +185,7 @@
     .matched-yes { color: #4caf50; font-weight: 600; }
     .matched-no { color: #f44336; font-weight: 600; }
 
-    .action-buttons {
-      display: flex;
-      gap: 8px;
-    }
+    .action-buttons { display: flex; gap: 8px; }
 
     .action-btn {
       padding: 6px 12px;
@@ -252,23 +196,10 @@
       transition: all 0.2s;
     }
 
-    .edit-btn {
-      background: #2196f3;
-      color: white;
-    }
-
-    .edit-btn:hover {
-      background: #1976d2;
-    }
-
-    .delete-btn {
-      background: #f44336;
-      color: white;
-    }
-
-    .delete-btn:hover {
-      background: #d32f2f;
-    }
+    .edit-btn { background: #2196f3; color: white; }
+    .edit-btn:hover { background: #1976d2; }
+    .delete-btn { background: #f44336; color: white; }
+    .delete-btn:hover { background: #d32f2f; }
 
     .filters {
       display: flex;
@@ -285,10 +216,7 @@
       font-size: 0.95em;
     }
 
-    .filters select:focus, .filters input:focus {
-      outline: none;
-      border-color: #667eea;
-    }
+    .filters select:focus, .filters input:focus { outline: none; border-color: #667eea; }
 
     .pagination {
       display: flex;
@@ -309,14 +237,8 @@
       transition: background 0.3s;
     }
 
-    .pagination button:hover:not(:disabled) {
-      background: #5568d3;
-    }
-
-    .pagination button:disabled {
-      background: #ccc;
-      cursor: not-allowed;
-    }
+    .pagination button:hover:not(:disabled) { background: #5568d3; }
+    .pagination button:disabled { background: #ccc; cursor: not-allowed; }
 
     .pagination .page-info {
       padding: 8px 16px;
@@ -337,10 +259,7 @@
       animation: fadeIn 0.3s;
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
     .modal-content {
       position: relative;
@@ -355,14 +274,8 @@
     }
 
     @keyframes slideDown {
-      from {
-        transform: translateY(-50px);
-        opacity: 0;
-      }
-      to {
-        transform: translateY(0);
-        opacity: 1;
-      }
+      from { transform: translateY(-50px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
     }
 
     .modal-close {
@@ -376,18 +289,10 @@
       transition: color 0.3s;
     }
 
-    .modal-close:hover {
-      color: #000;
-    }
+    .modal-close:hover { color: #000; }
 
-    .modal h2 {
-      margin-bottom: 20px;
-      color: #333;
-    }
-
-    .modal .form-group {
-      margin-bottom: 20px;
-    }
+    .modal h2 { margin-bottom: 20px; color: #333; }
+    .modal .form-group { margin-bottom: 20px; }
 
     .modal .form-group label {
       display: block;
@@ -407,10 +312,7 @@
       font-family: inherit;
     }
 
-    .modal .form-group textarea {
-      min-height: 100px;
-      resize: vertical;
-    }
+    .modal .form-group textarea { min-height: 100px; resize: vertical; }
 
     .modal .button-group {
       display: flex;
@@ -419,19 +321,10 @@
       margin-top: 20px;
     }
 
-    .modal .btn-secondary {
-      background: #6c757d;
-    }
+    .modal .btn-secondary { background: #6c757d; }
+    .modal .btn-secondary:hover { background: #5a6268; }
 
-    .modal .btn-secondary:hover {
-      background: #5a6268;
-    }
-
-    .loading {
-      text-align: center;
-      padding: 20px;
-      color: #667eea;
-    }
+    .loading { text-align: center; padding: 20px; color: #667eea; }
 
     .error {
       background: #fee;
@@ -440,29 +333,6 @@
       border-radius: 6px;
       margin: 10px 0;
       border-left: 4px solid #c33;
-    }
-
-    .success {
-      background: #efe;
-      color: #3c3;
-      padding: 15px;
-      border-radius: 6px;
-      margin: 10px 0;
-      border-left: 4px solid #3c3;
-    }
-
-    .browser-info {
-      font-size: 0.85em;
-      color: #666;
-      max-width: 200px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .browser-info:hover {
-      white-space: normal;
-      overflow: visible;
     }
 
     .summary-cards {
@@ -480,49 +350,39 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
 
-    .summary-card h4 {
+    .summary-card h4 { font-size: 0.85em; color: #666; margin-bottom: 8px; }
+    .summary-card .value { font-size: 1.8em; font-weight: bold; color: #333; }
+
+    .browser-info {
       font-size: 0.85em;
       color: #666;
-      margin-bottom: 8px;
+      max-width: 200px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    .summary-card .value {
-      font-size: 1.8em;
-      font-weight: bold;
-      color: #333;
-    }
+    .browser-info:hover { white-space: normal; overflow: visible; }
 
     @media (max-width: 768px) {
-      .stats {
-        grid-template-columns: 1fr;
-      }
-      
-      .filters {
-        flex-direction: column;
-        align-items: stretch;
-      }
-
-      .pagination {
-        flex-direction: column;
-      }
-
-      .action-buttons {
-        flex-direction: column;
-      }
+      .stats { grid-template-columns: 1fr; }
+      .filters { flex-direction: column; align-items: stretch; }
+      .pagination { flex-direction: column; }
+      .action-buttons { flex-direction: column; }
     }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
-      <h1>🤖 SCM 챗봇 관리자 페이지</h1>
+      <h1>SCM 챗봇 관리자 페이지</h1>
       <p>FAQ 질문 답변 관리 시스템</p>
     </header>
 
-    <!-- 로그인 섹션 -->
+    <!-- 로그인 -->
     <div id="loginSection" class="login-section">
       <div class="login-box">
-        <h2>🔐 관리자 로그인</h2>
+        <h2>관리자 로그인</h2>
         <div class="form-group">
           <label for="passwordInput">비밀번호</label>
           <input type="password" id="passwordInput" placeholder="비밀번호를 입력하세요" />
@@ -534,35 +394,33 @@
 
     <!-- 관리자 패널 -->
     <div id="adminPanel" class="admin-panel">
-      <!-- 통계 대시보드 -->
+      <!-- 통계 -->
       <div class="stats">
         <div class="stat-card">
-          <h3>📋 총 Q&A 수</h3>
+          <h3>총 Q&amp;A 수</h3>
           <div class="number" id="totalQACount">0</div>
         </div>
         <div class="stat-card">
-          <h3>💬 서버 저장 질문</h3>
+          <h3>서버 저장 질문</h3>
           <div class="number" id="serverQuestionCount">0</div>
         </div>
         <div class="stat-card">
-          <h3>✅ 매칭된 질문</h3>
+          <h3>매칭된 질문</h3>
           <div class="number" id="matchedCount">0</div>
         </div>
         <div class="stat-card">
-          <h3>❌ 미매칭 질문</h3>
+          <h3>미매칭 질문</h3>
           <div class="number" id="unmatchedCount">0</div>
         </div>
       </div>
 
-      <!-- 전체 질문 이력 관리 -->
+      <!-- 전체 질문 이력 -->
       <section id="allQuestionsSection" class="content-section">
-        <h2>📊 전체 질문 이력 관리</h2>
+        <h2>전체 질문 이력 관리</h2>
         <p class="section-description">
           <strong>모든 사용자</strong>가 챗봇에 입력한 질문을 실시간으로 확인할 수 있습니다.
-          시간은 <strong>현재 브라우저의 로컬 시간대</strong> 기준으로 표시됩니다.
         </p>
 
-        <!-- 요약 통계 -->
         <div class="summary-cards">
           <div class="summary-card">
             <h4>전체</h4>
@@ -582,7 +440,6 @@
           </div>
         </div>
 
-        <!-- 필터 -->
         <div class="filters">
           <select id="historyCategory">
             <option value="all">전체 카테고리</option>
@@ -599,12 +456,12 @@
             <option value="false">미매칭</option>
           </select>
 
-          <button class="btn" onclick="loadAllQuestionsFromServer()">🔍 조회</button>
-          <button class="btn" onclick="exportAllQuestions()">💾 CSV 다운로드</button>
-          <button class="btn" style="background:linear-gradient(135deg,#e53e3e,#c53030);" onclick="resetAllQuestions()">🗑️ 전체 이력 삭제</button>
+          <button class="btn" onclick="loadAllQuestionsFromServer()">조회</button>
+          <button class="btn" onclick="exportAllQuestions()">CSV 다운로드</button>
+          <button class="btn" style="background:linear-gradient(135deg,#e53e3e,#c53030);" onclick="resetAllQuestions()">전체 이력 삭제</button>
         </div>
 
-        <div id="allQuestionsLoading" class="loading" style="display:none;">📥 데이터 로딩 중...</div>
+        <div id="allQuestionsLoading" class="loading" style="display:none;">데이터 로딩 중...</div>
         <div id="allQuestionsError" class="error" style="display:none;"></div>
 
         <table id="allQuestionsTable">
@@ -622,19 +479,18 @@
           <tbody id="allQuestionsList"></tbody>
         </table>
 
-        <!-- 페이지네이션 -->
         <div class="pagination">
-          <button id="prevPageBtn" onclick="changePage(-1)">◀ 이전</button>
+          <button id="prevPageBtn" onclick="changePage(-1)">이전</button>
           <div class="page-info">
             <span id="currentPage">1</span> / <span id="totalPages">1</span>
           </div>
-          <button id="nextPageBtn" onclick="changePage(1)">다음 ▶</button>
+          <button id="nextPageBtn" onclick="changePage(1)">다음</button>
         </div>
       </section>
 
-      <!-- 저장된 Q&A 목록 -->
+      <!-- 저장된 Q&A -->
       <section id="savedQASection" class="content-section">
-        <h2>💾 저장된 Q&A 목록</h2>
+        <h2>저장된 Q&amp;A 목록</h2>
         <p class="section-description">
           챗봇이 사용하는 FAQ 데이터를 관리합니다. CSV 파일 업로드 또는 직접 추가/편집이 가능합니다.
         </p>
@@ -642,15 +498,14 @@
         <div class="csv-upload">
           <div class="file-input-wrapper">
             <input type="file" id="csvFile" accept=".csv" />
-            <label for="csvFile">📁 CSV 파일 선택</label>
+            <label for="csvFile">CSV 파일 선택</label>
           </div>
-          <button class="btn" onclick="uploadCSV()">📤 업로드</button>
-          <button class="btn" onclick="downloadCSV()">💾 다운로드</button>
-          <button class="btn" onclick="showAddQAModal()">➕ 새 Q&A 추가</button>
-          <button class="btn btn-secondary" onclick="clearAllQA()">🗑️ 전체 삭제</button>
+          <button class="btn" onclick="uploadCSV()">업로드</button>
+          <button class="btn" onclick="downloadCSV()">다운로드</button>
+          <button class="btn" onclick="showAddQAModal()">새 Q&amp;A 추가</button>
+          <button class="btn btn-secondary" onclick="clearAllQA()">전체 삭제</button>
         </div>
 
-        <!-- 필터 -->
         <div class="filters">
           <select id="qaCategory">
             <option value="all">전체 카테고리</option>
@@ -660,7 +515,7 @@
             <option value="purchase">구매</option>
             <option value="other">기타</option>
           </select>
-          <button class="btn" onclick="filterQA()">🔍 필터 적용</button>
+          <button class="btn" onclick="filterQA()">필터 적용</button>
         </div>
 
         <table id="savedQATable">
@@ -680,14 +535,14 @@
     </div>
   </div>
 
-  <!-- Q&A 추가/편집 모달 -->
+  <!-- Q&A 모달 -->
   <div id="qaModal" class="modal">
     <div class="modal-content">
       <span class="modal-close" onclick="closeQAModal()">&times;</span>
-      <h2 id="modalTitle">새 Q&A 추가</h2>
+      <h2 id="modalTitle">새 Q&amp;A 추가</h2>
       <form id="qaForm">
         <input type="hidden" id="qaId" />
-        
+
         <div class="form-group">
           <label for="qaQuestionInput">질문 *</label>
           <input type="text" id="qaQuestionInput" required placeholder="사용자가 물어볼 질문을 입력하세요" />
@@ -718,7 +573,7 @@
         <div class="form-group">
           <label>
             <input type="checkbox" id="qaTopInput" />
-            중요 질문 (⭐ 표시)
+            중요 질문 표시
           </label>
         </div>
 
@@ -730,82 +585,49 @@
     </div>
   </div>
 
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
-<script src="shared.js"></script>  <!-- ✅ 추가 -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+  <script src="shared.js"></script>
   <script>
     // ========== 설정 ==========
-    const ADMIN_CONFIG = {
+    var ADMIN_CONFIG = {
       authMode: "dev",
       devPassword: "wpkscm",
       allQuestionsApiUrl: "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/getAllQuestions",
+      deleteQuestionsApiUrl: "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/deleteAllQuestions",
       requestTimeoutMs: 15000,
       pageSize: 50
     };
 
     // ========== 전역 변수 ==========
-    let currentPage = 1;
-    let totalPages = 1;
-    let allQuestionsData = [];
+    var currentPage = 1;
+    var totalPages = 1;
+    var allQuestionsData = [];
+    var savedQACache = []; // ✅ editQA 안전 참조용 캐시
 
-    // ========== 유틸리티 함수 ==========
-    function normalizeCategory(cat) {
-      const map = {
-        '배송': 'delivery',
-        '서류': 'documents',
-        '생산': 'production',
-        '구매': 'purchase',
-        '기타': 'other'
-      };
-      return map[cat] || cat || 'other';
-    }
-
-    function normalizeCategoryDisplay(cat) {
-      const map = {
-        'delivery': '배송',
-        'documents': '서류',
-        'production': '생산',
-        'purchase': '구매',
-        'other': '기타'
-      };
-      return map[cat] || '기타';
-    }
-
-    function normalizeKeywords(kw) {
-      if (!kw) return [];
-      if (Array.isArray(kw)) return kw;
-      return kw.split(',').map(k => k.trim()).filter(Boolean);
-    }
-
-    function normalizeBoolean(val) {
-      if (typeof val === 'boolean') return val;
-      if (typeof val === 'string') {
-        const lower = val.toLowerCase();
-        if (lower === 'true' || lower === 'o' || lower === '1') return true;
-        if (lower === 'false' || lower === 'x' || lower === '0') return false;
-      }
-      return false;
-    }
-
-    function createQAId() {
-      return 'q_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-    }
+    // ========== shared.js 유틸리티 참조 ==========
+    var escapeHtml = ChatbotUtils.escapeHtml;
+    var normalizeCategory = ChatbotUtils.normalizeCategory;
+    var normalizeCategoryDisplay = ChatbotUtils.normalizeCategoryDisplay;
+    var normalizeKeywords = ChatbotUtils.normalizeKeywords;
+    var normalizeBoolean = ChatbotUtils.normalizeBoolean;
+    var createQAId = ChatbotUtils.createQAId;
 
     function toKoreanTime(timestamp) {
       if (!timestamp) return '-';
       try {
-        const date = new Date(timestamp);
-        // 사용자 브라우저의 로컬 시간대 사용
-        return date.toLocaleString('ko-KR');
+        return new Date(timestamp).toLocaleString('ko-KR');
       } catch (e) {
         return '-';
       }
     }
 
-    async function fetchWithTimeout(url, options = {}, timeoutMs = ADMIN_CONFIG.requestTimeoutMs) {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    async function fetchWithTimeout(url, options, timeoutMs) {
+      options = options || {};
+      timeoutMs = timeoutMs || ADMIN_CONFIG.requestTimeoutMs;
+      var controller = new AbortController();
+      var timeout = setTimeout(function() { controller.abort(); }, timeoutMs);
       try {
-        const response = await fetch(url, { ...options, signal: controller.signal });
+        var response = await fetch(url, Object.assign({}, options, { signal: controller.signal }));
         clearTimeout(timeout);
         return response;
       } catch (error) {
@@ -816,8 +638,8 @@
 
     // ========== 로그인 ==========
     function login() {
-      const password = document.getElementById('passwordInput').value;
-      const loginError = document.getElementById('loginError');
+      var password = document.getElementById('passwordInput').value;
+      var loginError = document.getElementById('loginError');
 
       if (ADMIN_CONFIG.authMode === "dev") {
         if (password === ADMIN_CONFIG.devPassword) {
@@ -831,7 +653,7 @@
       }
     }
 
-    document.getElementById('passwordInput')?.addEventListener('keypress', (e) => {
+    document.getElementById('passwordInput').addEventListener('keypress', function(e) {
       if (e.key === 'Enter') login();
     });
 
@@ -841,60 +663,74 @@
         loadSavedQA(),
         loadAllQuestionsFromServer()
       ]);
-      updateAllStats();
+    }
+
+    // ========== 통계 업데이트 (단일 정의) ==========
+    function updateStats() {
+      var qaData = ChatbotStore.getQA();
+      document.getElementById('totalQACount').textContent = qaData.length;
     }
 
     // ========== 저장된 Q&A 관리 ==========
-function loadSavedQA() {
-  // ✅ shared.js의 ChatbotStore에서 읽기
-  const saved = window.ChatbotStore ? ChatbotStore.getQA() : [];
-  displaySavedQA(saved);
-  updateStats();
-}
+    function loadSavedQA() {
+      var saved = ChatbotStore.getQA();
+      savedQACache = saved;
+      displaySavedQA(saved);
+      updateStats();
+    }
 
+    function displaySavedQA(data) {
+      var tbody = document.getElementById('savedQAList');
+      if (!tbody) return;
 
-function displaySavedQA(data = null) {
-  const tbody = document.getElementById('savedQAList');
-  if (!tbody) return;
+      var qaData = data || ChatbotStore.getQA();
+      savedQACache = qaData;
+      var category = (document.getElementById('qaCategory') || {}).value || 'all';
 
-  // ✅ ChatbotStore에서 읽기
-  const qaData = data || (window.ChatbotStore ? ChatbotStore.getQA() : []);
-  const category = document.getElementById('qaCategory')?.value || 'all';
-  
-  let filtered = qaData;
-  if (category && category !== 'all') {
-    filtered = qaData.filter(item => normalizeCategory(item.category) === category);
-  }
+      var filtered = qaData;
+      if (category && category !== 'all') {
+        filtered = qaData.filter(function(item) {
+          return normalizeCategory(item.category) === category;
+        });
+      }
 
-  tbody.innerHTML = '';
-  if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#999;">저장된 Q&A가 없습니다.</td></tr>';
-    return;
-  }
+      tbody.innerHTML = '';
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#999;">저장된 Q&A가 없습니다.</td></tr>';
+        return;
+      }
 
-  filtered.forEach(item => {
-    const row = document.createElement('tr');
-    const keywords = normalizeKeywords(item.keywords);
-    const isTop = normalizeBoolean(item.top);
-    const itemId = item.__id || item.id || '';
-    
-    row.innerHTML = `
-      <td><span class="category-badge category-${normalizeCategory(item.category)}">${normalizeCategoryDisplay(item.category)}</span></td>
-      <td>${item.question || ''}</td>
-      <td style="font-size:0.85em;color:#666;">${keywords.join(', ')}</td>
-      <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.answer || ''}</td>
-      <td style="text-align:center;">${isTop ? '⭐' : ''}</td>
-      <td>
-        <div class="action-buttons">
-          <button class="action-btn edit-btn" onclick='editQA(${JSON.stringify(item).replace(/'/g, "\\'")})'>수정</button>
-          <button class="action-btn delete-btn" onclick="deleteQAById('${itemId}')">삭제</button>
-        </div>
-      </td>
-    `;
-    tbody.appendChild(row);
-  });
-}
+      filtered.forEach(function(item, index) {
+        var row = document.createElement('tr');
+        var keywords = normalizeKeywords(item.keywords);
+        var isTop = normalizeBoolean(item.top);
+        var itemId = item.__id || '';
 
+        // ✅ escapeHtml 적용하여 XSS 방지
+        row.innerHTML =
+          '<td><span class="category-badge category-' + normalizeCategory(item.category) + '">' + escapeHtml(normalizeCategoryDisplay(item.category)) + '</span></td>' +
+          '<td>' + escapeHtml(item.question || '') + '</td>' +
+          '<td style="font-size:0.85em;color:#666;">' + escapeHtml(keywords.join(', ')) + '</td>' +
+          '<td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + escapeHtml(item.answer || '') + '">' + escapeHtml(item.answer || '') + '</td>' +
+          '<td style="text-align:center;">' + (isTop ? '⭐' : '') + '</td>' +
+          '<td>' +
+            '<div class="action-buttons">' +
+              '<button class="action-btn edit-btn" data-qa-id="' + escapeHtml(itemId) + '">수정</button>' +
+              '<button class="action-btn delete-btn" data-qa-id="' + escapeHtml(itemId) + '">삭제</button>' +
+            '</div>' +
+          '</td>';
+
+        // ✅ 이벤트 리스너로 안전하게 바인딩 (innerHTML injection 방지)
+        row.querySelector('.edit-btn').addEventListener('click', function() {
+          editQAById(itemId);
+        });
+        row.querySelector('.delete-btn').addEventListener('click', function() {
+          deleteQAById(itemId);
+        });
+
+        tbody.appendChild(row);
+      });
+    }
 
     function filterQA() {
       displaySavedQA();
@@ -907,9 +743,16 @@ function displaySavedQA(data = null) {
       document.getElementById('qaModal').style.display = 'block';
     }
 
-    function editQA(item) {
+    // ✅ 안전한 editQA — ID 기반 캐시 참조
+    function editQAById(id) {
+      var item = savedQACache.find(function(q) { return q.__id === id; });
+      if (!item) {
+        alert('해당 항목을 찾을 수 없습니다.');
+        return;
+      }
+
       document.getElementById('modalTitle').textContent = 'Q&A 수정';
-      document.getElementById('qaId').value = item.id || '';
+      document.getElementById('qaId').value = item.__id || '';
       document.getElementById('qaQuestionInput').value = item.question || '';
       document.getElementById('qaKeywordsInput').value = normalizeKeywords(item.keywords).join(', ');
       document.getElementById('qaAnswerInput').value = item.answer || '';
@@ -922,213 +765,184 @@ function displaySavedQA(data = null) {
       document.getElementById('qaModal').style.display = 'none';
     }
 
-    document.getElementById('qaForm')?.addEventListener('submit', (e) => {
+    document.getElementById('qaForm').addEventListener('submit', function(e) {
       e.preventDefault();
       saveQA();
     });
 
-  function saveQA() {
-  const id = document.getElementById('qaId').value || createQAId();
-  const question = document.getElementById('qaQuestionInput').value.trim();
-  const keywords = document.getElementById('qaKeywordsInput').value;
-  const answer = document.getElementById('qaAnswerInput').value.trim();
-  const category = document.getElementById('qaCategoryInput').value;
-  const top = document.getElementById('qaTopInput').checked;
+    function saveQA() {
+      var id = document.getElementById('qaId').value || createQAId();
+      var question = document.getElementById('qaQuestionInput').value.trim();
+      var keywords = document.getElementById('qaKeywordsInput').value;
+      var answer = document.getElementById('qaAnswerInput').value.trim();
+      var category = document.getElementById('qaCategoryInput').value;
+      var top = document.getElementById('qaTopInput').checked;
 
-  if (!question || !answer || !category) {
-    alert('필수 항목을 모두 입력해주세요.');
-    return;
-  }
-
-  // ✅ ChatbotStore에서 읽기
-  const qaData = window.ChatbotStore ? ChatbotStore.getQA() : [];
-  const existingIndex = qaData.findIndex(item => (item.__id || item.id) === id);
-
-  const newItem = {
-    __id: id,
-    category: normalizeCategory(category),
-    question,
-    keywords: normalizeKeywords(keywords),
-    answer,
-    top
-  };
-
-  if (existingIndex >= 0) {
-    qaData[existingIndex] = newItem;
-  } else {
-    const duplicate = qaData.find(item => 
-      item.question.toLowerCase() === question.toLowerCase() &&
-      normalizeCategory(item.category) === normalizeCategory(category)
-    );
-    if (duplicate) {
-      if (!confirm('동일한 질문이 이미 존재합니다. 계속하시겠습니까?')) {
-        return;
-      }
-    }
-    qaData.push(newItem);
-  }
-
-  // ✅ ChatbotStore로 저장 (chatbot_qa 키에 저장됨)
-  if (window.ChatbotStore) {
-    ChatbotStore.importTemplate({ mode: 'replace', data: qaData });
-  } else {
-    localStorage.setItem('chatbot_qa', JSON.stringify(qaData));
-  }
-
-  closeQAModal();
-  loadSavedQA();
-  alert('저장되었습니다.');
-}
-
-function deleteQAById(id) {
-  if (!confirm('정말 삭제하시겠습니까?')) return;
-
-  if (window.ChatbotStore) {
-    // ✅ ChatbotStore의 삭제 함수 사용
-    ChatbotStore.deleteQAById(id);
-  } else {
-    const qaData = JSON.parse(localStorage.getItem('chatbot_qa') || '[]');
-    const filtered = qaData.filter(item => (item.__id || item.id) !== id);
-    localStorage.setItem('chatbot_qa', JSON.stringify(filtered));
-  }
-  
-  loadSavedQA();
-}
-
-function clearAllQA() {
-  if (!confirm('모든 Q&A 데이터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return;
-  
-  if (window.ChatbotStore) {
-    ChatbotStore.clearQA();
-  } else {
-    localStorage.setItem('chatbot_qa', '[]');
-  }
-  
-  loadSavedQA();
-  alert('모든 데이터가 삭제되었습니다.');
-}
-
-
-    // ========== CSV 업로드/다운로드 ==========
-function uploadCSV() {
-  const fileInput = document.getElementById('csvFile');
-  const file = fileInput?.files[0];
-  if (!file) {
-    alert('CSV 파일을 선택해주세요.');
-    return;
-  }
-
-  Papa.parse(file, {
-    header: true,
-    skipEmptyLines: true,
-    complete: (results) => {
-      const qaData = results.data.map(row => ({
-        __id: row.id || row.__id || createQAId(),
-        category: normalizeCategory(row.category || row['카테고리'] || 'other'),
-        question: row.question || row['질문'] || '',
-        keywords: normalizeKeywords(row.keywords || row['키워드'] || ''),
-        answer: row.answer || row['답변'] || '',
-        top: normalizeBoolean(row.top || row['중요'] || false)
-      })).filter(item => item.question && item.answer);
-
-      if (qaData.length === 0) {
-        alert('유효한 데이터가 없습니다.');
+      if (!question || !answer || !category) {
+        alert('필수 항목을 모두 입력해주세요.');
         return;
       }
 
-      // ✅ ChatbotStore로 저장
-      if (window.ChatbotStore) {
-        ChatbotStore.importTemplate({ mode: 'replace', data: qaData });
+      var qaData = ChatbotStore.getQA();
+      var existingIndex = qaData.findIndex(function(item) { return item.__id === id; });
+
+      var newItem = {
+        __id: id,
+        category: normalizeCategory(category),
+        question: question,
+        keywords: normalizeKeywords(keywords),
+        answer: answer,
+        top: top
+      };
+
+      if (existingIndex >= 0) {
+        qaData[existingIndex] = newItem;
       } else {
-        localStorage.setItem('chatbot_qa', JSON.stringify(qaData));
+        var duplicate = qaData.find(function(item) {
+          return item.question.toLowerCase() === question.toLowerCase() &&
+                 normalizeCategory(item.category) === normalizeCategory(category);
+        });
+        if (duplicate) {
+          if (!confirm('동일한 질문이 이미 존재합니다. 계속하시겠습니까?')) {
+            return;
+          }
+        }
+        qaData.push(newItem);
       }
-      
+
+      ChatbotStore.importTemplate({ mode: 'replace', data: qaData });
+      closeQAModal();
       loadSavedQA();
-      alert(`${qaData.length}개의 Q&A가 업로드되었습니다.`);
-      fileInput.value = '';
-    },
-    error: (error) => {
-      alert('CSV 파일 읽기 실패: ' + error.message);
+      alert('저장되었습니다.');
     }
-  });
-}
 
+    function deleteQAById(id) {
+      if (!confirm('정말 삭제하시겠습니까?')) return;
+      ChatbotStore.deleteQAById(id);
+      loadSavedQA();
+    }
 
-function downloadCSV() {
-  // ✅ ChatbotStore에서 읽기
-  const qaData = window.ChatbotStore ? ChatbotStore.getQA() : [];
-  if (qaData.length === 0) {
-    alert('다운로드할 데이터가 없습니다.');
-    return;
-  }
+    function clearAllQA() {
+      if (!confirm('모든 Q&A 데이터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return;
+      ChatbotStore.clearQA();
+      loadSavedQA();
+      alert('모든 데이터가 삭제되었습니다.');
+    }
 
-  const csv = Papa.unparse(qaData.map(item => ({
-    id: item.__id || item.id,
-    category: normalizeCategoryDisplay(item.category),
-    question: item.question,
-    keywords: normalizeKeywords(item.keywords).join(', '),
-    answer: item.answer,
-    top: item.top ? 'O' : 'X'
-  })));
+    // ========== CSV ==========
+    function uploadCSV() {
+      var fileInput = document.getElementById('csvFile');
+      var file = fileInput && fileInput.files[0];
+      if (!file) {
+        alert('CSV 파일을 선택해주세요.');
+        return;
+      }
 
-  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = `faq_data_${new Date().getTime()}.csv`;
-  link.click();
-}
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+          var qaData = results.data.map(function(row) {
+            return {
+              __id: row.id || row.__id || createQAId(),
+              category: normalizeCategory(row.category || row['카테고리'] || 'other'),
+              question: row.question || row['질문'] || '',
+              keywords: normalizeKeywords(row.keywords || row['키워드'] || ''),
+              answer: row.answer || row['답변'] || '',
+              top: normalizeBoolean(row.top || row['중요'] || false)
+            };
+          }).filter(function(item) { return item.question && item.answer; });
 
-function updateStats() {
-  // ✅ ChatbotStore에서 읽기
-  const qaData = window.ChatbotStore ? ChatbotStore.getQA() : [];
-  document.getElementById('totalQACount').textContent = qaData.length;
-}
+          if (qaData.length === 0) {
+            alert('유효한 데이터가 없습니다.');
+            return;
+          }
+
+          ChatbotStore.importTemplate({ mode: 'replace', data: qaData });
+          loadSavedQA();
+          alert(qaData.length + '개의 Q&A가 업로드되었습니다.');
+          fileInput.value = '';
+        },
+        error: function(error) {
+          alert('CSV 파일 읽기 실패: ' + error.message);
+        }
+      });
+    }
+
+    function downloadCSV() {
+      var qaData = ChatbotStore.getQA();
+      if (qaData.length === 0) {
+        alert('다운로드할 데이터가 없습니다.');
+        return;
+      }
+
+      var csv = Papa.unparse(qaData.map(function(item) {
+        return {
+          id: item.__id,
+          category: normalizeCategoryDisplay(item.category),
+          question: item.question,
+          keywords: normalizeKeywords(item.keywords).join(', '),
+          answer: item.answer,
+          top: item.top ? 'O' : 'X'
+        };
+      }));
+
+      var blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+      var link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'faq_data_' + new Date().getTime() + '.csv';
+      link.click();
+    }
 
     // ========== 전체 질문 이력 ==========
     async function loadAllQuestionsFromServer() {
-      const loading = document.getElementById('allQuestionsLoading');
-      const error = document.getElementById('allQuestionsError');
-      const tbody = document.getElementById('allQuestionsList');
+      var loading = document.getElementById('allQuestionsLoading');
+      var error = document.getElementById('allQuestionsError');
+      var tbody = document.getElementById('allQuestionsList');
 
       if (loading) loading.style.display = 'block';
       if (error) error.style.display = 'none';
 
       try {
-        const category = document.getElementById('historyCategory')?.value || 'all';
-        const matched = document.getElementById('historyMatched')?.value || 'all';
-        const limit = ADMIN_CONFIG.pageSize;
-        const offset = (currentPage - 1) * limit;
+        var category = (document.getElementById('historyCategory') || {}).value || 'all';
+        var matched = (document.getElementById('historyMatched') || {}).value || 'all';
+        var limit = ADMIN_CONFIG.pageSize;
+        var offset = (currentPage - 1) * limit;
 
-        let url = `${ADMIN_CONFIG.allQuestionsApiUrl}?limit=${limit}&offset=${offset}`;
-        if (category && category !== 'all') url += `&category=${category}`;
-        if (matched && matched !== 'all') url += `&matched=${matched}`;
+        var url = ADMIN_CONFIG.allQuestionsApiUrl + '?limit=' + limit + '&offset=' + offset;
+        if (category && category !== 'all') url += '&category=' + category;
+        if (matched && matched !== 'all') url += '&matched=' + matched;
 
-        const res = await fetchWithTimeout(url, {
+        var res = await fetchWithTimeout(url, {
           method: 'GET',
           headers: { 'Accept': 'application/json' }
         });
 
         if (!res.ok) {
-          throw new Error(`서버 응답 오류 (${res.status})`);
+          throw new Error('서버 응답 오류 (' + res.status + ')');
         }
 
-        const data = await res.json();
-        
+        var data = await res.json();
+
         if (!data.success) {
           throw new Error(data.error || '데이터 로드 실패');
         }
 
         allQuestionsData = data.items || [];
-        totalPages = Math.ceil((data.totalCount || 0) / limit) || 1;
+        var totalCount = data.totalCount || 0;
+        totalPages = Math.ceil(totalCount / limit) || 1;
 
         displayAllQuestions(allQuestionsData);
-        updateHistoryStats(data.totalCount || 0, matched);
+        updateHistoryStats(totalCount, matched);
         updatePagination();
+
+        // ✅ 서버 통계 카운트 반영
+        document.getElementById('serverQuestionCount').textContent = totalCount;
 
       } catch (err) {
         console.error('전체 질문 이력 로드 실패:', err);
         if (error) {
-          error.textContent = `오류: ${err.message}`;
+          error.textContent = '오류: ' + err.message;
           error.style.display = 'block';
         }
         if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#999;">데이터를 불러올 수 없습니다.</td></tr>';
@@ -1138,57 +952,81 @@ function updateStats() {
     }
 
     function displayAllQuestions(items) {
-      const tbody = document.getElementById('allQuestionsList');
+      var tbody = document.getElementById('allQuestionsList');
       if (!tbody) return;
 
       tbody.innerHTML = '';
       if (!items || items.length === 0) {
         tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#999;">질문 이력이 없습니다.</td></tr>';
+        document.getElementById('historyPageCount').textContent = '0';
         return;
       }
 
-      items.forEach(item => {
-        const row = document.createElement('tr');
-        const matchedClass = item.matched ? 'matched-yes' : 'matched-no';
-        const matchedText = item.matched ? '✅ 매칭' : '❌ 미매칭';
-        const userAgent = item.userAgent || item.browser || '-';
-        
-        row.innerHTML = `
-          <td>${toKoreanTime(item.createdAt || item.timestamp)}</td>
-          <td style="max-width:300px;">${item.question || ''}</td>
-          <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;">${item.answer || '-'}</td>
-          <td><span class="category-badge category-${normalizeCategory(item.category)}">${normalizeCategoryDisplay(item.category)}</span></td>
-          <td class="${matchedClass}">${matchedText}</td>
-          <td style="font-size:0.85em;color:#666;">${item.source || 'user'}</td>
-          <td class="browser-info" title="${userAgent}">${userAgent}</td>
-        `;
+      var matchedTotal = 0;
+      var unmatchedTotal = 0;
+
+      items.forEach(function(item) {
+        var row = document.createElement('tr');
+        var matchedClass = item.matched ? 'matched-yes' : 'matched-no';
+        var matchedText = item.matched ? '매칭' : '미매칭';
+        var userAgent = item.userAgent || item.browser || '-';
+
+        if (item.matched) matchedTotal++;
+        else unmatchedTotal++;
+
+        // ✅ escapeHtml 적용
+        row.innerHTML =
+          '<td>' + escapeHtml(toKoreanTime(item.createdAt || item.timestamp)) + '</td>' +
+          '<td style="max-width:300px;">' + escapeHtml(item.question || '') + '</td>' +
+          '<td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(item.answer || '-') + '</td>' +
+          '<td><span class="category-badge category-' + normalizeCategory(item.category) + '">' + escapeHtml(normalizeCategoryDisplay(item.category)) + '</span></td>' +
+          '<td class="' + matchedClass + '">' + matchedText + '</td>' +
+          '<td style="font-size:0.85em;color:#666;">' + escapeHtml(item.source || 'user') + '</td>' +
+          '<td class="browser-info" title="' + escapeHtml(userAgent) + '">' + escapeHtml(userAgent) + '</td>';
+
         tbody.appendChild(row);
       });
 
       document.getElementById('historyPageCount').textContent = items.length;
+
+      // ✅ 대시보드 매칭/미매칭 카운트 업데이트
+      document.getElementById('matchedCount').textContent =
+        (parseInt(document.getElementById('matchedCount').textContent) || 0) > 0
+          ? document.getElementById('matchedCount').textContent
+          : matchedTotal;
+      document.getElementById('unmatchedCount').textContent =
+        (parseInt(document.getElementById('unmatchedCount').textContent) || 0) > 0
+          ? document.getElementById('unmatchedCount').textContent
+          : unmatchedTotal;
     }
 
     function updateHistoryStats(total, matchedFilter) {
       document.getElementById('historyTotalCount').textContent = total;
-      
+      document.getElementById('serverQuestionCount').textContent = total;
+
       if (matchedFilter === 'true') {
         document.getElementById('historyMatchedCount').textContent = total;
         document.getElementById('historyUnmatchedCount').textContent = 0;
+        document.getElementById('matchedCount').textContent = total;
+        document.getElementById('unmatchedCount').textContent = 0;
       } else if (matchedFilter === 'false') {
         document.getElementById('historyMatchedCount').textContent = 0;
         document.getElementById('historyUnmatchedCount').textContent = total;
+        document.getElementById('matchedCount').textContent = 0;
+        document.getElementById('unmatchedCount').textContent = total;
       } else {
-        const matched = allQuestionsData.filter(item => item.matched).length;
-        const unmatched = allQuestionsData.filter(item => !item.matched).length;
+        var matched = allQuestionsData.filter(function(item) { return item.matched; }).length;
+        var unmatched = allQuestionsData.filter(function(item) { return !item.matched; }).length;
         document.getElementById('historyMatchedCount').textContent = matched;
         document.getElementById('historyUnmatchedCount').textContent = unmatched;
+        document.getElementById('matchedCount').textContent = matched;
+        document.getElementById('unmatchedCount').textContent = unmatched;
       }
     }
 
     function changePage(delta) {
-      const newPage = currentPage + delta;
+      var newPage = currentPage + delta;
       if (newPage < 1 || newPage > totalPages) return;
-      
       currentPage = newPage;
       loadAllQuestionsFromServer();
     }
@@ -1206,59 +1044,58 @@ function updateStats() {
         return;
       }
 
-      const exportData = allQuestionsData.map(item => ({
-        '시간': toKoreanTime(item.createdAt || item.timestamp),
-        '질문': item.question || '',
-        '답변': item.answer || '',
-        '카테고리': normalizeCategoryDisplay(item.category),
-        '매칭': item.matched ? '매칭' : '미매칭',
-        '출처': item.source || 'user',
-        '브라우저': item.userAgent || item.browser || ''
-      }));
+      var exportData = allQuestionsData.map(function(item) {
+        return {
+          '시간': toKoreanTime(item.createdAt || item.timestamp),
+          '질문': item.question || '',
+          '답변': item.answer || '',
+          '카테고리': normalizeCategoryDisplay(item.category),
+          '매칭': item.matched ? '매칭' : '미매칭',
+          '출처': item.source || 'user',
+          '브라우저': item.userAgent || item.browser || ''
+        };
+      });
 
-      const csv = Papa.unparse(exportData);
-      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
+      var csv = Papa.unparse(exportData);
+      var blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+      var link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      link.download = `all_questions_${new Date().getTime()}.csv`;
+      link.download = 'all_questions_' + new Date().getTime() + '.csv';
       link.click();
     }
-    // ↑↑↑ exportAllQuestions 함수 끝
 
     async function resetAllQuestions() {
-      if (!confirm('⚠️ 전체 질문 이력을 삭제하시겠습니까?\n\n서버에 저장된 모든 질문 기록이 삭제됩니다.\n이 작업은 되돌릴 수 없습니다.')) return;
+      if (!confirm('전체 질문 이력을 삭제하시겠습니까?\n\n서버에 저장된 모든 질문 기록이 삭제됩니다.\n이 작업은 되돌릴 수 없습니다.')) return;
 
-      const confirmText = prompt('정말 삭제하려면 "삭제확인" 을 입력해주세요.');
+      var confirmText = prompt('정말 삭제하려면 "삭제확인" 을 입력해주세요.');
       if (confirmText !== '삭제확인') {
         alert('삭제가 취소되었습니다.');
         return;
       }
 
-      const loading = document.getElementById('allQuestionsLoading');
-      const error = document.getElementById('allQuestionsError');
+      var loading = document.getElementById('allQuestionsLoading');
+      var error = document.getElementById('allQuestionsError');
 
       if (loading) loading.style.display = 'block';
       if (error) error.style.display = 'none';
 
       try {
-        const deleteApiUrl = ADMIN_CONFIG.allQuestionsApiUrl.replace('/getAllQuestions', '/deleteAllQuestions');
-        
-        const res = await fetchWithTimeout(deleteApiUrl, {
+        var res = await fetchWithTimeout(ADMIN_CONFIG.deleteQuestionsApiUrl, {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' }
         });
 
         if (res.ok) {
-          const data = await res.json();
-          alert(`✅ 서버 이력이 삭제되었습니다.\n삭제 건수: ${data.deletedCount || '전체'}`);
+          var data = await res.json();
+          alert('서버 이력이 삭제되었습니다.\n삭제 건수: ' + (data.deletedCount || '전체'));
         } else if (res.status === 404) {
-          alert('⚠️ 서버에 삭제 API가 아직 설정되지 않았습니다.\n\n화면 표시만 초기화합니다.');
+          alert('서버에 삭제 API가 아직 설정되지 않았습니다.\n\n화면 표시만 초기화합니다.');
         } else {
-          throw new Error(`서버 응답 오류 (${res.status})`);
+          throw new Error('서버 응답 오류 (' + res.status + ')');
         }
       } catch (err) {
         console.warn('서버 삭제 실패:', err.message);
-        alert('⚠️ 서버 삭제 API 연결 실패\n\n화면 표시만 초기화합니다.');
+        alert('서버 삭제 API 연결 실패\n\n화면 표시만 초기화합니다.');
       }
 
       allQuestionsData = [];
@@ -1269,11 +1106,7 @@ function updateStats() {
       updateHistoryStats(0, 'all');
       updatePagination();
 
-      if (window.ChatbotStore) {
-        ChatbotStore.clearHistory();
-      } else {
-        localStorage.removeItem('chatbot_history');
-      }
+      ChatbotStore.clearHistory();
 
       document.getElementById('serverQuestionCount').textContent = '0';
       document.getElementById('matchedCount').textContent = '0';
@@ -1282,28 +1115,16 @@ function updateStats() {
       if (loading) loading.style.display = 'none';
     }
 
-    // ↓↓↓ 아래에 updateStats 함수 등이 이어짐
-
-    // ========== 통계 업데이트 ==========
-    function updateStats() {
-      const qaData = JSON.parse(localStorage.getItem('chatbot_qa') || '[]');
-      document.getElementById('totalQACount').textContent = qaData.length;
-    }
-
-    function updateAllStats() {
-      updateStats();
-    }
-
-    // ========== 모달 외부 클릭 시 닫기 ==========
+    // ========== 모달 외부 클릭 ==========
     window.onclick = function(event) {
-      const modal = document.getElementById('qaModal');
+      var modal = document.getElementById('qaModal');
       if (event.target === modal) {
         closeQAModal();
       }
     };
 
     // ========== 초기화 ==========
-    window.addEventListener('DOMContentLoaded', () => {
+    window.addEventListener('DOMContentLoaded', function() {
       console.log('관리자 페이지 로드됨');
       updatePagination();
     });
