@@ -6,224 +6,127 @@
   <title>SCM FAQ봇</title>
   <style>
     :root{
-      --main:#009C82;
-      --main-dark:#007a66;
-      --bg:#f4f8f7;
-      --line:#d8e5e2;
-      --text:#1f2937;
-      --sub:#6b7280;
+      --main:#009C82; --main-dark:#007a66;
+      --bg:#f4f8f7; --line:#d8e5e2;
+      --text:#1f2937; --sub:#6b7280;
     }
-
-    *{box-sizing:border-box}
-
+    *{ box-sizing:border-box }
     body{
       margin:0;
       font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif;
       background:linear-gradient(135deg,#f4fbf9,#eef7f5);
       color:var(--text);
     }
-
     .wrap{
-      max-width:500px;
-      margin:24px auto;
-      background:#fff;
-      border:1px solid var(--line);
-      border-radius:24px;
-      overflow:hidden;
+      max-width:500px; margin:24px auto;
+      background:#fff; border:1px solid var(--line);
+      border-radius:24px; overflow:hidden;
       box-shadow:0 16px 40px rgba(0,0,0,.08);
-      min-height:90vh;
-      display:flex;
-      flex-direction:column;
+      min-height:90vh; display:flex; flex-direction:column;
     }
-
     .header{
-      background:var(--main);
-      color:#fff;
-      padding:18px;
-      display:flex;
-      align-items:center;
-      gap:12px;
+      background:var(--main); color:#fff;
+      padding:18px; display:flex; align-items:center; gap:12px;
     }
-
     .avatar{
-      width:46px;
-      height:46px;
-      border-radius:50%;
+      width:46px; height:46px; border-radius:50%;
       background:rgba(255,255,255,.18);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size:22px;
-      flex-shrink:0;
+      display:flex; align-items:center; justify-content:center;
+      font-size:22px; flex-shrink:0;
     }
-
     .header h1{ margin:0; font-size:20px; }
     .header p{ margin:6px 0 0; font-size:13px; opacity:.95; }
-
     .notice{
-      background:#f8fbfb;
-      border-bottom:1px solid var(--line);
-      padding:10px 14px;
-      font-size:12px;
-      color:var(--sub);
-      text-align:center;
+      background:#f8fbfb; border-bottom:1px solid var(--line);
+      padding:10px 14px; font-size:12px; color:var(--sub); text-align:center;
     }
-
-    .chat{
-      flex:1;
-      overflow-y:auto;
-      padding:16px;
-      background:#f8fbfb;
-    }
-
-    .row{
-      display:flex;
-      gap:8px;
-      margin-bottom:14px;
-      align-items:flex-end;
-    }
-
+    .chat{ flex:1; overflow-y:auto; padding:16px; background:#f8fbfb; }
+    .row{ display:flex; gap:8px; margin-bottom:14px; align-items:flex-end; }
     .row.user{ justify-content:flex-end; }
-
     .bot-icon{
-      width:34px;
-      height:34px;
-      border-radius:50%;
-      background:#e7f7f3;
-      color:var(--main-dark);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size:15px;
-      font-weight:bold;
-      flex-shrink:0;
+      width:34px; height:34px; border-radius:50%;
+      background:#e7f7f3; color:var(--main-dark);
+      display:flex; align-items:center; justify-content:center;
+      font-size:15px; font-weight:bold; flex-shrink:0;
     }
-
     .bubble-group{ max-width:78%; }
     .sender{ font-size:12px; color:#64748b; margin:0 0 4px 4px; }
-
     .bubble{
-      padding:12px 14px;
-      border-radius:18px;
-      line-height:1.55;
-      font-size:14px;
-      word-break:break-word;
-      white-space:pre-wrap;
+      padding:12px 14px; border-radius:18px;
+      line-height:1.55; font-size:14px;
+      word-break:break-word; white-space:pre-wrap;
     }
-
     .bot .bubble{
-      background:#fff;
-      border:1px solid var(--line);
+      background:#fff; border:1px solid var(--line);
       border-bottom-left-radius:6px;
     }
-
-    .user .bubble{
-      background:var(--main);
-      color:#fff;
-      border-bottom-right-radius:6px;
-    }
-
+    .user .bubble{ background:var(--main); color:#fff; border-bottom-right-radius:6px; }
     .time{ font-size:11px; color:#94a3b8; margin-top:4px; padding:0 4px; }
     .user .time{ text-align:right; }
-
-    .faq{
-      padding:12px;
-      border-top:1px solid var(--line);
-      background:#fff;
-    }
-
-    .faq-title{
-      font-size:13px;
-      font-weight:700;
-      color:#334155;
-      margin-bottom:8px;
-    }
-
-    .category-tabs{
-      display:flex;
-      gap:8px;
-      overflow-x:auto;
-      padding-bottom:4px;
-    }
-
+    .faq{ padding:12px; border-top:1px solid var(--line); background:#fff; }
+    .faq-title{ font-size:13px; font-weight:700; color:#334155; margin-bottom:8px; }
+    .category-tabs{ display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; }
     .category-tab{
-      border:none;
-      background:#e8f7f3;
-      color:#006f5c;
-      padding:9px 13px;
-      border-radius:999px;
-      cursor:pointer;
-      white-space:nowrap;
-      font-size:13px;
-      flex-shrink:0;
+      border:none; background:#e8f7f3; color:#006f5c;
+      padding:9px 13px; border-radius:999px; cursor:pointer;
+      white-space:nowrap; font-size:13px; flex-shrink:0;
     }
-
     .category-tab.active{ background:var(--main); color:#fff; }
-
     .faq-list{ display:flex; flex-direction:column; gap:8px; }
-
     .faq-list button{
-      width:100%;
-      border:none;
-      background:#eef7f5;
-      color:#135f53;
-      padding:12px;
-      border-radius:12px;
-      cursor:pointer;
-      font-size:14px;
-      text-align:left;
-      line-height:1.5;
+      width:100%; border:none; background:#eef7f5; color:#135f53;
+      padding:12px; border-radius:12px; cursor:pointer;
+      font-size:14px; text-align:left; line-height:1.5;
     }
-
     .faq-list button:hover{ background:#dff3ef; }
     .faq-list button:disabled{ opacity:.65; cursor:not-allowed; }
-
     .empty-faq{ font-size:13px; color:var(--sub); padding:8px 2px; }
     .typing{ opacity:.8; font-style:italic; }
-
-    .input-area{
-      border-top:1px solid var(--line);
-      padding:12px;
-      background:#fff;
-    }
-
+    .input-area{ border-top:1px solid var(--line); padding:12px; background:#fff; }
     .input-wrap{
-      display:flex;
-      gap:8px;
-      background:#f7fbfb;
-      border:1px solid var(--line);
-      border-radius:16px;
-      padding:8px;
+      display:flex; gap:8px; background:#f7fbfb;
+      border:1px solid var(--line); border-radius:16px; padding:8px;
     }
-
     .input-wrap input{
-      flex:1;
-      border:none;
-      outline:none;
-      background:transparent;
-      padding:10px;
-      font-size:14px;
+      flex:1; border:none; outline:none;
+      background:transparent; padding:10px; font-size:14px;
     }
-
     .input-wrap button{
-      border:none;
-      background:var(--main);
-      color:#fff;
-      border-radius:12px;
-      width:48px;
-      cursor:pointer;
-      font-size:18px;
+      border:none; background:var(--main); color:#fff;
+      border-radius:12px; width:48px; cursor:pointer; font-size:18px;
     }
-
     .input-wrap button:disabled{ opacity:.7; cursor:not-allowed; }
 
+    /* 담당자 카드 */
+    .contact-card{
+      background:#fff; border:1px solid #b2ddd5;
+      border-radius:16px; border-bottom-left-radius:6px;
+      padding:14px 16px; display:flex; flex-direction:column; gap:8px;
+    }
+    .cc-title{ font-weight:700; font-size:14px; color:#1f2937; }
+    .cc-sub{ font-size:13px; color:#6b7280; margin-top:-4px; }
+    .cc-info{ display:flex; gap:8px; font-size:13px; align-items:center; }
+    .cc-label{
+      background:#e7f7f3; color:#007a66; border-radius:6px;
+      padding:2px 8px; font-size:12px; font-weight:700;
+      white-space:nowrap; min-width:48px; text-align:center;
+    }
+    .cc-value a{ color:#009C82; text-decoration:none; }
+    .cc-value a:hover{ text-decoration:underline; }
+    .cc-mail-btn{
+      display:block; margin-top:6px; background:#009C82; color:#fff;
+      text-align:center; padding:10px; border-radius:10px;
+      font-size:13px; font-weight:700; text-decoration:none;
+      cursor:pointer; transition:background .2s;
+    }
+    .cc-mail-btn:hover{ background:#007a66; }
+
+    /* 버블 내 링크 */
+    .bubble a{ color:#009C82; word-break:break-all; text-decoration:underline; }
+    .user .bubble a{ color:#fff; }
+
     @media (max-width:520px){
-      .wrap{
-        margin:0;
-        max-width:none;
-        border-radius:0;
-        min-height:100vh;
-      }
+      .wrap{ margin:0; max-width:none; border-radius:0; min-height:100vh; }
     }
   </style>
 </head>
@@ -236,19 +139,14 @@
         <p>문의 내용을 입력하시면 등록된 답변을 안내드립니다.</p>
       </div>
     </div>
-
     <div class="notice">아래 카테고리를 선택하면 해당 FAQ가 아래에 표시됩니다.</div>
-
     <div class="chat" id="chatBox"></div>
-
     <div class="faq">
       <div class="faq-title">카테고리</div>
       <div class="category-tabs" id="categoryTabs"></div>
-
       <div class="faq-title" style="margin-top:12px;">자주 묻는 질문</div>
       <div class="faq-list" id="faqList"></div>
     </div>
-
     <div class="input-area">
       <div class="input-wrap">
         <input id="userInput" type="text" placeholder="질문을 입력하세요" />
@@ -259,37 +157,130 @@
 
   <script>
     window.CHATBOT_CONFIG = Object.assign({
-      logApiUrl: "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/logQuestion",
+      logApiUrl:          "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/logQuestion",
       topQuestionsApiUrl: "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/getTopQuestions",
-      requestTimeoutMs: 10000,
-      faqButtonCount: 4,
+      contactsApiUrl:     "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/contacts/getContacts",
+      requestTimeoutMs:   10000,
+      faqButtonCount:     4,
       pendingRetryIntervalMs: 60000
     }, window.CHATBOT_CONFIG || {});
   </script>
   <script src="shared.js"></script>
   <script>
-    const chatBox = document.getElementById("chatBox");
-    const faqList = document.getElementById("faqList");
+    const chatBox      = document.getElementById("chatBox");
+    const faqList      = document.getElementById("faqList");
     const categoryTabs = document.getElementById("categoryTabs");
-    const userInput = document.getElementById("userInput");
-    const sendButton = document.getElementById("sendButton");
-
+    const userInput    = document.getElementById("userInput");
+    const sendButton   = document.getElementById("sendButton");
     const { escapeHtml } = ChatbotUtils;
 
     let selectedCategory = (window.ChatbotStore && ChatbotStore.getCategories()[0]) || "all";
-    let isSending = false;
+    let isSending  = false;
+    let CONTACT_MAP = [];
 
+    // ── 담당자 로드 ──────────────────────────────────────────────
+    async function loadContacts() {
+      if (!window.CHATBOT_CONFIG.contactsApiUrl) return;
+      try {
+        const res = await fetchWithTimeout(
+          window.CHATBOT_CONFIG.contactsApiUrl, { method: "GET" }, 5000
+        );
+        if (!res.ok) throw new Error("contacts API " + res.status);
+        CONTACT_MAP = await res.json();
+        console.log("담당자 목록 로드:", CONTACT_MAP.length + "명");
+      } catch (err) {
+        console.warn("담당자 로드 실패, fallback 사용:", err);
+        CONTACT_MAP = [{
+          name: "SCM팀 공통", phone: "031-xxx-xxxx",
+          email: "scm@willopump.com", keywords: [],
+          category: "default", isDefault: true
+        }];
+      }
+    }
+
+    // ── 담당자 매칭 ──────────────────────────────────────────────
+    function findContact(questionText, category) {
+      const text = String(questionText || "").toLowerCase();
+      for (const contact of CONTACT_MAP) {
+        if (!contact.isDefault && Array.isArray(contact.keywords)) {
+          if (contact.keywords.some(function (kw) {
+            return kw && text.includes(kw.toLowerCase());
+          })) return contact;
+        }
+      }
+      const byCategory = CONTACT_MAP.find(function (c) {
+        return !c.isDefault && c.category === category;
+      });
+      if (byCategory) return byCategory;
+      return CONTACT_MAP.find(function (c) { return c.isDefault; }) ||
+             CONTACT_MAP[CONTACT_MAP.length - 1] ||
+             { name: "SCM팀", phone: "", email: "scm@willopump.com",
+               keywords: [], category: "default", isDefault: true };
+    }
+
+    // ── 담당자 카드 버블 ─────────────────────────────────────────
+    function addContactCard(questionText, category) {
+      if (!CONTACT_MAP.length) {
+        addMessage("등록된 답변을 찾지 못했습니다.\nSCM팀 담당자에게 문의 부탁드립니다.", "bot", "SCM봇");
+        return;
+      }
+      const contact = findContact(questionText, category);
+      const subject  = encodeURIComponent("[SCM 문의] " + String(questionText).slice(0, 50));
+      const mailBody = encodeURIComponent(
+        "안녕하세요, SCM 관련 문의드립니다.\n\n【문의 내용】\n" + questionText +
+        "\n\n───────────────\n* 본 메일은 SCM FAQ봇에서 자동 생성되었습니다."
+      );
+      const mailtoLink = "mailto:" + contact.email + "?subject=" + subject + "&body=" + mailBody;
+      const phoneHtml  = contact.phone
+        ? '<div class="cc-info"><span class="cc-label">전화</span>' +
+          '<span class="cc-value"><a href="tel:' + escapeHtml(contact.phone) + '">' +
+          escapeHtml(contact.phone) + '</a></span></div>'
+        : "";
+
+      const row = document.createElement("div");
+      row.className = "row bot";
+      row.innerHTML =
+        '<div class="bot-icon">Q</div>' +
+        '<div class="bubble-group bot">' +
+          '<div class="sender">SCM봇</div>' +
+          '<div class="bubble contact-card">' +
+            '<div class="cc-title">📋 등록된 답변을 찾지 못했습니다.</div>' +
+            '<div class="cc-sub">아래 담당자에게 직접 문의해 주세요.</div>' +
+            '<div class="cc-info"><span class="cc-label">담당자</span>' +
+              '<span class="cc-value">' + escapeHtml(contact.name) + '</span></div>' +
+            phoneHtml +
+            '<div class="cc-info"><span class="cc-label">이메일</span>' +
+              '<span class="cc-value"><a href="mailto:' + escapeHtml(contact.email) + '">' +
+              escapeHtml(contact.email) + '</a></span></div>' +
+            '<a class="cc-mail-btn" href="' + mailtoLink + '" target="_blank">' +
+              '✉️ 이 질문 내용으로 이메일 보내기</a>' +
+          '</div>' +
+          '<div class="time">' + getTimeText() + '</div>' +
+        '</div>';
+
+      chatBox.appendChild(row);
+      scrollToBottom();
+    }
+
+    // ── 유틸 ─────────────────────────────────────────────────────
     function getTimeText() {
-      return new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
+      return new Date().toLocaleTimeString("ko-KR", { hour:"2-digit", minute:"2-digit" });
+    }
+
+    function scrollToBottom() {
+      setTimeout(function () { chatBox.scrollTop = chatBox.scrollHeight; }, 100);
     }
 
     function formatAnswer(text) {
-      return escapeHtml(String(text)).replace(/\n/g, "<br>");
+      const escaped = escapeHtml(String(text));
+      return escaped
+        .replace(/(https?:\/\/[^\s<>"]+)/g,
+          '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>')
+        .replace(/\n/g, "<br>");
     }
 
     function addMessage(text, sender, name, extraClass) {
-      name = name || "";
-      extraClass = extraClass || "";
+      name = name || ""; extraClass = extraClass || "";
       const row = document.createElement("div");
       row.className = ("row " + sender + " " + extraClass).trim();
 
@@ -309,10 +300,9 @@
             '<div class="time">' + getTimeText() + '</div>' +
           '</div>';
       }
-
       row.querySelector(".bubble").innerHTML = formatAnswer(text);
       chatBox.appendChild(row);
-      chatBox.scrollTop = chatBox.scrollHeight;
+      scrollToBottom();
       return row;
     }
 
@@ -320,16 +310,13 @@
       if (row && row.parentNode) row.parentNode.removeChild(row);
     }
 
-    async function fetchWithTimeout(url, options, timeoutMs) {
-      options = options || {};
+    function fetchWithTimeout(url, options, timeoutMs) {
+      options   = options   || {};
       timeoutMs = timeoutMs || window.CHATBOT_CONFIG.requestTimeoutMs || 10000;
       const controller = new AbortController();
-      const timer = setTimeout(function() { controller.abort(); }, timeoutMs);
-      try {
-        return await fetch(url, Object.assign({}, options, { signal: controller.signal }));
-      } finally {
-        clearTimeout(timer);
-      }
+      const timer = setTimeout(function () { controller.abort(); }, timeoutMs);
+      return fetch(url, Object.assign({}, options, { signal: controller.signal }))
+        .finally(function () { clearTimeout(timer); });
     }
 
     async function sendToServer(data) {
@@ -347,46 +334,19 @@
       }
     }
 
-    // ✅ 실패한 로그 재전송
-    async function retryPendingLogs() {
-      if (!window.CHATBOT_CONFIG.logApiUrl) return;
-      var pending = ChatbotStore.getPendingLogs();
-      if (!pending.length) return;
-
-      var remaining = [];
-      for (var i = 0; i < pending.length; i++) {
-        try {
-          var res = await fetchWithTimeout(window.CHATBOT_CONFIG.logApiUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(pending[i])
-          }, 5000);
-          if (!res.ok) throw new Error("retry failed");
-        } catch (e) {
-          remaining.push(pending[i]);
-        }
-      }
-
-      if (remaining.length) {
-        localStorage.setItem("chatbot_pending_logs", JSON.stringify(remaining.slice(-100)));
-      } else {
-        ChatbotStore.clearPendingLogs();
-      }
-    }
-
+    // ── 카테고리 탭 ──────────────────────────────────────────────
     function renderCategoryTabs() {
-      var categories = ChatbotStore.getCategories();
-      var labels = ChatbotStore.getCategoryLabels();
+      const categories = ChatbotStore.getCategories();
+      const labels     = ChatbotStore.getCategoryLabels();
       if (categories.indexOf(selectedCategory) === -1) {
         selectedCategory = categories[0] || "all";
       }
-
       categoryTabs.innerHTML = "";
-      categories.forEach(function(category) {
-        var btn = document.createElement("button");
-        btn.className = "category-tab " + (selectedCategory === category ? "active" : "");
+      categories.forEach(function (category) {
+        const btn = document.createElement("button");
+        btn.className   = "category-tab " + (selectedCategory === category ? "active" : "");
         btn.textContent = labels[category] || category;
-        btn.onclick = async function() {
+        btn.onclick = async function () {
           if (isSending) return;
           selectedCategory = category;
           renderCategoryTabs();
@@ -396,124 +356,147 @@
       });
     }
 
+    // ── FAQ 렌더링 (서버 TOP 질문 연동) ─────────────────────────
     async function renderFAQ() {
-      var qa = ChatbotStore.getQAByCategory(selectedCategory);
       faqList.innerHTML = "";
+      let topQA = [];
 
-      if (!qa.length) {
-        var empty = document.createElement("div");
-        empty.className = "empty-faq";
+      try {
+        if (window.CHATBOT_CONFIG.topQuestionsApiUrl) {
+          const url = window.CHATBOT_CONFIG.topQuestionsApiUrl +
+            "?category=" + encodeURIComponent(selectedCategory) +
+            "&limit=" + (window.CHATBOT_CONFIG.faqButtonCount || 4);
+          const res = await fetchWithTimeout(url, { method: "GET" }, 3000);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success && Array.isArray(data.items) && data.items.length) {
+              const mapped = data.items
+                .map(function (si) {
+                  return ChatbotStore.findAnswer(si.question, si.category || "all") || null;
+                })
+                .filter(Boolean);
+              if (mapped.length) topQA = mapped;
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("TOP 질문 서버 로드 실패, 로컬 폴백:", e.message);
+      }
+
+      if (!topQA.length) {
+        const qa = ChatbotStore.getQAByCategory(selectedCategory);
+        topQA = qa.filter(function (item) { return item.top; });
+        if (!topQA.length) topQA = qa;
+        topQA = topQA.slice(0, window.CHATBOT_CONFIG.faqButtonCount || 4);
+      }
+
+      if (!topQA.length) {
+        const empty = document.createElement("div");
+        empty.className   = "empty-faq";
         empty.textContent = "이 카테고리에 등록된 FAQ가 없습니다.";
         faqList.appendChild(empty);
         return;
       }
 
-      var topQA = qa.filter(function(item) { return item.top; });
-      if (!topQA.length) {
-        topQA = qa;
-      }
-      topQA = topQA.slice(0, window.CHATBOT_CONFIG.faqButtonCount);
-
-      topQA.forEach(function(item) {
-        var btn = document.createElement("button");
-        btn.type = "button";
+      topQA.forEach(function (item) {
+        const btn = document.createElement("button");
+        btn.type        = "button";
         btn.textContent = item.question;
-
-        btn.onclick = async function() {
+        btn.onclick = async function () {
           if (btn.disabled || isSending) return;
           btn.disabled = true;
           try {
             await sendMessage(item.question, true, item.category, item.answer);
           } finally {
-            setTimeout(function() { btn.disabled = false; }, 500);
+            setTimeout(function () { btn.disabled = false; }, 500);
           }
         };
         faqList.appendChild(btn);
       });
     }
 
+    // ── 메시지 전송 ──────────────────────────────────────────────
     async function sendMessage(customText, isFaqClick, faqCategory, directAnswer) {
-      var text = (customText != null ? customText : userInput.value).trim();
+      const text = (customText != null ? customText : userInput.value).trim();
       if (!text || isSending) return;
 
-      isSending = true;
+      isSending           = true;
       sendButton.disabled = true;
-      userInput.disabled = true;
+      userInput.disabled  = true;
 
       addMessage(text, "user");
       userInput.value = "";
-      var typingRow = addMessage("답변을 찾는 중입니다...", "bot", "SCM봇", "typing");
+      const typingRow = addMessage("답변을 찾는 중입니다...", "bot", "SCM봇", "typing");
 
       try {
-        var answer;
-        var matched;
-        var matchedCategory;
+        let answer = null, matched = false, matchedCategory;
 
         if (isFaqClick && directAnswer) {
-          answer = directAnswer;
-          matched = true;
+          answer          = directAnswer;
+          matched         = true;
           matchedCategory = faqCategory || selectedCategory;
         } else {
-          var searchCategory = faqCategory || selectedCategory;
-          var result = ChatbotStore.findAnswer(text, searchCategory);
-
+          const searchCategory = faqCategory || selectedCategory;
+          let result = ChatbotStore.findAnswer(text, searchCategory);
           if (!result && searchCategory !== "all") {
             result = ChatbotStore.findAnswer(text, "all");
           }
-
-          answer = result
-            ? result.answer
-            : "등록된 답변을 찾지 못했습니다. 해당 문의 사항은 SCM팀 담당자에게 문의 부탁드립니다.";
-          matched = !!result;
+          matched         = !!result;
           matchedCategory = result ? result.category : searchCategory;
+          answer          = result ? result.answer : null;
         }
 
-        await new Promise(function(resolve) { setTimeout(resolve, 250); });
+        await new Promise(function (resolve) { setTimeout(resolve, 250); });
         removeRow(typingRow);
-        addMessage(answer, "bot", "SCM봇");
 
-        var payload = {
-          question: text,
-          answer: answer,
-          matched: matched,
-          category: matchedCategory,
+        if (answer !== null) {
+          addMessage(answer, "bot", "SCM봇");
+        } else {
+          addContactCard(text, matchedCategory);
+        }
+
+        const payload = {
+          question:  text,
+          answer:    answer || "미매칭",
+          matched:   matched,
+          category:  matchedCategory,
           createdAt: new Date().toISOString(),
           timestamp: Date.now(),
-          page: location.href,
+          page:      location.href,
           userAgent: navigator.userAgent,
-          source: isFaqClick ? "faq-click" : "user"
+          source:    isFaqClick ? "faq-click" : "user"
         };
 
         ChatbotStore.saveHistory(payload);
+        try { await sendToServer(payload); }
+        catch (err) { console.warn("서버 로깅 실패:", err); }
 
-        try {
-          await sendToServer(payload);
-        } catch (err) {
-          console.warn("서버 로깅 실패:", err);
-        }
       } catch (error) {
         console.error("메시지 전송 오류:", error);
         removeRow(typingRow);
         addMessage("죄송합니다. 일시적인 오류가 발생했습니다. 다시 시도해 주세요.", "bot", "SCM봇");
       } finally {
-        isSending = false;
+        isSending           = false;
         sendButton.disabled = false;
-        userInput.disabled = false;
+        userInput.disabled  = false;
         userInput.focus();
       }
     }
 
-    userInput.addEventListener("keydown", function(e) {
+    userInput.addEventListener("keydown", function (e) {
       if (e.key === "Enter") sendMessage();
     });
 
+    // ── 초기화 ──────────────────────────────────────────────────
     addMessage("안녕하세요.\n문의사항을 입력하거나 아래 FAQ를 선택해주세요.", "bot", "SCM봇");
     renderCategoryTabs();
-    renderFAQ();
 
-    // ✅ 실패 로그 재전송 (1분마다)
-    retryPendingLogs();
-    setInterval(retryPendingLogs, window.CHATBOT_CONFIG.pendingRetryIntervalMs || 60000);
+    Promise.all([loadContacts(), renderFAQ()]);
+
+    ChatbotStore.retryPendingLogs(window.CHATBOT_CONFIG.logApiUrl);
+    setInterval(function () {
+      ChatbotStore.retryPendingLogs(window.CHATBOT_CONFIG.logApiUrl);
+    }, window.CHATBOT_CONFIG.pendingRetryIntervalMs || 60000);
   </script>
 </body>
 </html>
