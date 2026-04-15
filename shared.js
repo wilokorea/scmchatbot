@@ -1,9 +1,9 @@
 (function () {
-  const QA_KEY = "chatbot_qa";
-  const HISTORY_KEY = "chatbot_history";
-  const QA_VERSION_KEY = "chatbot_qa_version";
+  const QA_KEY           = "chatbot_qa";
+  const HISTORY_KEY      = "chatbot_history";
+  const QA_VERSION_KEY   = "chatbot_qa_version";
   const PENDING_LOGS_KEY = "chatbot_pending_logs";
-  const QA_VERSION = "2026-04-06-v4"; // ✅ 버전 업
+  const QA_VERSION       = "2026-04-06-v4";
 
   const DEFAULT_QA = [
     {
@@ -305,50 +305,38 @@
   ];
 
   const CATEGORY_LABELS = {
-    all: "전체",
-    delivery: "배송",
-    documents: "문서",
-    production: "생산",
-    purchase: "구매",
-    other: "기타"
+    all: "전체", delivery: "배송", documents: "문서",
+    production: "생산", purchase: "구매", other: "기타"
   };
 
-  const VALID_CATEGORIES = new Set(Object.keys(CATEGORY_LABELS).filter(cat => cat !== "all"));
+  const VALID_CATEGORIES = new Set(Object.keys(CATEGORY_LABELS).filter(function (c) { return c !== "all"; }));
 
-  // ========== 유틸리티 함수 ==========
   function safeParse(value, fallback) {
     try {
       const parsed = JSON.parse(value);
       return parsed === null ? fallback : parsed;
-    } catch {
-      return fallback;
-    }
+    } catch { return fallback; }
   }
 
   function createQAId() {
-    return `qa_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+    return "qa_" + Date.now() + "_" + Math.random().toString(36).slice(2, 10);
   }
 
   function normalizeKeywords(value) {
     if (Array.isArray(value)) {
-      return [...new Set(value.map(v => String(v || "").trim()).filter(Boolean))];
+      return [...new Set(value.map(function (v) { return String(v || "").trim(); }).filter(Boolean))];
     }
     return [...new Set(
-      String(value || "")
-        .split(/\||,|;|\//)
-        .map(v => v.trim())
-        .filter(Boolean)
+      String(value || "").split(/\||,|;|\//).map(function (v) { return v.trim(); }).filter(Boolean)
     )];
   }
 
   function normalizeCategory(value) {
-    const category = String(value || "other").trim().toLowerCase();
-    return VALID_CATEGORIES.has(category) ? category : "other";
+    const cat = String(value || "other").trim().toLowerCase();
+    return VALID_CATEGORIES.has(cat) ? cat : "other";
   }
 
-  function normalizeCategoryDisplay(cat) {
-    return CATEGORY_LABELS[cat] || "기타";
-  }
+  function normalizeCategoryDisplay(cat) { return CATEGORY_LABELS[cat] || "기타"; }
 
   function normalizeBoolean(val) {
     if (typeof val === "boolean") return val;
@@ -361,18 +349,16 @@
 
   function normalizeItem(item) {
     return {
-      __id: item.__id || createQAId(),
+      __id:     item.__id || createQAId(),
       category: normalizeCategory(item.category),
       question: String(item.question || "").trim(),
       keywords: normalizeKeywords(item.keywords),
-      answer: String(item.answer || "").trim(),
-      top: !!item.top
+      answer:   String(item.answer   || "").trim(),
+      top:      !!item.top
     };
   }
 
-  function normalizeText(value) {
-    return String(value || "").trim().toLowerCase();
-  }
+  function normalizeText(value) { return String(value || "").trim().toLowerCase(); }
 
   function stripText(value) {
     return String(value || "").replace(/[\s?!.,·…\-_()（）「」『』""''~]/g, "").toLowerCase();
@@ -380,33 +366,25 @@
 
   function escapeHtml(text) {
     return String(text)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;").replace(/"/g, "&quot;")
       .replace(/'/g, "&#039;");
   }
 
-  // ========== 버전 관리 / QA 로드 ==========
+  // ── 버전 관리 / QA 로드 ──────────────────────────────────────
   function ensureLatestDefaultQA() {
     const currentVersion = localStorage.getItem(QA_VERSION_KEY);
     const stored = safeParse(localStorage.getItem(QA_KEY), null);
 
     if (currentVersion !== QA_VERSION || !Array.isArray(stored) || !stored.length) {
-      // ✅ 병합 로직: 기존 사용자 추가/수정 데이터 보존
-      const normalizedDefaults = DEFAULT_QA.map(normalizeItem).filter(item => item.question && item.answer);
+      const normalizedDefaults = DEFAULT_QA.map(normalizeItem).filter(function (i) { return i.question && i.answer; });
 
       if (Array.isArray(stored) && stored.length) {
-        const mergedMap = new Map();
+        const mergedMap  = new Map();
+        const defaultIds = new Set(DEFAULT_QA.map(function (d) { return d.__id; }));
 
-        // 기본 데이터 먼저 삽입
-        normalizedDefaults.forEach(item => {
-          mergedMap.set(item.__id, item);
-        });
-
-        // 사용자 데이터 병합 (기본 ID가 아닌 항목은 보존)
-        const defaultIds = new Set(DEFAULT_QA.map(d => d.__id));
-        stored.forEach(raw => {
+        normalizedDefaults.forEach(function (item) { mergedMap.set(item.__id, item); });
+        stored.forEach(function (raw) {
           const item = normalizeItem(raw);
           if (item.question && item.answer && !defaultIds.has(item.__id)) {
             mergedMap.set(item.__id, item);
@@ -424,20 +402,17 @@
       return normalizedDefaults;
     }
 
-    return stored.map(normalizeItem).filter(item => item.question && item.answer);
+    return stored.map(normalizeItem).filter(function (i) { return i.question && i.answer; });
   }
 
-  function loadQA() {
-    return ensureLatestDefaultQA();
-  }
-
+  function loadQA()      { return ensureLatestDefaultQA(); }
   function saveQA(items) {
-    const normalized = items.map(normalizeItem).filter(item => item.question && item.answer);
+    const normalized = items.map(normalizeItem).filter(function (i) { return i.question && i.answer; });
     localStorage.setItem(QA_KEY, JSON.stringify(normalized));
     localStorage.setItem(QA_VERSION_KEY, QA_VERSION);
   }
 
-  // ========== 히스토리 ==========
+  // ── 히스토리 ─────────────────────────────────────────────────
   function getHistory() {
     const data = safeParse(localStorage.getItem(HISTORY_KEY), []);
     return Array.isArray(data) ? data : [];
@@ -445,151 +420,126 @@
 
   function saveHistoryItem(item) {
     const history = getHistory();
-    history.unshift({
-      ...item,
-      timestamp: item.timestamp || Date.now()
-    });
+    history.unshift(Object.assign({}, item, { timestamp: item.timestamp || Date.now() }));
     localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 500)));
   }
 
-  // ========== 점수 기반 매칭 ==========
+  // ── 점수 기반 매칭 ───────────────────────────────────────────
   function calculateMatchScore(item, text) {
-    const q = normalizeText(text);
+    const q            = normalizeText(text);
     const itemQuestion = normalizeText(item.question);
-
     if (!q) return 0;
-
-    // 1) 완전 일치 → 최고 점수
     if (q === itemQuestion) return 100;
 
-    // 2) 특수문자/공백 제거 후 완전 일치
-    const strippedQ = stripText(text);
+    const strippedQ    = stripText(text);
     const strippedItem = stripText(item.question);
     if (strippedQ && strippedItem && strippedQ === strippedItem) return 95;
 
     let score = 0;
-
-    // 3) 포함 관계 (양방향)
-    if (itemQuestion && q.includes(itemQuestion)) {
-      score = Math.max(score, 85);
-    }
+    if (itemQuestion && q.includes(itemQuestion)) score = Math.max(score, 85);
     if (q.length >= 4 && itemQuestion.includes(q)) {
-      const ratio = q.length / itemQuestion.length;
-      score = Math.max(score, 60 + ratio * 25);
+      score = Math.max(score, 60 + (q.length / itemQuestion.length) * 25);
     }
-
-    // 4) 특수문자 제거 후 포함 관계
-    if (strippedItem && strippedQ.includes(strippedItem)) {
-      score = Math.max(score, 80);
-    }
+    if (strippedItem && strippedQ.includes(strippedItem)) score = Math.max(score, 80);
     if (strippedQ.length >= 4 && strippedItem.includes(strippedQ)) {
-      const ratio = strippedQ.length / strippedItem.length;
-      score = Math.max(score, 55 + ratio * 25);
+      score = Math.max(score, 55 + (strippedQ.length / strippedItem.length) * 25);
     }
 
-    // 5) 키워드 매칭 — 매칭된 키워드 수에 따라 점수 부여
-    const matchedKeywords = item.keywords.filter(keyword => {
-      const kw = normalizeText(keyword);
-      return kw && kw.length >= 2 && q.includes(kw);
+    const matchedKeywords = item.keywords.filter(function (kw) {
+      const k = normalizeText(kw);
+      return k && k.length >= 2 && q.includes(k);
     });
-
     if (matchedKeywords.length > 0) {
-      const kwScore = Math.min(50, 20 + matchedKeywords.length * 10);
-      score = Math.max(score, kwScore);
+      score = Math.max(score, Math.min(50, 20 + matchedKeywords.length * 10));
     }
-
     return score;
   }
 
   function findBestMatch(candidates, text) {
-    let bestMatch = null;
-    let bestScore = 0;
-
-    for (const item of candidates) {
+    let bestMatch = null, bestScore = 0;
+    candidates.forEach(function (item) {
       const score = calculateMatchScore(item, text);
-      if (score > bestScore) {
-        bestScore = score;
-        bestMatch = item;
-      }
-    }
-
-    // 최소 임계값: 30 이상이어야 매칭
+      if (score > bestScore) { bestScore = score; bestMatch = item; }
+    });
     return bestScore >= 30 ? bestMatch : null;
   }
 
-  // ========== Pending Logs ==========
+  // ── Pending Logs ─────────────────────────────────────────────
   function getPendingLogs() {
     return safeParse(localStorage.getItem(PENDING_LOGS_KEY), []);
   }
-
   function savePendingLog(data) {
     const pending = getPendingLogs();
     pending.push(data);
     localStorage.setItem(PENDING_LOGS_KEY, JSON.stringify(pending.slice(-100)));
   }
+  function clearPendingLogs() { localStorage.removeItem(PENDING_LOGS_KEY); }
 
-  function clearPendingLogs() {
-    localStorage.removeItem(PENDING_LOGS_KEY);
+  // ✅ 10번: retryPendingLogs shared.js 통합
+  function _fetchWithTimeout(url, options, timeoutMs) {
+    timeoutMs = timeoutMs || 10000;
+    const controller = new AbortController();
+    const timer = setTimeout(function () { controller.abort(); }, timeoutMs);
+    return fetch(url, Object.assign({}, options, { signal: controller.signal }))
+      .finally(function () { clearTimeout(timer); });
   }
 
-  // ========== Public API ==========
+  async function retryPendingLogs(logApiUrl) {
+    if (!logApiUrl) return;
+    const pending = getPendingLogs();
+    if (!pending.length) return;
+    const remaining = [];
+    for (let i = 0; i < pending.length; i++) {
+      try {
+        const res = await _fetchWithTimeout(logApiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(pending[i])
+        }, 5000);
+        if (!res.ok) throw new Error("retry failed " + res.status);
+      } catch (e) {
+        remaining.push(pending[i]);
+      }
+    }
+    remaining.length
+      ? localStorage.setItem(PENDING_LOGS_KEY, JSON.stringify(remaining.slice(-100)))
+      : clearPendingLogs();
+  }
+
+  // ── Public API ───────────────────────────────────────────────
   window.ChatbotStore = {
-    getQA() {
-      return loadQA();
-    },
-    getQAByCategory(category) {
+    getQA()                    { return loadQA(); },
+    getQAByCategory(category)  {
       const all = loadQA();
       if (!category || category === "all") return all;
-      return all.filter(item => item.category === category);
+      return all.filter(function (item) { return item.category === category; });
     },
     getCategories() {
       const qa = loadQA();
-      const categories = [...new Set(qa.map(item => item.category).filter(Boolean))].sort();
-      return ["all", ...categories];
+      const cats = [...new Set(qa.map(function (i) { return i.category; }).filter(Boolean))].sort();
+      return ["all", ...cats];
     },
-    getCategoryLabels() {
-      return { ...CATEGORY_LABELS };
-    },
+    getCategoryLabels() { return Object.assign({}, CATEGORY_LABELS); },
     findAnswer(text, selectedCategory) {
-      // 1차: 선택된 카테고리 내에서 검색
       const candidates = this.getQAByCategory(selectedCategory === "all" ? "all" : selectedCategory);
       const found = findBestMatch(candidates, text);
       if (found) return found;
-
-      // 2차: 전체에서 검색 (카테고리가 지정된 경우)
-      if (selectedCategory !== "all") {
-        return findBestMatch(loadQA(), text) || null;
-      }
-
+      if (selectedCategory !== "all") return findBestMatch(loadQA(), text) || null;
       return null;
     },
-    saveHistory(item) {
-      saveHistoryItem(item);
-    },
-    getHistory() {
-      return getHistory();
-    },
-    clearHistory() {
-      localStorage.removeItem(HISTORY_KEY);
-    },
+    saveHistory(item)  { saveHistoryItem(item); },
+    getHistory()       { return getHistory(); },
+    clearHistory()     { localStorage.removeItem(HISTORY_KEY); },
     importTemplate(payload) {
-      const mode = payload && payload.mode === "append" ? "append" : "replace";
+      const mode     = payload && payload.mode === "append" ? "append" : "replace";
       const incoming = Array.isArray(payload && payload.data) ? payload.data.map(normalizeItem) : [];
-
       if (mode === "append") {
-        const current = loadQA();
+        const current   = loadQA();
         const mergedMap = new Map();
-
-        current.forEach(item => {
-          mergedMap.set(normalizeText(item.question), item);
+        current.forEach(function (item) { mergedMap.set(normalizeText(item.question), item); });
+        incoming.forEach(function (item) {
+          if (item.question && item.answer) mergedMap.set(normalizeText(item.question), item);
         });
-
-        incoming.forEach(item => {
-          if (item.question && item.answer) {
-            mergedMap.set(normalizeText(item.question), item);
-          }
-        });
-
         saveQA(Array.from(mergedMap.values()));
       } else {
         saveQA(incoming);
@@ -597,17 +547,14 @@
     },
     deleteQAById(id) {
       const current = loadQA();
-      const next = current.filter(item => item.__id !== id);
+      const next    = current.filter(function (item) { return item.__id !== id; });
       if (next.length === current.length) return false;
-      saveQA(next);
-      return true;
+      saveQA(next); return true;
     },
     deleteQAByIndex(index) {
       const current = loadQA();
       if (index < 0 || index >= current.length) return false;
-      current.splice(index, 1);
-      saveQA(current);
-      return true;
+      current.splice(index, 1); saveQA(current); return true;
     },
     clearQA() {
       localStorage.setItem(QA_KEY, JSON.stringify([]));
@@ -619,48 +566,36 @@
     },
     searchQA(query) {
       if (!query) return this.getQA();
-
       const q = normalizeText(query);
-      return this.getQA().filter(item => {
+      return this.getQA().filter(function (item) {
         return normalizeText(item.question).includes(q) ||
-               normalizeText(item.answer).includes(q) ||
-               item.keywords.some(kw => normalizeText(kw).includes(q));
+               normalizeText(item.answer).includes(q)   ||
+               item.keywords.some(function (kw) { return normalizeText(kw).includes(q); });
       });
     },
     getStats() {
-      const qa = this.getQA();
+      const qa      = this.getQA();
       const history = this.getHistory();
-      const categories = {};
-
-      qa.forEach(item => {
-        categories[item.category] = (categories[item.category] || 0) + 1;
-      });
-
+      const cats    = {};
+      qa.forEach(function (item) { cats[item.category] = (cats[item.category] || 0) + 1; });
       return {
-        totalQA: qa.length,
-        totalHistory: history.length,
-        matchedHistory: history.filter(h => h.matched).length,
-        unmatchedHistory: history.filter(h => !h.matched).length,
-        categoryCounts: categories,
-        topQuestions: qa.filter(item => item.top).length
+        totalQA:          qa.length,
+        totalHistory:     history.length,
+        matchedHistory:   history.filter(function (h) { return h.matched; }).length,
+        unmatchedHistory: history.filter(function (h) { return !h.matched; }).length,
+        categoryCounts:   cats,
+        topQuestions:     qa.filter(function (item) { return item.top; }).length
       };
     },
-
-    // ✅ Pending logs 관리
     getPendingLogs,
     savePendingLog,
-    clearPendingLogs
+    clearPendingLogs,
+    retryPendingLogs   // ✅ 10번: 공개
   };
 
-  // ========== 유틸리티 공용 노출 ==========
   window.ChatbotUtils = {
-    escapeHtml,
-    normalizeCategory,
-    normalizeCategoryDisplay,
-    normalizeKeywords,
-    normalizeBoolean,
-    normalizeText,
-    createQAId,
-    safeParse
+    escapeHtml, normalizeCategory, normalizeCategoryDisplay,
+    normalizeKeywords, normalizeBoolean, normalizeText,
+    createQAId, safeParse
   };
 })();
