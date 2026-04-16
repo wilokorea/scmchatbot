@@ -254,8 +254,8 @@
       } catch (err) {
         console.warn("담당자 로드 실패, fallback 사용:", err);
         CONTACT_MAP = [{
-          name: "SCM팀 공통", phone: "031-xxx-xxxx",
-          email: "scm@willopump.com", keywords: [],
+          name: "차현정", phone: "051-950-8138",
+          email: "hyeonjung.cha@wilo.com", keywords: [],
           category: "default", isDefault: true
         }];
       }
@@ -342,7 +342,7 @@
       var contact = overrideContact || findContact(questionText, category);
       var subject  = encodeURIComponent("[SCM 문의] " + String(questionText).slice(0, 50));
       var mailBody = encodeURIComponent(
-        "안녕하세요, 아래 내용 관련 문의드립니다.\n\n"담당이 아니신 경우 담당자에 전달 부탁드립니다." \n\n【문의 내용】\n" + questionText +
+        "안녕하세요, SCM 관련 문의드립니다.\n\n【문의 내용】\n" + questionText +
         "\n\n───────────────\n* 본 메일은 SCM FAQ봇에서 자동 생성되었습니다."
       );
       var mailtoLink = "mailto:" + contact.email + "?subject=" + subject + "&body=" + mailBody;
