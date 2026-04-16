@@ -319,8 +319,6 @@
 
     .modal .form-group textarea { min-height: 100px; resize: vertical; }
 
-    .modal .form-group textarea { min-height: 100px; resize: vertical; }
-
     .modal .button-group {
       display: flex;
       gap: 10px;
@@ -368,7 +366,6 @@
 
     .browser-info:hover { white-space: normal; overflow: visible; }
 
-    /* ✅ 추가: 담당자 뱃지 스타일 */
     .contact-badge {
       display: inline-block;
       padding: 3px 10px;
@@ -400,7 +397,6 @@
       <p>FAQ 질문 답변 관리 시스템</p>
     </header>
 
-    <!-- 로그인 -->
     <div id="loginSection" class="login-section">
       <div class="login-box">
         <h2>관리자 로그인</h2>
@@ -413,9 +409,7 @@
       </div>
     </div>
 
-    <!-- 관리자 패널 -->
     <div id="adminPanel" class="admin-panel">
-      <!-- 통계 -->
       <div class="stats">
         <div class="stat-card">
           <h3>총 Q&amp;A 수</h3>
@@ -435,7 +429,6 @@
         </div>
       </div>
 
-      <!-- 전체 질문 이력 -->
       <section id="allQuestionsSection" class="content-section">
         <h2>전체 질문 이력 관리</h2>
         <p class="section-description">
@@ -443,22 +436,10 @@
         </p>
 
         <div class="summary-cards">
-          <div class="summary-card">
-            <h4>전체</h4>
-            <div class="value" id="historyTotalCount">0</div>
-          </div>
-          <div class="summary-card">
-            <h4>매칭</h4>
-            <div class="value" id="historyMatchedCount">0</div>
-          </div>
-          <div class="summary-card">
-            <h4>미매칭</h4>
-            <div class="value" id="historyUnmatchedCount">0</div>
-          </div>
-          <div class="summary-card">
-            <h4>현재 페이지</h4>
-            <div class="value" id="historyPageCount">0</div>
-          </div>
+          <div class="summary-card"><h4>전체</h4><div class="value" id="historyTotalCount">0</div></div>
+          <div class="summary-card"><h4>매칭</h4><div class="value" id="historyMatchedCount">0</div></div>
+          <div class="summary-card"><h4>미매칭</h4><div class="value" id="historyUnmatchedCount">0</div></div>
+          <div class="summary-card"><h4>현재 페이지</h4><div class="value" id="historyPageCount">0</div></div>
         </div>
 
         <div class="filters">
@@ -470,13 +451,11 @@
             <option value="purchase">구매</option>
             <option value="other">기타</option>
           </select>
-
           <select id="historyMatched">
             <option value="all">전체 (매칭/미매칭)</option>
             <option value="true">매칭됨</option>
             <option value="false">미매칭</option>
           </select>
-
           <button class="btn" onclick="loadAllQuestionsFromServer()">조회</button>
           <button class="btn" onclick="exportAllQuestions()">CSV 다운로드</button>
           <button class="btn" style="background:linear-gradient(135deg,#e53e3e,#c53030);" onclick="resetAllQuestions()">전체 이력 삭제</button>
@@ -487,29 +466,18 @@
 
         <table id="allQuestionsTable">
           <thead>
-            <tr>
-              <th>시간</th>
-              <th>질문</th>
-              <th>답변</th>
-              <th>카테고리</th>
-              <th>매칭</th>
-              <th>출처</th>
-              <th>브라우저</th>
-            </tr>
+            <tr><th>시간</th><th>질문</th><th>답변</th><th>카테고리</th><th>매칭</th><th>출처</th><th>브라우저</th></tr>
           </thead>
           <tbody id="allQuestionsList"></tbody>
         </table>
 
         <div class="pagination">
           <button id="prevPageBtn" onclick="changePage(-1)">이전</button>
-          <div class="page-info">
-            <span id="currentPage">1</span> / <span id="totalPages">1</span>
-          </div>
+          <div class="page-info"><span id="currentPage">1</span> / <span id="totalPages">1</span></div>
           <button id="nextPageBtn" onclick="changePage(1)">다음</button>
         </div>
       </section>
 
-      <!-- 저장된 Q&A -->
       <section id="savedQASection" class="content-section">
         <h2>저장된 Q&amp;A 목록</h2>
         <p class="section-description">
@@ -539,24 +507,14 @@
           <button class="btn" onclick="filterQA()">필터 적용</button>
         </div>
 
-        <!-- ✅ 변경: 담당자 열 추가 -->
         <table id="savedQATable">
           <thead>
-            <tr>
-              <th>카테고리</th>
-              <th>질문</th>
-              <th>키워드</th>
-              <th>답변</th>
-              <th>담당자</th>
-              <th>중요</th>
-              <th>관리</th>
-            </tr>
+            <tr><th>카테고리</th><th>질문</th><th>키워드</th><th>답변</th><th>담당자</th><th>중요</th><th>관리</th></tr>
           </thead>
           <tbody id="savedQAList"></tbody>
         </table>
       </section>
 
-      <!-- 담당자 관리 섹션 -->
       <section id="contactsSection" class="content-section">
         <h2>담당자 관리</h2>
         <p class="section-description">
@@ -573,16 +531,7 @@
 
         <table id="contactsTable">
           <thead>
-            <tr>
-              <th>이름</th>
-              <th>전화번호</th>
-              <th>이메일</th>
-              <th>카테고리</th>
-              <th>키워드</th>
-              <th>기본</th>
-              <th>순서</th>
-              <th>관리</th>
-            </tr>
+            <tr><th>이름</th><th>전화번호</th><th>이메일</th><th>카테고리</th><th>키워드</th><th>기본</th><th>순서</th><th>관리</th></tr>
           </thead>
           <tbody id="contactsList"></tbody>
         </table>
@@ -597,22 +546,18 @@
       <h2 id="modalTitle">새 Q&amp;A 추가</h2>
       <form id="qaForm">
         <input type="hidden" id="qaId" />
-
         <div class="form-group">
           <label for="qaQuestionInput">질문 *</label>
           <input type="text" id="qaQuestionInput" required placeholder="사용자가 물어볼 질문을 입력하세요" />
         </div>
-
         <div class="form-group">
           <label for="qaKeywordsInput">키워드 (쉼표로 구분)</label>
           <input type="text" id="qaKeywordsInput" placeholder="예: 배송, 기간, 일정" />
         </div>
-
         <div class="form-group">
           <label for="qaAnswerInput">답변 *</label>
           <textarea id="qaAnswerInput" required placeholder="질문에 대한 답변을 입력하세요"></textarea>
         </div>
-
         <div class="form-group">
           <label for="qaCategoryInput">카테고리 *</label>
           <select id="qaCategoryInput" required>
@@ -624,8 +569,6 @@
             <option value="other">기타</option>
           </select>
         </div>
-
-        <!-- ✅ 추가: 담당자 선택 드롭다운 -->
         <div class="form-group">
           <label for="qaContactSelect">담당자 지정 (선택사항)</label>
           <select id="qaContactSelect">
@@ -635,14 +578,9 @@
             지정하지 않으면 카테고리·키워드 기반으로 자동 매칭됩니다.
           </small>
         </div>
-
         <div class="form-group">
-          <label>
-            <input type="checkbox" id="qaTopInput" />
-            중요 질문 표시
-          </label>
+          <label><input type="checkbox" id="qaTopInput" /> 중요 질문 표시</label>
         </div>
-
         <div class="button-group">
           <button type="button" class="btn btn-secondary" onclick="closeQAModal()">취소</button>
           <button type="submit" class="btn">저장</button>
@@ -659,22 +597,18 @@
       <form id="contactForm">
         <input type="hidden" id="contactId" />
         <input type="hidden" id="contactOrigCategory" />
-
         <div class="form-group">
           <label for="contactNameInput">이름 *</label>
           <input type="text" id="contactNameInput" required placeholder="홍길동" />
         </div>
-
         <div class="form-group">
           <label for="contactPhoneInput">전화번호</label>
           <input type="text" id="contactPhoneInput" placeholder="031-xxx-xxxx" />
         </div>
-
         <div class="form-group">
           <label for="contactEmailInput">이메일 *</label>
           <input type="email" id="contactEmailInput" required placeholder="name@willopump.com" />
         </div>
-
         <div class="form-group">
           <label for="contactCategoryInput">카테고리 *</label>
           <select id="contactCategoryInput" required>
@@ -687,24 +621,17 @@
             <option value="default">기본 (전체)</option>
           </select>
         </div>
-
         <div class="form-group">
           <label for="contactKeywordsInput">키워드 (쉼표로 구분)</label>
           <input type="text" id="contactKeywordsInput" placeholder="예: 원산지, 증명서, FTA" />
         </div>
-
         <div class="form-group">
           <label for="contactOrderInput">표시 순서</label>
           <input type="number" id="contactOrderInput" value="99" min="1" max="99" />
         </div>
-
         <div class="form-group">
-          <label>
-            <input type="checkbox" id="contactDefaultInput" />
-            기본 담당자 (매칭 안 될 때 표시)
-          </label>
+          <label><input type="checkbox" id="contactDefaultInput" /> 기본 담당자 (매칭 안 될 때 표시)</label>
         </div>
-
         <div class="button-group">
           <button type="button" class="btn btn-secondary" onclick="closeContactModal()">취소</button>
           <button type="submit" class="btn">저장</button>
@@ -744,11 +671,8 @@
 
     function toKoreanTime(timestamp) {
       if (!timestamp) return '-';
-      try {
-        return new Date(timestamp).toLocaleString('ko-KR');
-      } catch (e) {
-        return '-';
-      }
+      try { return new Date(timestamp).toLocaleString('ko-KR'); }
+      catch (e) { return '-'; }
     }
 
     async function fetchWithTimeout(url, options, timeoutMs) {
@@ -770,7 +694,6 @@
     function login() {
       var password = document.getElementById('passwordInput').value;
       var loginError = document.getElementById('loginError');
-
       if (ADMIN_CONFIG.authMode === "dev") {
         if (password === ADMIN_CONFIG.devPassword) {
           document.getElementById('loginSection').style.display = 'none';
@@ -790,30 +713,25 @@
     // ========== 데이터 로드 ==========
     async function loadAllData() {
       await Promise.all([
-        loadSavedQA(),
         loadAllQuestionsFromServer(),
         loadContacts()
       ]);
-      // ✅ 추가: 담당자 로드 완료 후 드롭다운 갱신 및 QA 테이블 재표시
+      // 담당자 로드 완료 후 QA 표시 (담당자명 표시를 위해 순서 중요)
+      loadSavedQA();
       refreshContactSelectOptions();
-      displaySavedQA(savedQACache);
     }
 
     // ========== 통계 업데이트 ==========
     function updateStats() {
-      var qaData = ChatbotStore.getQA();
+      var qaData = JSON.parse(localStorage.getItem('chatbot_qa') || '[]');
       document.getElementById('totalQACount').textContent = qaData.length;
     }
 
-    // ========== ✅ 추가: 담당자 드롭다운 갱신 함수 ==========
+    // ========== 담당자 드롭다운 갱신 ==========
     function refreshContactSelectOptions() {
       var select = document.getElementById('qaContactSelect');
       if (!select) return;
-
-      // 현재 선택된 값 보존
       var currentVal = select.value;
-
-      // 기본 옵션만 남기고 초기화
       select.innerHTML = '<option value="">자동 매칭 (카테고리/키워드 기반)</option>';
 
       var categoryLabels = {
@@ -829,13 +747,10 @@
         select.appendChild(opt);
       });
 
-      // 이전 선택 값 복원
-      if (currentVal) {
-        select.value = currentVal;
-      }
+      if (currentVal) select.value = currentVal;
     }
 
-    // ✅ 추가: contactId로 담당자 이름 찾기
+    // ========== contactId로 담당자 이름 찾기 ==========
     function getContactNameById(contactId) {
       if (!contactId) return null;
       var found = contactsCache.find(function(c) { return c.id === contactId; });
@@ -844,18 +759,17 @@
 
     // ========== 저장된 Q&A 관리 ==========
     function loadSavedQA() {
-      var saved = ChatbotStore.getQA();
+      var saved = JSON.parse(localStorage.getItem('chatbot_qa') || '[]');
       savedQACache = saved;
       displaySavedQA(saved);
       updateStats();
     }
 
-    // ✅ 변경: 담당자 열 추가된 displaySavedQA
     function displaySavedQA(data) {
       var tbody = document.getElementById('savedQAList');
       if (!tbody) return;
 
-      var qaData = data || ChatbotStore.getQA();
+      var qaData = data || JSON.parse(localStorage.getItem('chatbot_qa') || '[]');
       savedQACache = qaData;
       var category = (document.getElementById('qaCategory') || {}).value || 'all';
 
@@ -874,11 +788,10 @@
 
       filtered.forEach(function(item) {
         var row = document.createElement('tr');
-        var keywords = normalizeKeywords(item.keywords);
-        var isTop = normalizeBoolean(item.top);
+        var keywords = Array.isArray(item.keywords) ? item.keywords : [];
+        var isTop = !!item.top;
         var itemId = item.__id || '';
 
-        // ✅ 추가: 담당자 표시
         var contactName = getContactNameById(item.contactId);
         var contactHtml = contactName
           ? '<span class="contact-badge assigned">' + escapeHtml(contactName) + '</span>'
@@ -893,8 +806,8 @@
           '<td style="text-align:center;">' + (isTop ? '⭐' : '') + '</td>' +
           '<td>' +
             '<div class="action-buttons">' +
-              '<button class="action-btn edit-btn" data-qa-id="' + escapeHtml(itemId) + '">수정</button>' +
-              '<button class="action-btn delete-btn" data-qa-id="' + escapeHtml(itemId) + '">삭제</button>' +
+              '<button class="action-btn edit-btn">수정</button>' +
+              '<button class="action-btn delete-btn">삭제</button>' +
             '</div>' +
           '</td>';
 
@@ -917,14 +830,14 @@
       document.getElementById('modalTitle').textContent = '새 Q&A 추가';
       document.getElementById('qaForm').reset();
       document.getElementById('qaId').value = '';
-      document.getElementById('qaContactSelect').value = ''; // ✅ 추가
-      refreshContactSelectOptions(); // ✅ 추가
+      refreshContactSelectOptions();
+      document.getElementById('qaContactSelect').value = '';
       document.getElementById('qaModal').style.display = 'block';
     }
 
-    // ✅ 변경: editQAById에 contactId 복원 추가
     function editQAById(id) {
-      var item = savedQACache.find(function(q) { return q.__id === id; });
+      var qaData = JSON.parse(localStorage.getItem('chatbot_qa') || '[]');
+      var item = qaData.find(function(q) { return q.__id === id; });
       if (!item) {
         alert('해당 항목을 찾을 수 없습니다.');
         return;
@@ -933,12 +846,11 @@
       document.getElementById('modalTitle').textContent = 'Q&A 수정';
       document.getElementById('qaId').value = item.__id || '';
       document.getElementById('qaQuestionInput').value = item.question || '';
-      document.getElementById('qaKeywordsInput').value = normalizeKeywords(item.keywords).join(', ');
+      document.getElementById('qaKeywordsInput').value = (Array.isArray(item.keywords) ? item.keywords : []).join(', ');
       document.getElementById('qaAnswerInput').value = item.answer || '';
       document.getElementById('qaCategoryInput').value = normalizeCategory(item.category);
-      document.getElementById('qaTopInput').checked = normalizeBoolean(item.top);
+      document.getElementById('qaTopInput').checked = !!item.top;
 
-      // ✅ 추가: 담당자 드롭다운 갱신 후 값 설정
       refreshContactSelectOptions();
       document.getElementById('qaContactSelect').value = item.contactId || '';
 
@@ -953,8 +865,12 @@
       e.preventDefault();
       saveQA();
     });
+
     function saveQA() {
-      var id = document.getElementById('qaId').value || createQAId();
+      var id = document.getElementById('qaId').value;
+      var isEdit = !!id;
+      if (!id) id = createQAId();
+
       var question = document.getElementById('qaQuestionInput').value.trim();
       var keywords = document.getElementById('qaKeywordsInput').value;
       var answer = document.getElementById('qaAnswerInput').value.trim();
@@ -967,8 +883,7 @@
         return;
       }
 
-      var qaData = ChatbotStore.getQA();
-      var existingIndex = qaData.findIndex(function(item) { return item.__id === id; });
+      var qaData = JSON.parse(localStorage.getItem('chatbot_qa') || '[]');
 
       var newItem = {
         __id: id,
@@ -980,8 +895,13 @@
         contactId: contactId
       };
 
-      if (existingIndex >= 0) {
-        qaData[existingIndex] = newItem;
+      if (isEdit) {
+        var existingIndex = qaData.findIndex(function(item) { return item.__id === id; });
+        if (existingIndex >= 0) {
+          qaData[existingIndex] = newItem;
+        } else {
+          qaData.push(newItem);
+        }
       } else {
         var duplicate = qaData.find(function(item) {
           return item.question.toLowerCase() === question.toLowerCase() &&
@@ -995,40 +915,37 @@
         qaData.push(newItem);
       }
 
-      // ✅ 수정: importTemplate 대신 직접 localStorage에 저장 (contactId 유실 방지)
       localStorage.setItem('chatbot_qa', JSON.stringify(qaData));
 
       closeQAModal();
-
-      // ✅ 수정: loadSavedQA 대신 캐시 직접 갱신 후 표시
       savedQACache = qaData;
       displaySavedQA(qaData);
       updateStats();
-
-      // ✅ 디버그 확인용 (정상 작동 확인 후 삭제 가능)
-      var check = JSON.parse(localStorage.getItem('chatbot_qa'));
-      var found = check.find(function(i) { return i.__id === id; });
-      console.log('저장 확인 - contactId:', found ? found.contactId : 'NOT FOUND');
-
       alert('저장되었습니다.');
     }
 
-
     function deleteQAById(id) {
       if (!confirm('정말 삭제하시겠습니까?')) return;
-      ChatbotStore.deleteQAById(id);
-      loadSavedQA();
+
+      var qaData = JSON.parse(localStorage.getItem('chatbot_qa') || '[]');
+      var filtered = qaData.filter(function(item) { return item.__id !== id; });
+      localStorage.setItem('chatbot_qa', JSON.stringify(filtered));
+
+      savedQACache = filtered;
+      displaySavedQA(filtered);
+      updateStats();
     }
 
     function clearAllQA() {
       if (!confirm('모든 Q&A 데이터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return;
-      ChatbotStore.clearQA();
-      loadSavedQA();
+      localStorage.setItem('chatbot_qa', JSON.stringify([]));
+      savedQACache = [];
+      displaySavedQA([]);
+      updateStats();
       alert('모든 데이터가 삭제되었습니다.');
     }
 
     // ========== CSV ==========
-    // ✅ 변경: contactId 포함
     function uploadCSV() {
       var fileInput = document.getElementById('csvFile');
       var file = fileInput && fileInput.files[0];
@@ -1049,7 +966,7 @@
               keywords: normalizeKeywords(row.keywords || row['키워드'] || ''),
               answer: row.answer || row['답변'] || '',
               top: normalizeBoolean(row.top || row['중요'] || false),
-              contactId: row.contactId || row['담당자ID'] || '' // ✅ 추가
+              contactId: row.contactId || row['담당자ID'] || ''
             };
           }).filter(function(item) { return item.question && item.answer; });
 
@@ -1058,8 +975,10 @@
             return;
           }
 
-          ChatbotStore.importTemplate({ mode: 'replace', data: qaData });
-          loadSavedQA();
+          localStorage.setItem('chatbot_qa', JSON.stringify(qaData));
+          savedQACache = qaData;
+          displaySavedQA(qaData);
+          updateStats();
           alert(qaData.length + '개의 Q&A가 업로드되었습니다.');
           fileInput.value = '';
         },
@@ -1069,9 +988,8 @@
       });
     }
 
-    // ✅ 변경: CSV 다운로드에 contactId, 담당자명 포함
     function downloadCSV() {
-      var qaData = ChatbotStore.getQA();
+      var qaData = JSON.parse(localStorage.getItem('chatbot_qa') || '[]');
       if (qaData.length === 0) {
         alert('다운로드할 데이터가 없습니다.');
         return;
@@ -1082,7 +1000,7 @@
           id: item.__id,
           category: normalizeCategoryDisplay(item.category),
           question: item.question,
-          keywords: normalizeKeywords(item.keywords).join(', '),
+          keywords: (Array.isArray(item.keywords) ? item.keywords : []).join(', '),
           answer: item.answer,
           top: item.top ? 'O' : 'X',
           contactId: item.contactId || '',
@@ -1121,15 +1039,10 @@
           headers: { 'Accept': 'application/json' }
         });
 
-        if (!res.ok) {
-          throw new Error('서버 응답 오류 (' + res.status + ')');
-        }
+        if (!res.ok) throw new Error('서버 응답 오류 (' + res.status + ')');
 
         var data = await res.json();
-
-        if (!data.success) {
-          throw new Error(data.error || '데이터 로드 실패');
-        }
+        if (!data.success) throw new Error(data.error || '데이터 로드 실패');
 
         allQuestionsData = data.items || [];
         var totalCount = data.totalCount || 0;
@@ -1189,15 +1102,8 @@
       });
 
       document.getElementById('historyPageCount').textContent = items.length;
-
-      document.getElementById('matchedCount').textContent =
-        (parseInt(document.getElementById('matchedCount').textContent) || 0) > 0
-          ? document.getElementById('matchedCount').textContent
-          : matchedTotal;
-      document.getElementById('unmatchedCount').textContent =
-        (parseInt(document.getElementById('unmatchedCount').textContent) || 0) > 0
-          ? document.getElementById('unmatchedCount').textContent
-          : unmatchedTotal;
+      document.getElementById('matchedCount').textContent = matchedTotal;
+      document.getElementById('unmatchedCount').textContent = unmatchedTotal;
     }
 
     function updateHistoryStats(total, matchedFilter) {
@@ -1335,8 +1241,6 @@
         var data = await res.json();
         contactsCache = Array.isArray(data) ? data : [];
         displayContacts(contactsCache);
-
-        // ✅ 추가: 담당자 로드 후 QA 드롭다운도 갱신
         refreshContactSelectOptions();
 
       } catch (err) {
@@ -1358,7 +1262,6 @@
       if (!tbody) return;
 
       tbody.innerHTML = '';
-
       if (!contacts || contacts.length === 0) {
         tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:#999;">등록된 담당자가 없습니다.</td></tr>';
         return;
@@ -1463,9 +1366,7 @@
         isDefault: isDefault
       };
 
-      if (id) {
-        payload.id = id;
-      }
+      if (id) payload.id = id;
 
       try {
         var res = await fetchWithTimeout(ADMIN_CONFIG.contactsApiBase + '/saveContact', {
@@ -1480,7 +1381,6 @@
         if (data.success) {
           closeContactModal();
           await loadContacts();
-          // ✅ 추가: 담당자 변경 후 QA 테이블도 갱신 (담당자명 표시 업데이트)
           displaySavedQA(savedQACache);
           alert('담당자가 저장되었습니다.');
         } else {
@@ -1506,7 +1406,6 @@
         var data = await res.json();
         if (data.success) {
           await loadContacts();
-          // ✅ 추가: 담당자 삭제 후 QA 테이블도 갱신
           displaySavedQA(savedQACache);
           alert('담당자가 삭제되었습니다.');
         } else {
@@ -1519,10 +1418,8 @@
 
     // ========== 모달 외부 클릭 ==========
     window.onclick = function(event) {
-      var qaModal = document.getElementById('qaModal');
-      var contactModal = document.getElementById('contactModal');
-      if (event.target === qaModal) closeQAModal();
-      if (event.target === contactModal) closeContactModal();
+      if (event.target === document.getElementById('qaModal')) closeQAModal();
+      if (event.target === document.getElementById('contactModal')) closeContactModal();
     };
 
     // ========== 초기화 ==========
