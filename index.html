@@ -17,6 +17,12 @@
       background:linear-gradient(135deg,#f4fbf9,#eef7f5);
       color:var(--text);
     }
+    .cc-compact-desc{
+      margin-top:8px;
+      font-size:12.5px;
+      color:#64748b;
+      line-height:1.5;
+    }
     .wrap{
       max-width:500px; margin:24px auto;
       background:#fff; border:1px solid var(--line);
@@ -330,7 +336,7 @@
 
     // ── 축소형 담당자 카드 (매칭용) ──────────────────────────────
     // ✅ 변경: overrideContact 매개변수 추가
-    function addContactCardCompact(questionText, category, overrideContact) {
+     function addContactCardCompact(questionText, category, overrideContact) {
       if (!CONTACT_MAP.length && !overrideContact) return;
       var contact = overrideContact || findContact(questionText, category);
       var subject  = encodeURIComponent("[SCM 문의] " + String(questionText).slice(0, 50));
@@ -356,6 +362,7 @@
               '<span class="cc-compact-divider">·</span>' +
               '<a href="mailto:' + escapeHtml(contact.email) + '">' + escapeHtml(contact.email) + '</a>' +
             '</div>' +
+            '<div class="cc-compact-desc">원하는 답변을 찾지 못하셨다면, 아래 \'메일 보내기\' 버튼을 통해 문의해 주세요.</div>' +
             '<a class="cc-compact-mail-btn" href="' + mailtoLink + '" target="_blank">' +
               '✉️ 추가 문의가 필요하시면 메일 보내기</a>' +
           '</div>' +
@@ -364,6 +371,7 @@
       chatBox.appendChild(row);
       scrollToBottom();
     }
+
 
     // ── 유틸 ─────────────────────────────────────────────────────
     function getTimeText() {
