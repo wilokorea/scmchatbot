@@ -953,8 +953,6 @@
       e.preventDefault();
       saveQA();
     });
-
-    // ✅ 변경: saveQA에 contactId 저장 추가
     function saveQA() {
       var id = document.getElementById('qaId').value || createQAId();
       var question = document.getElementById('qaQuestionInput').value.trim();
@@ -962,7 +960,7 @@
       var answer = document.getElementById('qaAnswerInput').value.trim();
       var category = document.getElementById('qaCategoryInput').value;
       var top = document.getElementById('qaTopInput').checked;
-      var contactId = document.getElementById('qaContactSelect').value || ''; // ✅ 추가
+      var contactId = document.getElementById('qaContactSelect').value || '';
 
       if (!question || !answer || !category) {
         alert('필수 항목을 모두 입력해주세요.');
@@ -979,7 +977,7 @@
         keywords: normalizeKeywords(keywords),
         answer: answer,
         top: top,
-        contactId: contactId // ✅ 추가
+        contactId: contactId
       };
 
       if (existingIndex >= 0) {
@@ -997,11 +995,24 @@
         qaData.push(newItem);
       }
 
-      ChatbotStore.importTemplate({ mode: 'replace', data: qaData });
+      // ✅ 수정: importTemplate 대신 직접 localStorage에 저장 (contactId 유실 방지)
+      localStorage.setItem('chatbot_qa', JSON.stringify(qaData));
+
       closeQAModal();
-      loadSavedQA();
+
+      // ✅ 수정: loadSavedQA 대신 캐시 직접 갱신 후 표시
+      savedQACache = qaData;
+      displaySavedQA(qaData);
+      updateStats();
+
+      // ✅ 디버그 확인용 (정상 작동 확인 후 삭제 가능)
+      var check = JSON.parse(localStorage.getItem('chatbot_qa'));
+      var found = check.find(function(i) { return i.__id === id; });
+      console.log('저장 확인 - contactId:', found ? found.contactId : 'NOT FOUND');
+
       alert('저장되었습니다.');
     }
+
 
     function deleteQAById(id) {
       if (!confirm('정말 삭제하시겠습니까?')) return;
