@@ -98,72 +98,87 @@
     .input-wrap button:disabled{ opacity:.7; cursor:not-allowed; }
 
     /* 담당자 카드 */
+    /* 담당자 카드 (미매칭용) */
     .contact-card{
       background:#fff; border:1px solid #b2ddd5;
       border-radius:16px; border-bottom-left-radius:6px;
-      padding:14px 16px; display:flex; flex-direction:column; gap:8px;
+      padding:16px 18px; display:flex; flex-direction:column; gap:10px;
     }
-    .cc-title{ font-weight:700; font-size:14px; color:#1f2937; }
-    .cc-sub{ font-size:13px; color:#6b7280; margin-top:-4px; }
-    .cc-info{ display:flex; gap:8px; font-size:13px; align-items:center; }
+    .cc-title{ font-weight:700; font-size:15px; color:#1f2937; }
+    .cc-sub{ font-size:14px; color:#4a5568; margin-top:-4px; }
+    .cc-info{ display:flex; gap:10px; font-size:14px; align-items:center; }
     .cc-label{
       background:#e7f7f3; color:#007a66; border-radius:6px;
-      padding:2px 8px; font-size:12px; font-weight:700;
-      white-space:nowrap; min-width:48px; text-align:center;
+      padding:3px 10px; font-size:13px; font-weight:700;
+      white-space:nowrap; min-width:52px; text-align:center;
     }
-    .cc-value a{ color:#009C82; text-decoration:none; }
+    .cc-value{ color:#1f2937; font-weight:500; }
+    .cc-value a{ color:#007a66; text-decoration:none; font-weight:600; }
     .cc-value a:hover{ text-decoration:underline; }
     .cc-mail-btn{
-      display:block; margin-top:6px; background:#009C82; color:#fff;
-      text-align:center; padding:10px; border-radius:10px;
-      font-size:13px; font-weight:700; text-decoration:none;
+      display:block; margin-top:8px; background:#009C82; color:#fff;
+      text-align:center; padding:12px; border-radius:10px;
+      font-size:14px; font-weight:700; text-decoration:none;
       cursor:pointer; transition:background .2s;
     }
     .cc-mail-btn:hover{ background:#007a66; }
 
-    /* ✅ 추가: 축소형 담당자 카드 */
+    /* 축소형 담당자 카드 (매칭용) */
     .compact-contact{
       background:#f0faf7 !important;
       border:1px solid #b2ddd5 !important;
-      padding:10px 14px !important;
-      font-size:13px;
+      padding:12px 16px !important;
+      font-size:14px;
       border-bottom-left-radius:6px;
     }
     .cc-compact-header{
-      color:#4a5568;
-      line-height:1.6;
+      color:#1f2937;
+      line-height:1.7;
+      font-size:14px;
+    }
+    .cc-compact-header .cc-compact-label{
+      background:#e7f7f3;
+      color:#007a66;
+      border-radius:4px;
+      padding:2px 8px;
+      font-size:12px;
+      font-weight:700;
+      margin-right:4px;
+    }
+    .cc-compact-header .cc-compact-name{
+      font-weight:700;
+      color:#1f2937;
+    }
+    .cc-compact-header .cc-compact-divider{
+      color:#94a3b8;
+      margin:0 4px;
     }
     .cc-compact-header a{
-      color:#009C82;
+      color:#007a66;
       text-decoration:none;
+      font-weight:600;
     }
     .cc-compact-header a:hover{
       text-decoration:underline;
     }
-    .cc-compact-label{
-      background:#e7f7f3;
-      color:#007a66;
-      border-radius:4px;
-      padding:1px 6px;
-      font-size:11px;
-      font-weight:700;
-    }
     .cc-compact-mail-btn{
       display:block;
-      margin-top:8px;
+      margin-top:10px;
       background:#e7f7f3;
       color:#007a66;
       text-align:center;
-      padding:8px;
+      padding:10px;
       border-radius:8px;
-      font-size:12px;
-      font-weight:600;
+      font-size:13px;
+      font-weight:700;
       text-decoration:none;
       transition:background .2s;
+      border:1px solid #b2ddd5;
     }
     .cc-compact-mail-btn:hover{
       background:#d0f0e8;
     }
+
 
     /* 버블 내 링크 */
     .bubble a{ color:#009C82; word-break:break-all; text-decoration:underline; }
@@ -262,7 +277,7 @@
                keywords: [], category: "default", isDefault: true };
     }
 
-    // ── 담당자 카드 버블 (미매칭용 — 전체 표시) ──────────────────
+     // ✅ 수정: 미매칭 담당자 카드 — 가독성 개선
     function addContactCard(questionText, category) {
       if (!CONTACT_MAP.length) {
         addMessage("등록된 답변을 찾지 못했습니다.\nSCM팀 담당자에게 문의 부탁드립니다.", "bot", "SCM봇");
@@ -306,7 +321,8 @@
       scrollToBottom();
     }
 
-    // ✅ 추가: 축소형 담당자 카드 (매칭 시 답변 아래에 표시) ──────
+
+    // ✅ 수정: 축소형 담당자 카드 — 가독성 개선
     function addContactCardCompact(questionText, category) {
       if (!CONTACT_MAP.length) return;
       const contact = findContact(questionText, category);
@@ -317,7 +333,7 @@
       );
       const mailtoLink = "mailto:" + contact.email + "?subject=" + subject + "&body=" + mailBody;
       const phoneHtml  = contact.phone
-        ? ' · <a href="tel:' + escapeHtml(contact.phone) + '">' + escapeHtml(contact.phone) + '</a>'
+        ? '<span class="cc-compact-divider">·</span><a href="tel:' + escapeHtml(contact.phone) + '">' + escapeHtml(contact.phone) + '</a>'
         : "";
 
       const row = document.createElement("div");
@@ -327,18 +343,21 @@
         '<div class="bubble-group bot">' +
           '<div class="bubble compact-contact">' +
             '<div class="cc-compact-header">' +
-              '<span class="cc-compact-label">담당자</span> ' +
-              escapeHtml(contact.name) + phoneHtml +
-              ' · <a href="mailto:' + escapeHtml(contact.email) + '">' + escapeHtml(contact.email) + '</a>' +
+              '<span class="cc-compact-label">담당자</span>' +
+              '<span class="cc-compact-name">' + escapeHtml(contact.name) + '</span>' +
+              phoneHtml +
+              '<span class="cc-compact-divider">·</span>' +
+              '<a href="mailto:' + escapeHtml(contact.email) + '">' + escapeHtml(contact.email) + '</a>' +
             '</div>' +
             '<a class="cc-compact-mail-btn" href="' + mailtoLink + '" target="_blank">' +
-              '추가 문의가 필요하시면 메일 보내기</a>' +
+              '✉️ 추가 문의가 필요하시면 메일 보내기</a>' +
           '</div>' +
         '</div>';
 
       chatBox.appendChild(row);
       scrollToBottom();
     }
+
 
     // ── 유틸 ─────────────────────────────────────────────────────
     function getTimeText() {
