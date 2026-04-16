@@ -319,6 +319,8 @@
 
     .modal .form-group textarea { min-height: 100px; resize: vertical; }
 
+    .modal .form-group textarea { min-height: 100px; resize: vertical; }
+
     .modal .button-group {
       display: flex;
       gap: 10px;
@@ -365,6 +367,23 @@
     }
 
     .browser-info:hover { white-space: normal; overflow: visible; }
+
+    /* ✅ 추가: 담당자 뱃지 스타일 */
+    .contact-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.8em;
+      font-weight: 500;
+    }
+    .contact-badge.assigned {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+    .contact-badge.auto {
+      background: #f5f5f5;
+      color: #999;
+    }
 
     @media (max-width: 768px) {
       .stats { grid-template-columns: 1fr; }
@@ -520,6 +539,7 @@
           <button class="btn" onclick="filterQA()">필터 적용</button>
         </div>
 
+        <!-- ✅ 변경: 담당자 열 추가 -->
         <table id="savedQATable">
           <thead>
             <tr>
@@ -527,6 +547,7 @@
               <th>질문</th>
               <th>키워드</th>
               <th>답변</th>
+              <th>담당자</th>
               <th>중요</th>
               <th>관리</th>
             </tr>
@@ -535,7 +556,7 @@
         </table>
       </section>
 
-      <!-- ✅ 추가: 담당자 관리 섹션 -->
+      <!-- 담당자 관리 섹션 -->
       <section id="contactsSection" class="content-section">
         <h2>담당자 관리</h2>
         <p class="section-description">
@@ -604,6 +625,17 @@
           </select>
         </div>
 
+        <!-- ✅ 추가: 담당자 선택 드롭다운 -->
+        <div class="form-group">
+          <label for="qaContactSelect">담당자 지정 (선택사항)</label>
+          <select id="qaContactSelect">
+            <option value="">자동 매칭 (카테고리/키워드 기반)</option>
+          </select>
+          <small style="color:#888; font-size:0.85em; margin-top:4px; display:block;">
+            지정하지 않으면 카테고리·키워드 기반으로 자동 매칭됩니다.
+          </small>
+        </div>
+
         <div class="form-group">
           <label>
             <input type="checkbox" id="qaTopInput" />
@@ -619,7 +651,7 @@
     </div>
   </div>
 
-  <!-- ✅ 추가: 담당자 모달 -->
+  <!-- 담당자 모달 -->
   <div id="contactModal" class="modal">
     <div class="modal-content">
       <span class="modal-close" onclick="closeContactModal()">&times;</span>
@@ -700,7 +732,7 @@
     var totalPages = 1;
     var allQuestionsData = [];
     var savedQACache = [];
-    var contactsCache = []; // ✅ 추가
+    var contactsCache = [];
 
     // ========== shared.js 유틸리티 참조 ==========
     var escapeHtml = ChatbotUtils.escapeHtml;
@@ -756,19 +788,58 @@
     });
 
     // ========== 데이터 로드 ==========
-    // ✅ 변경: 담당자 로드 추가
     async function loadAllData() {
       await Promise.all([
         loadSavedQA(),
         loadAllQuestionsFromServer(),
         loadContacts()
       ]);
+      // ✅ 추가: 담당자 로드 완료 후 드롭다운 갱신 및 QA 테이블 재표시
+      refreshContactSelectOptions();
+      displaySavedQA(savedQACache);
     }
 
     // ========== 통계 업데이트 ==========
     function updateStats() {
       var qaData = ChatbotStore.getQA();
       document.getElementById('totalQACount').textContent = qaData.length;
+    }
+
+    // ========== ✅ 추가: 담당자 드롭다운 갱신 함수 ==========
+    function refreshContactSelectOptions() {
+      var select = document.getElementById('qaContactSelect');
+      if (!select) return;
+
+      // 현재 선택된 값 보존
+      var currentVal = select.value;
+
+      // 기본 옵션만 남기고 초기화
+      select.innerHTML = '<option value="">자동 매칭 (카테고리/키워드 기반)</option>';
+
+      var categoryLabels = {
+        delivery: '배송', documents: '서류', production: '생산',
+        purchase: '구매', other: '기타', default: '기본'
+      };
+
+      contactsCache.forEach(function(contact) {
+        var opt = document.createElement('option');
+        opt.value = contact.id;
+        var catLabel = categoryLabels[contact.category] || contact.category;
+        opt.textContent = contact.name + ' (' + catLabel + ') - ' + contact.email;
+        select.appendChild(opt);
+      });
+
+      // 이전 선택 값 복원
+      if (currentVal) {
+        select.value = currentVal;
+      }
+    }
+
+    // ✅ 추가: contactId로 담당자 이름 찾기
+    function getContactNameById(contactId) {
+      if (!contactId) return null;
+      var found = contactsCache.find(function(c) { return c.id === contactId; });
+      return found ? found.name : null;
     }
 
     // ========== 저장된 Q&A 관리 ==========
@@ -779,6 +850,7 @@
       updateStats();
     }
 
+    // ✅ 변경: 담당자 열 추가된 displaySavedQA
     function displaySavedQA(data) {
       var tbody = document.getElementById('savedQAList');
       if (!tbody) return;
@@ -796,21 +868,28 @@
 
       tbody.innerHTML = '';
       if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#999;">저장된 Q&A가 없습니다.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#999;">저장된 Q&A가 없습니다.</td></tr>';
         return;
       }
 
-      filtered.forEach(function(item, index) {
+      filtered.forEach(function(item) {
         var row = document.createElement('tr');
         var keywords = normalizeKeywords(item.keywords);
         var isTop = normalizeBoolean(item.top);
         var itemId = item.__id || '';
+
+        // ✅ 추가: 담당자 표시
+        var contactName = getContactNameById(item.contactId);
+        var contactHtml = contactName
+          ? '<span class="contact-badge assigned">' + escapeHtml(contactName) + '</span>'
+          : '<span class="contact-badge auto">자동 매칭</span>';
 
         row.innerHTML =
           '<td><span class="category-badge category-' + normalizeCategory(item.category) + '">' + escapeHtml(normalizeCategoryDisplay(item.category)) + '</span></td>' +
           '<td>' + escapeHtml(item.question || '') + '</td>' +
           '<td style="font-size:0.85em;color:#666;">' + escapeHtml(keywords.join(', ')) + '</td>' +
           '<td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + escapeHtml(item.answer || '') + '">' + escapeHtml(item.answer || '') + '</td>' +
+          '<td>' + contactHtml + '</td>' +
           '<td style="text-align:center;">' + (isTop ? '⭐' : '') + '</td>' +
           '<td>' +
             '<div class="action-buttons">' +
@@ -838,9 +917,12 @@
       document.getElementById('modalTitle').textContent = '새 Q&A 추가';
       document.getElementById('qaForm').reset();
       document.getElementById('qaId').value = '';
+      document.getElementById('qaContactSelect').value = ''; // ✅ 추가
+      refreshContactSelectOptions(); // ✅ 추가
       document.getElementById('qaModal').style.display = 'block';
     }
 
+    // ✅ 변경: editQAById에 contactId 복원 추가
     function editQAById(id) {
       var item = savedQACache.find(function(q) { return q.__id === id; });
       if (!item) {
@@ -855,6 +937,11 @@
       document.getElementById('qaAnswerInput').value = item.answer || '';
       document.getElementById('qaCategoryInput').value = normalizeCategory(item.category);
       document.getElementById('qaTopInput').checked = normalizeBoolean(item.top);
+
+      // ✅ 추가: 담당자 드롭다운 갱신 후 값 설정
+      refreshContactSelectOptions();
+      document.getElementById('qaContactSelect').value = item.contactId || '';
+
       document.getElementById('qaModal').style.display = 'block';
     }
 
@@ -867,6 +954,7 @@
       saveQA();
     });
 
+    // ✅ 변경: saveQA에 contactId 저장 추가
     function saveQA() {
       var id = document.getElementById('qaId').value || createQAId();
       var question = document.getElementById('qaQuestionInput').value.trim();
@@ -874,6 +962,7 @@
       var answer = document.getElementById('qaAnswerInput').value.trim();
       var category = document.getElementById('qaCategoryInput').value;
       var top = document.getElementById('qaTopInput').checked;
+      var contactId = document.getElementById('qaContactSelect').value || ''; // ✅ 추가
 
       if (!question || !answer || !category) {
         alert('필수 항목을 모두 입력해주세요.');
@@ -889,7 +978,8 @@
         question: question,
         keywords: normalizeKeywords(keywords),
         answer: answer,
-        top: top
+        top: top,
+        contactId: contactId // ✅ 추가
       };
 
       if (existingIndex >= 0) {
@@ -927,6 +1017,7 @@
     }
 
     // ========== CSV ==========
+    // ✅ 변경: contactId 포함
     function uploadCSV() {
       var fileInput = document.getElementById('csvFile');
       var file = fileInput && fileInput.files[0];
@@ -946,7 +1037,8 @@
               question: row.question || row['질문'] || '',
               keywords: normalizeKeywords(row.keywords || row['키워드'] || ''),
               answer: row.answer || row['답변'] || '',
-              top: normalizeBoolean(row.top || row['중요'] || false)
+              top: normalizeBoolean(row.top || row['중요'] || false),
+              contactId: row.contactId || row['담당자ID'] || '' // ✅ 추가
             };
           }).filter(function(item) { return item.question && item.answer; });
 
@@ -966,6 +1058,7 @@
       });
     }
 
+    // ✅ 변경: CSV 다운로드에 contactId, 담당자명 포함
     function downloadCSV() {
       var qaData = ChatbotStore.getQA();
       if (qaData.length === 0) {
@@ -980,7 +1073,9 @@
           question: item.question,
           keywords: normalizeKeywords(item.keywords).join(', '),
           answer: item.answer,
-          top: item.top ? 'O' : 'X'
+          top: item.top ? 'O' : 'X',
+          contactId: item.contactId || '',
+          '담당자명': getContactNameById(item.contactId) || '자동 매칭'
         };
       }));
 
@@ -1209,7 +1304,7 @@
       if (loading) loading.style.display = 'none';
     }
 
-    // ========== ✅ 추가: 담당자 관리 ==========
+    // ========== 담당자 관리 ==========
     async function loadContacts() {
       var loading = document.getElementById('contactsLoading');
       var error   = document.getElementById('contactsError');
@@ -1229,6 +1324,9 @@
         var data = await res.json();
         contactsCache = Array.isArray(data) ? data : [];
         displayContacts(contactsCache);
+
+        // ✅ 추가: 담당자 로드 후 QA 드롭다운도 갱신
+        refreshContactSelectOptions();
 
       } catch (err) {
         console.error('담당자 로드 실패:', err);
@@ -1371,6 +1469,8 @@
         if (data.success) {
           closeContactModal();
           await loadContacts();
+          // ✅ 추가: 담당자 변경 후 QA 테이블도 갱신 (담당자명 표시 업데이트)
+          displaySavedQA(savedQACache);
           alert('담당자가 저장되었습니다.');
         } else {
           throw new Error(data.error || '저장 실패');
@@ -1395,6 +1495,8 @@
         var data = await res.json();
         if (data.success) {
           await loadContacts();
+          // ✅ 추가: 담당자 삭제 후 QA 테이블도 갱신
+          displaySavedQA(savedQACache);
           alert('담당자가 삭제되었습니다.');
         } else {
           throw new Error(data.error || '삭제 실패');
@@ -1405,7 +1507,6 @@
     }
 
     // ========== 모달 외부 클릭 ==========
-    // ✅ 변경: 담당자 모달도 포함
     window.onclick = function(event) {
       var qaModal = document.getElementById('qaModal');
       var contactModal = document.getElementById('contactModal');
