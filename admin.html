@@ -84,6 +84,9 @@
     .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); }
     .btn:active { transform: translateY(0); }
 
+    .btn-secondary { background: #6c757d !important; }
+    .btn-secondary:hover { background: #5a6268 !important; box-shadow: 0 4px 12px rgba(108,117,125,0.4); }
+
     .admin-panel { display: none; padding: 30px; }
 
     .stats {
@@ -271,6 +274,8 @@
       border-radius: 12px;
       box-shadow: 0 8px 32px rgba(0,0,0,0.2);
       animation: slideDown 0.3s;
+      max-height: 90vh;
+      overflow-y: auto;
     }
 
     @keyframes slideDown {
@@ -320,9 +325,6 @@
       justify-content: flex-end;
       margin-top: 20px;
     }
-
-    .modal .btn-secondary { background: #6c757d; }
-    .modal .btn-secondary:hover { background: #5a6268; }
 
     .loading { text-align: center; padding: 20px; color: #667eea; }
 
@@ -532,6 +534,38 @@
           <tbody id="savedQAList"></tbody>
         </table>
       </section>
+
+      <!-- ✅ 추가: 담당자 관리 섹션 -->
+      <section id="contactsSection" class="content-section">
+        <h2>담당자 관리</h2>
+        <p class="section-description">
+          챗봇에서 질문 시 표시되는 담당자 정보를 관리합니다. 카테고리별 담당자를 설정하면 해당 카테고리 질문에 대해 자동으로 담당자 정보가 표시됩니다.
+        </p>
+
+        <div style="margin-bottom:15px; display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn" onclick="showAddContactModal()">새 담당자 추가</button>
+          <button class="btn" onclick="loadContacts()">새로고침</button>
+        </div>
+
+        <div id="contactsLoading" class="loading" style="display:none;">담당자 로딩 중...</div>
+        <div id="contactsError" class="error" style="display:none;"></div>
+
+        <table id="contactsTable">
+          <thead>
+            <tr>
+              <th>이름</th>
+              <th>전화번호</th>
+              <th>이메일</th>
+              <th>카테고리</th>
+              <th>키워드</th>
+              <th>기본</th>
+              <th>순서</th>
+              <th>관리</th>
+            </tr>
+          </thead>
+          <tbody id="contactsList"></tbody>
+        </table>
+      </section>
     </div>
   </div>
 
@@ -585,6 +619,68 @@
     </div>
   </div>
 
+  <!-- ✅ 추가: 담당자 모달 -->
+  <div id="contactModal" class="modal">
+    <div class="modal-content">
+      <span class="modal-close" onclick="closeContactModal()">&times;</span>
+      <h2 id="contactModalTitle">새 담당자 추가</h2>
+      <form id="contactForm">
+        <input type="hidden" id="contactId" />
+        <input type="hidden" id="contactOrigCategory" />
+
+        <div class="form-group">
+          <label for="contactNameInput">이름 *</label>
+          <input type="text" id="contactNameInput" required placeholder="홍길동" />
+        </div>
+
+        <div class="form-group">
+          <label for="contactPhoneInput">전화번호</label>
+          <input type="text" id="contactPhoneInput" placeholder="031-xxx-xxxx" />
+        </div>
+
+        <div class="form-group">
+          <label for="contactEmailInput">이메일 *</label>
+          <input type="email" id="contactEmailInput" required placeholder="name@willopump.com" />
+        </div>
+
+        <div class="form-group">
+          <label for="contactCategoryInput">카테고리 *</label>
+          <select id="contactCategoryInput" required>
+            <option value="">선택하세요</option>
+            <option value="delivery">배송</option>
+            <option value="documents">서류</option>
+            <option value="production">생산</option>
+            <option value="purchase">구매</option>
+            <option value="other">기타</option>
+            <option value="default">기본 (전체)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="contactKeywordsInput">키워드 (쉼표로 구분)</label>
+          <input type="text" id="contactKeywordsInput" placeholder="예: 원산지, 증명서, FTA" />
+        </div>
+
+        <div class="form-group">
+          <label for="contactOrderInput">표시 순서</label>
+          <input type="number" id="contactOrderInput" value="99" min="1" max="99" />
+        </div>
+
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="contactDefaultInput" />
+            기본 담당자 (매칭 안 될 때 표시)
+          </label>
+        </div>
+
+        <div class="button-group">
+          <button type="button" class="btn btn-secondary" onclick="closeContactModal()">취소</button>
+          <button type="submit" class="btn">저장</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
   <script src="shared.js"></script>
   <script>
@@ -594,6 +690,7 @@
       devPassword: "wpkscm",
       allQuestionsApiUrl: "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/getAllQuestions",
       deleteQuestionsApiUrl: "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/deleteAllQuestions",
+      contactsApiBase: "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/contacts",
       requestTimeoutMs: 15000,
       pageSize: 50
     };
@@ -602,7 +699,8 @@
     var currentPage = 1;
     var totalPages = 1;
     var allQuestionsData = [];
-    var savedQACache = []; // ✅ editQA 안전 참조용 캐시
+    var savedQACache = [];
+    var contactsCache = []; // ✅ 추가
 
     // ========== shared.js 유틸리티 참조 ==========
     var escapeHtml = ChatbotUtils.escapeHtml;
@@ -658,14 +756,16 @@
     });
 
     // ========== 데이터 로드 ==========
+    // ✅ 변경: 담당자 로드 추가
     async function loadAllData() {
       await Promise.all([
         loadSavedQA(),
-        loadAllQuestionsFromServer()
+        loadAllQuestionsFromServer(),
+        loadContacts()
       ]);
     }
 
-    // ========== 통계 업데이트 (단일 정의) ==========
+    // ========== 통계 업데이트 ==========
     function updateStats() {
       var qaData = ChatbotStore.getQA();
       document.getElementById('totalQACount').textContent = qaData.length;
@@ -706,7 +806,6 @@
         var isTop = normalizeBoolean(item.top);
         var itemId = item.__id || '';
 
-        // ✅ escapeHtml 적용하여 XSS 방지
         row.innerHTML =
           '<td><span class="category-badge category-' + normalizeCategory(item.category) + '">' + escapeHtml(normalizeCategoryDisplay(item.category)) + '</span></td>' +
           '<td>' + escapeHtml(item.question || '') + '</td>' +
@@ -720,7 +819,6 @@
             '</div>' +
           '</td>';
 
-        // ✅ 이벤트 리스너로 안전하게 바인딩 (innerHTML injection 방지)
         row.querySelector('.edit-btn').addEventListener('click', function() {
           editQAById(itemId);
         });
@@ -743,7 +841,6 @@
       document.getElementById('qaModal').style.display = 'block';
     }
 
-    // ✅ 안전한 editQA — ID 기반 캐시 참조
     function editQAById(id) {
       var item = savedQACache.find(function(q) { return q.__id === id; });
       if (!item) {
@@ -936,7 +1033,6 @@
         updateHistoryStats(totalCount, matched);
         updatePagination();
 
-        // ✅ 서버 통계 카운트 반영
         document.getElementById('serverQuestionCount').textContent = totalCount;
 
       } catch (err) {
@@ -974,7 +1070,6 @@
         if (item.matched) matchedTotal++;
         else unmatchedTotal++;
 
-        // ✅ escapeHtml 적용
         row.innerHTML =
           '<td>' + escapeHtml(toKoreanTime(item.createdAt || item.timestamp)) + '</td>' +
           '<td style="max-width:300px;">' + escapeHtml(item.question || '') + '</td>' +
@@ -989,7 +1084,6 @@
 
       document.getElementById('historyPageCount').textContent = items.length;
 
-      // ✅ 대시보드 매칭/미매칭 카운트 업데이트
       document.getElementById('matchedCount').textContent =
         (parseInt(document.getElementById('matchedCount').textContent) || 0) > 0
           ? document.getElementById('matchedCount').textContent
@@ -1115,12 +1209,208 @@
       if (loading) loading.style.display = 'none';
     }
 
-    // ========== 모달 외부 클릭 ==========
-    window.onclick = function(event) {
-      var modal = document.getElementById('qaModal');
-      if (event.target === modal) {
-        closeQAModal();
+    // ========== ✅ 추가: 담당자 관리 ==========
+    async function loadContacts() {
+      var loading = document.getElementById('contactsLoading');
+      var error   = document.getElementById('contactsError');
+      var tbody   = document.getElementById('contactsList');
+
+      if (loading) loading.style.display = 'block';
+      if (error) error.style.display = 'none';
+
+      try {
+        var res = await fetchWithTimeout(ADMIN_CONFIG.contactsApiBase + '/getContacts', {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' }
+        });
+
+        if (!res.ok) throw new Error('서버 응답 오류 (' + res.status + ')');
+
+        var data = await res.json();
+        contactsCache = Array.isArray(data) ? data : [];
+        displayContacts(contactsCache);
+
+      } catch (err) {
+        console.error('담당자 로드 실패:', err);
+        if (error) {
+          error.textContent = '오류: ' + err.message;
+          error.style.display = 'block';
+        }
+        if (tbody) {
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:#999;">담당자 데이터를 불러올 수 없습니다.</td></tr>';
+        }
+      } finally {
+        if (loading) loading.style.display = 'none';
       }
+    }
+
+    function displayContacts(contacts) {
+      var tbody = document.getElementById('contactsList');
+      if (!tbody) return;
+
+      tbody.innerHTML = '';
+
+      if (!contacts || contacts.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:#999;">등록된 담당자가 없습니다.</td></tr>';
+        return;
+      }
+
+      var categoryLabels = {
+        delivery: '배송', documents: '서류', production: '생산',
+        purchase: '구매', other: '기타', default: '기본'
+      };
+
+      contacts.forEach(function(contact) {
+        var row = document.createElement('tr');
+        var keywords = Array.isArray(contact.keywords) ? contact.keywords.join(', ') : '';
+        var catLabel = categoryLabels[contact.category] || contact.category;
+        var badgeClass = contact.category === 'default' ? 'other' : normalizeCategory(contact.category);
+
+        row.innerHTML =
+          '<td>' + escapeHtml(contact.name || '') + '</td>' +
+          '<td>' + escapeHtml(contact.phone || '-') + '</td>' +
+          '<td>' + escapeHtml(contact.email || '') + '</td>' +
+          '<td><span class="category-badge category-' + badgeClass + '">' + escapeHtml(catLabel) + '</span></td>' +
+          '<td style="font-size:0.85em;color:#666;">' + escapeHtml(keywords) + '</td>' +
+          '<td style="text-align:center;">' + (contact.isDefault ? '⭐' : '') + '</td>' +
+          '<td style="text-align:center;">' + (contact.order || 99) + '</td>' +
+          '<td>' +
+            '<div class="action-buttons">' +
+              '<button class="action-btn edit-btn">수정</button>' +
+              '<button class="action-btn delete-btn">삭제</button>' +
+            '</div>' +
+          '</td>';
+
+        row.querySelector('.edit-btn').addEventListener('click', function() {
+          editContact(contact);
+        });
+        row.querySelector('.delete-btn').addEventListener('click', function() {
+          deleteContact(contact.id, contact.category);
+        });
+
+        tbody.appendChild(row);
+      });
+    }
+
+    function showAddContactModal() {
+      document.getElementById('contactModalTitle').textContent = '새 담당자 추가';
+      document.getElementById('contactForm').reset();
+      document.getElementById('contactId').value = '';
+      document.getElementById('contactOrigCategory').value = '';
+      document.getElementById('contactOrderInput').value = '99';
+      document.getElementById('contactModal').style.display = 'block';
+    }
+
+    function editContact(contact) {
+      document.getElementById('contactModalTitle').textContent = '담당자 수정';
+      document.getElementById('contactId').value = contact.id || '';
+      document.getElementById('contactOrigCategory').value = contact.category || '';
+      document.getElementById('contactNameInput').value = contact.name || '';
+      document.getElementById('contactPhoneInput').value = contact.phone || '';
+      document.getElementById('contactEmailInput').value = contact.email || '';
+      document.getElementById('contactCategoryInput').value = contact.category || '';
+      document.getElementById('contactKeywordsInput').value = Array.isArray(contact.keywords) ? contact.keywords.join(', ') : '';
+      document.getElementById('contactOrderInput').value = contact.order || 99;
+      document.getElementById('contactDefaultInput').checked = !!contact.isDefault;
+      document.getElementById('contactModal').style.display = 'block';
+    }
+
+    function closeContactModal() {
+      document.getElementById('contactModal').style.display = 'none';
+    }
+
+    document.getElementById('contactForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      saveContact();
+    });
+
+    async function saveContact() {
+      var id       = document.getElementById('contactId').value;
+      var name     = document.getElementById('contactNameInput').value.trim();
+      var phone    = document.getElementById('contactPhoneInput').value.trim();
+      var email    = document.getElementById('contactEmailInput').value.trim();
+      var category = document.getElementById('contactCategoryInput').value;
+      var keywords = document.getElementById('contactKeywordsInput').value;
+      var order    = parseInt(document.getElementById('contactOrderInput').value) || 99;
+      var isDefault = document.getElementById('contactDefaultInput').checked;
+
+      if (!name || !email || !category) {
+        alert('이름, 이메일, 카테고리는 필수입니다.');
+        return;
+      }
+
+      var keywordsArray = keywords
+        .split(/[,;|\/]/)
+        .map(function(k) { return k.trim(); })
+        .filter(Boolean);
+
+      var payload = {
+        name: name,
+        phone: phone,
+        email: email,
+        category: category,
+        keywords: keywordsArray,
+        order: order,
+        isDefault: isDefault
+      };
+
+      if (id) {
+        payload.id = id;
+      }
+
+      try {
+        var res = await fetchWithTimeout(ADMIN_CONFIG.contactsApiBase + '/saveContact', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) throw new Error('서버 응답 오류 (' + res.status + ')');
+
+        var data = await res.json();
+        if (data.success) {
+          closeContactModal();
+          await loadContacts();
+          alert('담당자가 저장되었습니다.');
+        } else {
+          throw new Error(data.error || '저장 실패');
+        }
+      } catch (err) {
+        alert('담당자 저장 실패: ' + err.message);
+      }
+    }
+
+    async function deleteContact(id, category) {
+      if (!confirm('이 담당자를 삭제하시겠습니까?')) return;
+
+      try {
+        var res = await fetchWithTimeout(ADMIN_CONFIG.contactsApiBase + '/deleteContact', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: id, category: category })
+        });
+
+        if (!res.ok) throw new Error('서버 응답 오류 (' + res.status + ')');
+
+        var data = await res.json();
+        if (data.success) {
+          await loadContacts();
+          alert('담당자가 삭제되었습니다.');
+        } else {
+          throw new Error(data.error || '삭제 실패');
+        }
+      } catch (err) {
+        alert('담당자 삭제 실패: ' + err.message);
+      }
+    }
+
+    // ========== 모달 외부 클릭 ==========
+    // ✅ 변경: 담당자 모달도 포함
+    window.onclick = function(event) {
+      var qaModal = document.getElementById('qaModal');
+      var contactModal = document.getElementById('contactModal');
+      if (event.target === qaModal) closeQAModal();
+      if (event.target === contactModal) closeContactModal();
     };
 
     // ========== 초기화 ==========
