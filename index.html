@@ -226,7 +226,7 @@
       if (!window.CHATBOT_CONFIG.contactsApiUrl) return;
       try {
         var res = await fetchWithTimeout(
-          window.CHATBOT_CONFIG.contactsApiUrl, { method: "GET" }, 5000
+          window.CHATBOT_CONFIG.contactsApiUrl, { method: "GET" }, 15000
         );
         if (!res.ok) throw new Error("contacts API " + res.status);
         CONTACT_MAP = await res.json();
@@ -244,7 +244,6 @@
     function findContact(questionText, category) {
       var text = String(questionText || "").toLowerCase();
 
-      // 1. 키워드 매칭
       for (var i = 0; i < CONTACT_MAP.length; i++) {
         var contact = CONTACT_MAP[i];
         if (!contact.isDefault && Array.isArray(contact.keywords)) {
@@ -255,7 +254,6 @@
         }
       }
 
-      // 2. 카테고리 매칭
       var byCategory = null;
       for (var j = 0; j < CONTACT_MAP.length; j++) {
         if (!CONTACT_MAP[j].isDefault && CONTACT_MAP[j].category === category) {
@@ -265,7 +263,6 @@
       }
       if (byCategory) return byCategory;
 
-      // 3. 기본 담당자
       for (var k = 0; k < CONTACT_MAP.length; k++) {
         if (CONTACT_MAP[k].isDefault) return CONTACT_MAP[k];
       }
@@ -413,7 +410,7 @@
           var url = window.CHATBOT_CONFIG.topQuestionsApiUrl +
             "?category=" + encodeURIComponent(selectedCategory) +
             "&limit=" + (window.CHATBOT_CONFIG.faqButtonCount || 4);
-          var res = await fetchWithTimeout(url, { method: "GET" }, 3000);
+          var res = await fetchWithTimeout(url, { method: "GET" }, 5000);
           if (res.ok) {
             var data = await res.json();
             if (data.success && Array.isArray(data.items) && data.items.length) {
@@ -554,7 +551,6 @@
       }
     }
 
-    // ── 한글 IME 조합 중 전송 방지 ──
     userInput.addEventListener("keydown", function (e) {
       if (e.key === "Enter" && !isComposing) {
         e.preventDefault();
@@ -566,16 +562,32 @@
     addMessage("안녕하세요.\n문의사항을 입력하거나 아래 FAQ를 선택해주세요.", "bot", "SCM봇");
 
     async function init() {
+      var qaLoaded = false;
+      var contactsLoaded = false;
+
+      // QA 로드 (독립적으로 시도)
       try {
-        await Promise.all([
-          ChatbotStore.loadFromServer(),
-          loadContacts()
-        ]);
-        selectedCategory = ChatbotStore.getCategories()[0] || "all";
-        renderCategoryTabs();
-        await renderFAQ();
+        await ChatbotStore.loadFromServer();
+        qaLoaded = true;
       } catch (err) {
-        console.error("초기화 실패:", err);
+        console.warn("QA 로드 실패:", err);
+      }
+
+      // 담당자 로드 (독립적으로 시도)
+      try {
+        await loadContacts();
+        contactsLoaded = true;
+      } catch (err) {
+        console.warn("담당자 로드 실패:", err);
+      }
+
+      // 하나라도 성공했으면 UI 렌더링
+      selectedCategory = ChatbotStore.getCategories()[0] || "all";
+      renderCategoryTabs();
+      await renderFAQ();
+
+      // 둘 다 실패한 경우에만 안내 메시지
+      if (!qaLoaded && !contactsLoaded) {
         addMessage("일부 데이터를 불러오지 못했습니다. 페이지를 새로고침해 주세요.", "bot", "SCM봇");
       }
     }
@@ -587,5 +599,8 @@
       ChatbotStore.retryPendingLogs(window.CHATBOT_CONFIG.logApiUrl);
     }, window.CHATBOT_CONFIG.pendingRetryIntervalMs || 60000);
   </script>
+
+
+  
 </body>
 </html>
