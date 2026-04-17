@@ -32,153 +32,53 @@
 
     header h1 { font-size: 2.5em; margin-bottom: 10px; }
 
-    .login-section {
-      padding: 40px;
-      text-align: center;
-      background: #f8f9fa;
-    }
+    .login-section { padding: 40px; text-align: center; background: #f8f9fa; }
 
     .login-box {
-      max-width: 400px;
-      margin: 0 auto;
-      background: white;
-      padding: 30px;
-      border-radius: 8px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      max-width: 400px; margin: 0 auto; background: white;
+      padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
 
     .login-box h2 { margin-bottom: 20px; color: #333; }
-
     .form-group { margin-bottom: 20px; }
-
-    .form-group label {
-      display: block;
-      text-align: left;
-      margin-bottom: 8px;
-      color: #555;
-      font-weight: 500;
-    }
-
-    .form-group input {
-      width: 100%;
-      padding: 12px;
-      border: 2px solid #e1e8ed;
-      border-radius: 6px;
-      font-size: 1em;
-      transition: border-color 0.3s;
-    }
-
+    .form-group label { display: block; text-align: left; margin-bottom: 8px; color: #555; font-weight: 500; }
+    .form-group input { width: 100%; padding: 12px; border: 2px solid #e1e8ed; border-radius: 6px; font-size: 1em; transition: border-color 0.3s; }
     .form-group input:focus { outline: none; border-color: #667eea; }
 
     .btn {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border: none;
-      padding: 12px 30px;
-      border-radius: 6px;
-      font-size: 1em;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
+      color: white; border: none; padding: 12px 30px; border-radius: 6px;
+      font-size: 1em; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
     }
-
     .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); }
     .btn:active { transform: translateY(0); }
-
     .btn-secondary { background: #6c757d !important; }
     .btn-secondary:hover { background: #5a6268 !important; box-shadow: 0 4px 12px rgba(108,117,125,0.4); }
 
     .admin-panel { display: none; padding: 30px; }
 
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 20px;
-      margin-bottom: 30px;
-    }
-
-    .stat-card {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 25px;
-      border-radius: 10px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    }
-
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+    .stat-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
     .stat-card h3 { font-size: 0.9em; opacity: 0.9; margin-bottom: 10px; }
     .stat-card .number { font-size: 2.5em; font-weight: bold; }
 
-    .content-section {
-      background: #f8f9fa;
-      border-radius: 10px;
-      padding: 25px;
-      margin-bottom: 20px;
-    }
+    .content-section { background: #f8f9fa; border-radius: 10px; padding: 25px; margin-bottom: 20px; }
+    .content-section h2 { color: #333; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+    .section-description { color: #666; margin-bottom: 20px; font-size: 0.95em; line-height: 1.6; }
 
-    .content-section h2 {
-      color: #333;
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .section-description {
-      color: #666;
-      margin-bottom: 20px;
-      font-size: 0.95em;
-      line-height: 1.6;
-    }
-
-    .csv-upload {
-      margin: 20px 0;
-      padding: 20px;
-      border: 2px dashed #667eea;
-      border-radius: 8px;
-      text-align: center;
-      background: white;
-    }
-
+    .csv-upload { margin: 20px 0; padding: 20px; border: 2px dashed #667eea; border-radius: 8px; text-align: center; background: white; }
     .file-input-wrapper { position: relative; display: inline-block; margin-right: 10px; }
     .file-input-wrapper input[type="file"] { position: absolute; left: -9999px; }
-
-    .file-input-wrapper label {
-      display: inline-block;
-      padding: 10px 20px;
-      background: #667eea;
-      color: white;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-
+    .file-input-wrapper label { display: inline-block; padding: 10px 20px; background: #667eea; color: white; border-radius: 6px; cursor: pointer; transition: background 0.3s; }
     .file-input-wrapper label:hover { background: #5568d3; }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: white;
-      border-radius: 8px;
-      overflow: hidden;
-      margin-top: 15px;
-    }
-
-    thead {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-    }
-
+    table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; margin-top: 15px; }
+    thead { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
     th { padding: 15px; text-align: left; font-weight: 600; }
     td { padding: 12px 15px; border-bottom: 1px solid #e1e8ed; }
     tr:hover { background: #f8f9fa; }
 
-    .category-badge {
-      display: inline-block;
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 0.85em;
-      font-weight: 500;
-    }
-
+    .category-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 500; }
     .category-delivery { background: #e3f2fd; color: #1976d2; }
     .category-documents { background: #f3e5f5; color: #7b1fa2; }
     .category-production { background: #e8f5e9; color: #388e3c; }
@@ -189,198 +89,49 @@
     .matched-no { color: #f44336; font-weight: 600; }
 
     .action-buttons { display: flex; gap: 8px; }
-
-    .action-btn {
-      padding: 6px 12px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 0.85em;
-      transition: all 0.2s;
-    }
-
+    .action-btn { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em; transition: all 0.2s; }
     .edit-btn { background: #2196f3; color: white; }
     .edit-btn:hover { background: #1976d2; }
     .delete-btn { background: #f44336; color: white; }
     .delete-btn:hover { background: #d32f2f; }
 
-    .filters {
-      display: flex;
-      gap: 15px;
-      margin: 20px 0;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-
-    .filters select, .filters input {
-      padding: 10px 15px;
-      border: 2px solid #e1e8ed;
-      border-radius: 6px;
-      font-size: 0.95em;
-    }
-
+    .filters { display: flex; gap: 15px; margin: 20px 0; flex-wrap: wrap; align-items: center; }
+    .filters select, .filters input { padding: 10px 15px; border: 2px solid #e1e8ed; border-radius: 6px; font-size: 0.95em; }
     .filters select:focus, .filters input:focus { outline: none; border-color: #667eea; }
 
-    .pagination {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 10px;
-      margin-top: 20px;
-      padding: 20px;
-    }
-
-    .pagination button {
-      padding: 8px 16px;
-      border: none;
-      background: #667eea;
-      color: white;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-
+    .pagination { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 20px; padding: 20px; }
+    .pagination button { padding: 8px 16px; border: none; background: #667eea; color: white; border-radius: 6px; cursor: pointer; transition: background 0.3s; }
     .pagination button:hover:not(:disabled) { background: #5568d3; }
     .pagination button:disabled { background: #ccc; cursor: not-allowed; }
+    .pagination .page-info { padding: 8px 16px; background: #f8f9fa; border-radius: 6px; font-weight: 500; }
 
-    .pagination .page-info {
-      padding: 8px 16px;
-      background: #f8f9fa;
-      border-radius: 6px;
-      font-weight: 500;
-    }
-
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.5);
-      animation: fadeIn 0.3s;
-    }
-
+    .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); animation: fadeIn 0.3s; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-    .modal-content {
-      position: relative;
-      background: white;
-      margin: 5% auto;
-      padding: 30px;
-      width: 90%;
-      max-width: 600px;
-      border-radius: 12px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-      animation: slideDown 0.3s;
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-
-    @keyframes slideDown {
-      from { transform: translateY(-50px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
-
-    .modal-close {
-      position: absolute;
-      right: 20px;
-      top: 20px;
-      font-size: 28px;
-      font-weight: bold;
-      color: #aaa;
-      cursor: pointer;
-      transition: color 0.3s;
-    }
-
+    .modal-content { position: relative; background: white; margin: 5% auto; padding: 30px; width: 90%; max-width: 600px; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); animation: slideDown 0.3s; max-height: 90vh; overflow-y: auto; }
+    @keyframes slideDown { from { transform: translateY(-50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal-close { position: absolute; right: 20px; top: 20px; font-size: 28px; font-weight: bold; color: #aaa; cursor: pointer; transition: color 0.3s; }
     .modal-close:hover { color: #000; }
-
     .modal h2 { margin-bottom: 20px; color: #333; }
     .modal .form-group { margin-bottom: 20px; }
-
-    .modal .form-group label {
-      display: block;
-      margin-bottom: 8px;
-      color: #555;
-      font-weight: 500;
-    }
-
-    .modal .form-group input,
-    .modal .form-group textarea,
-    .modal .form-group select {
-      width: 100%;
-      padding: 12px;
-      border: 2px solid #e1e8ed;
-      border-radius: 6px;
-      font-size: 1em;
-      font-family: inherit;
-    }
-
+    .modal .form-group label { display: block; margin-bottom: 8px; color: #555; font-weight: 500; }
+    .modal .form-group input, .modal .form-group textarea, .modal .form-group select { width: 100%; padding: 12px; border: 2px solid #e1e8ed; border-radius: 6px; font-size: 1em; font-family: inherit; }
     .modal .form-group textarea { min-height: 100px; resize: vertical; }
-
-    .modal .button-group {
-      display: flex;
-      gap: 10px;
-      justify-content: flex-end;
-      margin-top: 20px;
-    }
+    .modal .button-group { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
 
     .loading { text-align: center; padding: 20px; color: #667eea; }
+    .error { background: #fee; color: #c33; padding: 15px; border-radius: 6px; margin: 10px 0; border-left: 4px solid #c33; }
 
-    .error {
-      background: #fee;
-      color: #c33;
-      padding: 15px;
-      border-radius: 6px;
-      margin: 10px 0;
-      border-left: 4px solid #c33;
-    }
-
-    .summary-cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 15px;
-      margin-bottom: 20px;
-    }
-
-    .summary-card {
-      background: white;
-      padding: 15px;
-      border-radius: 8px;
-      border-left: 4px solid #667eea;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-
+    .summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px; }
+    .summary-card { background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #667eea; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
     .summary-card h4 { font-size: 0.85em; color: #666; margin-bottom: 8px; }
     .summary-card .value { font-size: 1.8em; font-weight: bold; color: #333; }
 
-    .browser-info {
-      font-size: 0.85em;
-      color: #666;
-      max-width: 200px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
+    .browser-info { font-size: 0.85em; color: #666; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .browser-info:hover { white-space: normal; overflow: visible; }
 
-    .contact-badge {
-      display: inline-block;
-      padding: 3px 10px;
-      border-radius: 12px;
-      font-size: 0.8em;
-      font-weight: 500;
-    }
-    .contact-badge.assigned {
-      background: #e8f5e9;
-      color: #2e7d32;
-    }
-    .contact-badge.auto {
-      background: #f5f5f5;
-      color: #999;
-    }
+    .contact-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.8em; font-weight: 500; }
+    .contact-badge.assigned { background: #e8f5e9; color: #2e7d32; }
+    .contact-badge.auto { background: #f5f5f5; color: #999; }
 
     @media (max-width: 768px) {
       .stats { grid-template-columns: 1fr; }
@@ -411,29 +162,15 @@
 
     <div id="adminPanel" class="admin-panel">
       <div class="stats">
-        <div class="stat-card">
-          <h3>총 Q&amp;A 수</h3>
-          <div class="number" id="totalQACount">0</div>
-        </div>
-        <div class="stat-card">
-          <h3>서버 저장 질문</h3>
-          <div class="number" id="serverQuestionCount">0</div>
-        </div>
-        <div class="stat-card">
-          <h3>매칭된 질문</h3>
-          <div class="number" id="matchedCount">0</div>
-        </div>
-        <div class="stat-card">
-          <h3>미매칭 질문</h3>
-          <div class="number" id="unmatchedCount">0</div>
-        </div>
+        <div class="stat-card"><h3>총 Q&amp;A 수</h3><div class="number" id="totalQACount">0</div></div>
+        <div class="stat-card"><h3>서버 저장 질문</h3><div class="number" id="serverQuestionCount">0</div></div>
+        <div class="stat-card"><h3>매칭된 질문</h3><div class="number" id="matchedCount">0</div></div>
+        <div class="stat-card"><h3>미매칭 질문</h3><div class="number" id="unmatchedCount">0</div></div>
       </div>
 
-      <section id="allQuestionsSection" class="content-section">
+      <section class="content-section">
         <h2>전체 질문 이력 관리</h2>
-        <p class="section-description">
-          <strong>모든 사용자</strong>가 챗봇에 입력한 질문을 실시간으로 확인할 수 있습니다.
-        </p>
+        <p class="section-description"><strong>모든 사용자</strong>가 챗봇에 입력한 질문을 실시간으로 확인할 수 있습니다.</p>
 
         <div class="summary-cards">
           <div class="summary-card"><h4>전체</h4><div class="value" id="historyTotalCount">0</div></div>
@@ -464,10 +201,8 @@
         <div id="allQuestionsLoading" class="loading" style="display:none;">데이터 로딩 중...</div>
         <div id="allQuestionsError" class="error" style="display:none;"></div>
 
-        <table id="allQuestionsTable">
-          <thead>
-            <tr><th>시간</th><th>질문</th><th>답변</th><th>카테고리</th><th>매칭</th><th>출처</th><th>브라우저</th></tr>
-          </thead>
+        <table>
+          <thead><tr><th>시간</th><th>질문</th><th>답변</th><th>카테고리</th><th>매칭</th><th>출처</th><th>브라우저</th></tr></thead>
           <tbody id="allQuestionsList"></tbody>
         </table>
 
@@ -478,11 +213,9 @@
         </div>
       </section>
 
-      <section id="savedQASection" class="content-section">
+      <section class="content-section">
         <h2>저장된 Q&amp;A 목록</h2>
-        <p class="section-description">
-          챗봇이 사용하는 FAQ 데이터를 관리합니다. CSV 파일 업로드 또는 직접 추가/편집이 가능합니다.
-        </p>
+        <p class="section-description">챗봇이 사용하는 FAQ 데이터를 관리합니다. CSV 파일 업로드 또는 직접 추가/편집이 가능합니다.</p>
 
         <div class="csv-upload">
           <div class="file-input-wrapper">
@@ -507,19 +240,18 @@
           <button class="btn" onclick="filterQA()">필터 적용</button>
         </div>
 
-        <table id="savedQATable">
-          <thead>
-            <tr><th>카테고리</th><th>질문</th><th>키워드</th><th>답변</th><th>담당자</th><th>중요</th><th>관리</th></tr>
-          </thead>
+        <div id="qaLoading" class="loading" style="display:none;">Q&A 로딩 중...</div>
+        <div id="qaError" class="error" style="display:none;"></div>
+
+        <table>
+          <thead><tr><th>카테고리</th><th>질문</th><th>키워드</th><th>답변</th><th>담당자</th><th>중요</th><th>관리</th></tr></thead>
           <tbody id="savedQAList"></tbody>
         </table>
       </section>
 
-      <section id="contactsSection" class="content-section">
+      <section class="content-section">
         <h2>담당자 관리</h2>
-        <p class="section-description">
-          챗봇에서 질문 시 표시되는 담당자 정보를 관리합니다. 카테고리별 담당자를 설정하면 해당 카테고리 질문에 대해 자동으로 담당자 정보가 표시됩니다.
-        </p>
+        <p class="section-description">챗봇에서 질문 시 표시되는 담당자 정보를 관리합니다.</p>
 
         <div style="margin-bottom:15px; display:flex; gap:10px; flex-wrap:wrap;">
           <button class="btn" onclick="showAddContactModal()">새 담당자 추가</button>
@@ -529,10 +261,8 @@
         <div id="contactsLoading" class="loading" style="display:none;">담당자 로딩 중...</div>
         <div id="contactsError" class="error" style="display:none;"></div>
 
-        <table id="contactsTable">
-          <thead>
-            <tr><th>이름</th><th>전화번호</th><th>이메일</th><th>카테고리</th><th>키워드</th><th>기본</th><th>순서</th><th>관리</th></tr>
-          </thead>
+        <table>
+          <thead><tr><th>이름</th><th>전화번호</th><th>이메일</th><th>카테고리</th><th>키워드</th><th>기본</th><th>순서</th><th>관리</th></tr></thead>
           <tbody id="contactsList"></tbody>
         </table>
       </section>
@@ -574,9 +304,7 @@
           <select id="qaContactSelect">
             <option value="">자동 매칭 (카테고리/키워드 기반)</option>
           </select>
-          <small style="color:#888; font-size:0.85em; margin-top:4px; display:block;">
-            지정하지 않으면 카테고리·키워드 기반으로 자동 매칭됩니다.
-          </small>
+          <small style="color:#888; font-size:0.85em; margin-top:4px; display:block;">지정하지 않으면 카테고리·키워드 기반으로 자동 매칭됩니다.</small>
         </div>
         <div class="form-group">
           <label><input type="checkbox" id="qaTopInput" /> 중요 질문 표시</label>
@@ -643,25 +371,23 @@
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
   <script src="shared.js"></script>
   <script>
-    // ========== 설정 ==========
     var ADMIN_CONFIG = {
       authMode: "dev",
       devPassword: "wpkscm",
       allQuestionsApiUrl: "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/getAllQuestions",
       deleteQuestionsApiUrl: "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/deleteAllQuestions",
       contactsApiBase: "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/contacts",
+      qaApiBase: "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/qa",
       requestTimeoutMs: 15000,
       pageSize: 50
     };
 
-    // ========== 전역 변수 ==========
     var currentPage = 1;
     var totalPages = 1;
     var allQuestionsData = [];
     var savedQACache = [];
     var contactsCache = [];
 
-    // ========== shared.js 유틸리티 참조 ==========
     var escapeHtml = ChatbotUtils.escapeHtml;
     var normalizeCategory = ChatbotUtils.normalizeCategory;
     var normalizeCategoryDisplay = ChatbotUtils.normalizeCategoryDisplay;
@@ -710,33 +436,26 @@
       if (e.key === 'Enter') login();
     });
 
-    // ========== 데이터 로드 ==========
     async function loadAllData() {
       await Promise.all([
         loadAllQuestionsFromServer(),
-        loadContacts()
+        loadContacts(),
+        loadSavedQAFromServer()
       ]);
-      loadSavedQA();
       refreshContactSelectOptions();
     }
 
-    // ========== 통계 업데이트 ==========
     function updateStats() {
-      var qaData = JSON.parse(localStorage.getItem('chatbot_qa') || '[]');
-      document.getElementById('totalQACount').textContent = qaData.length;
+      document.getElementById('totalQACount').textContent = savedQACache.length;
     }
 
-    // ========== 담당자 드롭다운 갱신 ==========
     function refreshContactSelectOptions() {
       var select = document.getElementById('qaContactSelect');
       if (!select) return;
       var currentVal = select.value;
       select.innerHTML = '<option value="">자동 매칭 (카테고리/키워드 기반)</option>';
 
-      var categoryLabels = {
-        delivery: '배송', documents: '서류', production: '생산',
-        purchase: '구매', other: '기타', default: '기본'
-      };
+      var categoryLabels = { delivery: '배송', documents: '서류', production: '생산', purchase: '구매', other: '기타', default: '기본' };
 
       contactsCache.forEach(function(contact) {
         var opt = document.createElement('option');
@@ -749,34 +468,53 @@
       if (currentVal) select.value = currentVal;
     }
 
-    // ========== contactId로 담당자 이름 찾기 ==========
     function getContactNameById(contactId) {
       if (!contactId) return null;
       var found = contactsCache.find(function(c) { return c.id === contactId; });
       return found ? found.name : null;
     }
 
-    // ========== 저장된 Q&A 관리 ==========
-    function loadSavedQA() {
-      var saved = JSON.parse(localStorage.getItem('chatbot_qa') || '[]');
-      savedQACache = saved;
-      displaySavedQA(saved);
-      updateStats();
+    // ========== Q&A 관리 (서버 기반) ==========
+    async function loadSavedQAFromServer() {
+      var loading = document.getElementById('qaLoading');
+      var error = document.getElementById('qaError');
+
+      if (loading) loading.style.display = 'block';
+      if (error) error.style.display = 'none';
+
+      try {
+        var res = await fetchWithTimeout(ADMIN_CONFIG.qaApiBase + '/getAll', { method: 'GET' });
+        if (!res.ok) throw new Error('서버 응답 오류 (' + res.status + ')');
+        var data = await res.json();
+        if (!data.success) throw new Error(data.error || '로드 실패');
+
+        savedQACache = data.items || [];
+        ChatbotStore.updateLocalCache(savedQACache);
+        displaySavedQA(savedQACache);
+        updateStats();
+
+      } catch (err) {
+        console.error('QA 서버 로드 실패:', err);
+        if (error) { error.textContent = '오류: ' + err.message; error.style.display = 'block'; }
+        // fallback: 로컬 캐시
+        savedQACache = ChatbotStore.getQA();
+        displaySavedQA(savedQACache);
+        updateStats();
+      } finally {
+        if (loading) loading.style.display = 'none';
+      }
     }
 
     function displaySavedQA(data) {
       var tbody = document.getElementById('savedQAList');
       if (!tbody) return;
 
-      var qaData = data || JSON.parse(localStorage.getItem('chatbot_qa') || '[]');
-      savedQACache = qaData;
+      var qaData = data || savedQACache;
       var category = (document.getElementById('qaCategory') || {}).value || 'all';
 
       var filtered = qaData;
       if (category && category !== 'all') {
-        filtered = qaData.filter(function(item) {
-          return normalizeCategory(item.category) === category;
-        });
+        filtered = qaData.filter(function(item) { return normalizeCategory(item.category) === category; });
       }
 
       tbody.innerHTML = '';
@@ -803,27 +541,16 @@
           '<td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + escapeHtml(item.answer || '') + '">' + escapeHtml(item.answer || '') + '</td>' +
           '<td>' + contactHtml + '</td>' +
           '<td style="text-align:center;">' + (isTop ? '⭐' : '') + '</td>' +
-          '<td>' +
-            '<div class="action-buttons">' +
-              '<button class="action-btn edit-btn">수정</button>' +
-              '<button class="action-btn delete-btn">삭제</button>' +
-            '</div>' +
-          '</td>';
+          '<td><div class="action-buttons"><button class="action-btn edit-btn">수정</button><button class="action-btn delete-btn">삭제</button></div></td>';
 
-        row.querySelector('.edit-btn').addEventListener('click', function() {
-          editQAById(itemId);
-        });
-        row.querySelector('.delete-btn').addEventListener('click', function() {
-          deleteQAById(itemId);
-        });
+        row.querySelector('.edit-btn').addEventListener('click', function() { editQAById(itemId); });
+        row.querySelector('.delete-btn').addEventListener('click', function() { deleteQAById(itemId, normalizeCategory(item.category)); });
 
         tbody.appendChild(row);
       });
     }
 
-    function filterQA() {
-      displaySavedQA();
-    }
+    function filterQA() { displaySavedQA(); }
 
     function showAddQAModal() {
       document.getElementById('modalTitle').textContent = '새 Q&A 추가';
@@ -835,12 +562,8 @@
     }
 
     function editQAById(id) {
-      var qaData = JSON.parse(localStorage.getItem('chatbot_qa') || '[]');
-      var item = qaData.find(function(q) { return q.__id === id; });
-      if (!item) {
-        alert('해당 항목을 찾을 수 없습니다.');
-        return;
-      }
+      var item = savedQACache.find(function(q) { return q.__id === id; });
+      if (!item) { alert('해당 항목을 찾을 수 없습니다.'); return; }
 
       document.getElementById('modalTitle').textContent = 'Q&A 수정';
       document.getElementById('qaId').value = item.__id || '';
@@ -856,18 +579,15 @@
       document.getElementById('qaModal').style.display = 'block';
     }
 
-    function closeQAModal() {
-      document.getElementById('qaModal').style.display = 'none';
-    }
+    function closeQAModal() { document.getElementById('qaModal').style.display = 'none'; }
 
     document.getElementById('qaForm').addEventListener('submit', function(e) {
       e.preventDefault();
       saveQA();
     });
 
-    function saveQA() {
+    async function saveQA() {
       var id = document.getElementById('qaId').value;
-      var isEdit = !!id;
       if (!id) id = createQAId();
 
       var question = document.getElementById('qaQuestionInput').value.trim();
@@ -877,14 +597,9 @@
       var top = document.getElementById('qaTopInput').checked;
       var contactId = document.getElementById('qaContactSelect').value || '';
 
-      if (!question || !answer || !category) {
-        alert('필수 항목을 모두 입력해주세요.');
-        return;
-      }
+      if (!question || !answer || !category) { alert('필수 항목을 모두 입력해주세요.'); return; }
 
-      var qaData = JSON.parse(localStorage.getItem('chatbot_qa') || '[]');
-
-      var newItem = {
+      var payload = {
         __id: id,
         category: normalizeCategory(category),
         question: question,
@@ -894,70 +609,80 @@
         contactId: contactId
       };
 
-      if (isEdit) {
-        var existingIndex = qaData.findIndex(function(item) { return item.__id === id; });
-        if (existingIndex >= 0) {
-          qaData[existingIndex] = newItem;
-        } else {
-          qaData.push(newItem);
-        }
-      } else {
-        var duplicate = qaData.find(function(item) {
-          return item.question.toLowerCase() === question.toLowerCase() &&
-                 normalizeCategory(item.category) === normalizeCategory(category);
+      try {
+        var res = await fetchWithTimeout(ADMIN_CONFIG.qaApiBase + '/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
         });
-        if (duplicate) {
-          if (!confirm('동일한 질문이 이미 존재합니다. 계속하시겠습니까?')) {
-            return;
-          }
-        }
-        qaData.push(newItem);
+
+        if (!res.ok) throw new Error('서버 응답 오류 (' + res.status + ')');
+        var data = await res.json();
+        if (!data.success) throw new Error(data.error || '저장 실패');
+
+        closeQAModal();
+        await loadSavedQAFromServer();
+        alert('저장되었습니다.');
+
+      } catch (err) {
+        alert('저장 실패: ' + err.message);
       }
-
-      localStorage.setItem('chatbot_qa', JSON.stringify(qaData));
-
-      closeQAModal();
-      savedQACache = qaData;
-      displaySavedQA(qaData);
-      updateStats();
-      alert('저장되었습니다.');
     }
 
-    function deleteQAById(id) {
+    async function deleteQAById(id, category) {
       if (!confirm('정말 삭제하시겠습니까?')) return;
 
-      var qaData = JSON.parse(localStorage.getItem('chatbot_qa') || '[]');
-      var filtered = qaData.filter(function(item) { return item.__id !== id; });
-      localStorage.setItem('chatbot_qa', JSON.stringify(filtered));
+      try {
+        var res = await fetchWithTimeout(ADMIN_CONFIG.qaApiBase + '/delete', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: id, category: category })
+        });
 
-      savedQACache = filtered;
-      displaySavedQA(filtered);
-      updateStats();
+        if (!res.ok) throw new Error('서버 응답 오류 (' + res.status + ')');
+        var data = await res.json();
+        if (!data.success) throw new Error(data.error || '삭제 실패');
+
+        await loadSavedQAFromServer();
+
+      } catch (err) {
+        alert('삭제 실패: ' + err.message);
+      }
     }
 
-    function clearAllQA() {
+    async function clearAllQA() {
       if (!confirm('모든 Q&A 데이터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return;
-      localStorage.setItem('chatbot_qa', JSON.stringify([]));
-      savedQACache = [];
-      displaySavedQA([]);
-      updateStats();
-      alert('모든 데이터가 삭제되었습니다.');
+
+      try {
+        var res = await fetchWithTimeout(ADMIN_CONFIG.qaApiBase + '/deleteAll', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (!res.ok) throw new Error('서버 응답 오류 (' + res.status + ')');
+
+        savedQACache = [];
+        ChatbotStore.updateLocalCache([]);
+        displaySavedQA([]);
+        updateStats();
+        alert('모든 Q&A가 삭제되었습니다.');
+
+      } catch (err) {
+        alert('삭제 실패: ' + err.message);
+      }
     }
 
     // ========== CSV ==========
-    function uploadCSV() {
+    async function uploadCSV() {
       var fileInput = document.getElementById('csvFile');
       var file = fileInput && fileInput.files[0];
-      if (!file) {
-        alert('CSV 파일을 선택해주세요.');
-        return;
-      }
+      if (!file) { alert('CSV 파일을 선택해주세요.'); return; }
 
       Papa.parse(file, {
         header: true,
         skipEmptyLines: true,
-        complete: function(results) {
-          var qaData = results.data.map(function(row) {
+        complete: async function(results) {
+          var items = results.data.map(function(row) {
             return {
               __id: row.id || row.__id || createQAId(),
               category: normalizeCategory(row.category || row['카테고리'] || 'other'),
@@ -969,32 +694,35 @@
             };
           }).filter(function(item) { return item.question && item.answer; });
 
-          if (qaData.length === 0) {
-            alert('유효한 데이터가 없습니다.');
-            return;
-          }
+          if (items.length === 0) { alert('유효한 데이터가 없습니다.'); return; }
 
-          localStorage.setItem('chatbot_qa', JSON.stringify(qaData));
-          savedQACache = qaData;
-          displaySavedQA(qaData);
-          updateStats();
-          alert(qaData.length + '개의 Q&A가 업로드되었습니다.');
-          fileInput.value = '';
+          try {
+            var res = await fetchWithTimeout(ADMIN_CONFIG.qaApiBase + '/saveBulk', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ items: items, mode: 'replace' })
+            });
+
+            if (!res.ok) throw new Error('서버 응답 오류 (' + res.status + ')');
+            var data = await res.json();
+            if (!data.success) throw new Error(data.error || '업로드 실패');
+
+            await loadSavedQAFromServer();
+            alert(data.savedCount + '개의 Q&A가 업로드되었습니다.');
+            fileInput.value = '';
+
+          } catch (err) {
+            alert('업로드 실패: ' + err.message);
+          }
         },
-        error: function(error) {
-          alert('CSV 파일 읽기 실패: ' + error.message);
-        }
+        error: function(error) { alert('CSV 파일 읽기 실패: ' + error.message); }
       });
     }
 
     function downloadCSV() {
-      var qaData = JSON.parse(localStorage.getItem('chatbot_qa') || '[]');
-      if (qaData.length === 0) {
-        alert('다운로드할 데이터가 없습니다.');
-        return;
-      }
+      if (savedQACache.length === 0) { alert('다운로드할 데이터가 없습니다.'); return; }
 
-      var csv = Papa.unparse(qaData.map(function(item) {
+      var csv = Papa.unparse(savedQACache.map(function(item) {
         return {
           id: item.__id,
           category: normalizeCategoryDisplay(item.category),
@@ -1033,11 +761,7 @@
         if (category && category !== 'all') url += '&category=' + category;
         if (matched && matched !== 'all') url += '&matched=' + matched;
 
-        var res = await fetchWithTimeout(url, {
-          method: 'GET',
-          headers: { 'Accept': 'application/json' }
-        });
-
+        var res = await fetchWithTimeout(url, { method: 'GET', headers: { 'Accept': 'application/json' } });
         if (!res.ok) throw new Error('서버 응답 오류 (' + res.status + ')');
 
         var data = await res.json();
@@ -1050,15 +774,11 @@
         displayAllQuestions(allQuestionsData);
         updateHistoryStats(totalCount, matched);
         updatePagination();
-
         document.getElementById('serverQuestionCount').textContent = totalCount;
 
       } catch (err) {
         console.error('전체 질문 이력 로드 실패:', err);
-        if (error) {
-          error.textContent = '오류: ' + err.message;
-          error.style.display = 'block';
-        }
+        if (error) { error.textContent = '오류: ' + err.message; error.style.display = 'block'; }
         if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#999;">데이터를 불러올 수 없습니다.</td></tr>';
       } finally {
         if (loading) loading.style.display = 'none';
@@ -1076,8 +796,7 @@
         return;
       }
 
-      var matchedTotal = 0;
-      var unmatchedTotal = 0;
+      var matchedTotal = 0, unmatchedTotal = 0;
 
       items.forEach(function(item) {
         var row = document.createElement('tr');
@@ -1085,8 +804,7 @@
         var matchedText = item.matched ? '매칭' : '미매칭';
         var userAgent = item.userAgent || item.browser || '-';
 
-        if (item.matched) matchedTotal++;
-        else unmatchedTotal++;
+        if (item.matched) matchedTotal++; else unmatchedTotal++;
 
         row.innerHTML =
           '<td>' + escapeHtml(toKoreanTime(item.createdAt || item.timestamp)) + '</td>' +
@@ -1112,20 +830,14 @@
       if (matchedFilter === 'true') {
         document.getElementById('historyMatchedCount').textContent = total;
         document.getElementById('historyUnmatchedCount').textContent = 0;
-        document.getElementById('matchedCount').textContent = total;
-        document.getElementById('unmatchedCount').textContent = 0;
       } else if (matchedFilter === 'false') {
         document.getElementById('historyMatchedCount').textContent = 0;
         document.getElementById('historyUnmatchedCount').textContent = total;
-        document.getElementById('matchedCount').textContent = 0;
-        document.getElementById('unmatchedCount').textContent = total;
       } else {
         var matched = allQuestionsData.filter(function(item) { return item.matched; }).length;
         var unmatched = allQuestionsData.filter(function(item) { return !item.matched; }).length;
         document.getElementById('historyMatchedCount').textContent = matched;
         document.getElementById('historyUnmatchedCount').textContent = unmatched;
-        document.getElementById('matchedCount').textContent = matched;
-        document.getElementById('unmatchedCount').textContent = unmatched;
       }
     }
 
@@ -1144,12 +856,9 @@
     }
 
     function exportAllQuestions() {
-      if (!allQuestionsData || allQuestionsData.length === 0) {
-        alert('다운로드할 데이터가 없습니다.');
-        return;
-      }
+      if (!allQuestionsData || allQuestionsData.length === 0) { alert('다운로드할 데이터가 없습니다.'); return; }
 
-      var exportData = allQuestionsData.map(function(item) {
+      var csv = Papa.unparse(allQuestionsData.map(function(item) {
         return {
           '시간': toKoreanTime(item.createdAt || item.timestamp),
           '질문': item.question || '',
@@ -1159,9 +868,8 @@
           '출처': item.source || 'user',
           '브라우저': item.userAgent || item.browser || ''
         };
-      });
+      }));
 
-      var csv = Papa.unparse(exportData);
       var blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
       var link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
@@ -1171,12 +879,8 @@
 
     async function resetAllQuestions() {
       if (!confirm('전체 질문 이력을 삭제하시겠습니까?\n\n서버에 저장된 모든 질문 기록이 삭제됩니다.\n이 작업은 되돌릴 수 없습니다.')) return;
-
       var confirmText = prompt('정말 삭제하려면 "삭제확인" 을 입력해주세요.');
-      if (confirmText !== '삭제확인') {
-        alert('삭제가 취소되었습니다.');
-        return;
-      }
+      if (confirmText !== '삭제확인') { alert('삭제가 취소되었습니다.'); return; }
 
       var loading = document.getElementById('allQuestionsLoading');
       var error = document.getElementById('allQuestionsError');
@@ -1206,17 +910,13 @@
       allQuestionsData = [];
       currentPage = 1;
       totalPages = 1;
-
       displayAllQuestions([]);
       updateHistoryStats(0, 'all');
       updatePagination();
-
       ChatbotStore.clearHistory();
-
       document.getElementById('serverQuestionCount').textContent = '0';
       document.getElementById('matchedCount').textContent = '0';
       document.getElementById('unmatchedCount').textContent = '0';
-
       if (loading) loading.style.display = 'none';
     }
 
@@ -1231,10 +931,8 @@
 
       try {
         var res = await fetchWithTimeout(ADMIN_CONFIG.contactsApiBase + '/getContacts', {
-          method: 'GET',
-          headers: { 'Accept': 'application/json' }
+          method: 'GET', headers: { 'Accept': 'application/json' }
         });
-
         if (!res.ok) throw new Error('서버 응답 오류 (' + res.status + ')');
 
         var data = await res.json();
@@ -1244,13 +942,8 @@
 
       } catch (err) {
         console.error('담당자 로드 실패:', err);
-        if (error) {
-          error.textContent = '오류: ' + err.message;
-          error.style.display = 'block';
-        }
-        if (tbody) {
-          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:#999;">담당자 데이터를 불러올 수 없습니다.</td></tr>';
-        }
+        if (error) { error.textContent = '오류: ' + err.message; error.style.display = 'block'; }
+        if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:#999;">담당자 데이터를 불러올 수 없습니다.</td></tr>';
       } finally {
         if (loading) loading.style.display = 'none';
       }
@@ -1266,10 +959,7 @@
         return;
       }
 
-      var categoryLabels = {
-        delivery: '배송', documents: '서류', production: '생산',
-        purchase: '구매', other: '기타', default: '기본'
-      };
+      var categoryLabels = { delivery: '배송', documents: '서류', production: '생산', purchase: '구매', other: '기타', default: '기본' };
 
       contacts.forEach(function(contact) {
         var row = document.createElement('tr');
@@ -1285,19 +975,10 @@
           '<td style="font-size:0.85em;color:#666;">' + escapeHtml(keywords) + '</td>' +
           '<td style="text-align:center;">' + (contact.isDefault ? '⭐' : '') + '</td>' +
           '<td style="text-align:center;">' + (contact.order || 99) + '</td>' +
-          '<td>' +
-            '<div class="action-buttons">' +
-              '<button class="action-btn edit-btn">수정</button>' +
-              '<button class="action-btn delete-btn">삭제</button>' +
-            '</div>' +
-          '</td>';
+          '<td><div class="action-buttons"><button class="action-btn edit-btn">수정</button><button class="action-btn delete-btn">삭제</button></div></td>';
 
-        row.querySelector('.edit-btn').addEventListener('click', function() {
-          editContact(contact);
-        });
-        row.querySelector('.delete-btn').addEventListener('click', function() {
-          deleteContact(contact.id, contact.category);
-        });
+        row.querySelector('.edit-btn').addEventListener('click', function() { editContact(contact); });
+        row.querySelector('.delete-btn').addEventListener('click', function() { deleteContact(contact.id, contact.category); });
 
         tbody.appendChild(row);
       });
@@ -1326,9 +1007,7 @@
       document.getElementById('contactModal').style.display = 'block';
     }
 
-    function closeContactModal() {
-      document.getElementById('contactModal').style.display = 'none';
-    }
+    function closeContactModal() { document.getElementById('contactModal').style.display = 'none'; }
 
     document.getElementById('contactForm').addEventListener('submit', function(e) {
       e.preventDefault();
@@ -1345,49 +1024,29 @@
       var order    = parseInt(document.getElementById('contactOrderInput').value) || 99;
       var isDefault = document.getElementById('contactDefaultInput').checked;
 
-      if (!name || !email || !category) {
-        alert('이름, 이메일, 카테고리는 필수입니다.');
-        return;
-      }
-
-      var keywordsArray = keywords
-        .split(/[,;|\/]/)
-        .map(function(k) { return k.trim(); })
-        .filter(Boolean);
+      if (!name || !email || !category) { alert('이름, 이메일, 카테고리는 필수입니다.'); return; }
 
       var payload = {
-        name: name,
-        phone: phone,
-        email: email,
-        category: category,
-        keywords: keywordsArray,
-        order: order,
-        isDefault: isDefault
+        name: name, phone: phone, email: email, category: category,
+        keywords: keywords.split(/[,;|\/]/).map(function(k) { return k.trim(); }).filter(Boolean),
+        order: order, isDefault: isDefault
       };
-
       if (id) payload.id = id;
 
       try {
         var res = await fetchWithTimeout(ADMIN_CONFIG.contactsApiBase + '/saveContact', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
-
         if (!res.ok) throw new Error('서버 응답 오류 (' + res.status + ')');
-
         var data = await res.json();
         if (data.success) {
           closeContactModal();
           await loadContacts();
           displaySavedQA(savedQACache);
           alert('담당자가 저장되었습니다.');
-        } else {
-          throw new Error(data.error || '저장 실패');
-        }
-      } catch (err) {
-        alert('담당자 저장 실패: ' + err.message);
-      }
+        } else { throw new Error(data.error || '저장 실패'); }
+      } catch (err) { alert('담당자 저장 실패: ' + err.message); }
     }
 
     async function deleteContact(id, category) {
@@ -1395,33 +1054,24 @@
 
       try {
         var res = await fetchWithTimeout(ADMIN_CONFIG.contactsApiBase + '/deleteContact', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
+          method: 'DELETE', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id: id, category: category })
         });
-
         if (!res.ok) throw new Error('서버 응답 오류 (' + res.status + ')');
-
         var data = await res.json();
         if (data.success) {
           await loadContacts();
           displaySavedQA(savedQACache);
           alert('담당자가 삭제되었습니다.');
-        } else {
-          throw new Error(data.error || '삭제 실패');
-        }
-      } catch (err) {
-        alert('담당자 삭제 실패: ' + err.message);
-      }
+        } else { throw new Error(data.error || '삭제 실패'); }
+      } catch (err) { alert('담당자 삭제 실패: ' + err.message); }
     }
 
-    // ========== 모달 외부 클릭 ==========
     window.onclick = function(event) {
       if (event.target === document.getElementById('qaModal')) closeQAModal();
       if (event.target === document.getElementById('contactModal')) closeContactModal();
     };
 
-    // ========== 초기화 ==========
     window.addEventListener('DOMContentLoaded', function() {
       console.log('관리자 페이지 로드됨');
       updatePagination();
