@@ -112,7 +112,7 @@
   // ── 서버에서 QA 로드 ─────────────────────────────────────────
   async function loadQAFromServer() {
     try {
-      const res = await _fetchWithTimeout(QA_API_BASE + "/getAll", { method: "GET" }, 8000);
+      const res = await _fetchWithTimeout(QA_API_BASE + "/getAll", { method: "GET" }, 30000);
       if (!res.ok) throw new Error("QA API " + res.status);
       const data = await res.json();
       if (data.success && Array.isArray(data.items)) {
