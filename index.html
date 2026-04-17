@@ -187,7 +187,7 @@
     <div class="input-area">
       <div class="input-wrap">
         <input id="userInput" type="text" placeholder="질문을 입력하세요" />
-        <button id="sendButton" onclick="sendMessage()">➤</button>
+        <button id="sendButton" onclick="handleSend()">➤</button>
       </div>
     </div>
   </div>
@@ -205,21 +205,27 @@
   </script>
   <script src="shared.js"></script>
   <script>
-    const chatBox      = document.getElementById("chatBox");
-    const faqList      = document.getElementById("faqList");
-    const categoryTabs = document.getElementById("categoryTabs");
-    const userInput    = document.getElementById("userInput");
-    const sendButton   = document.getElementById("sendButton");
-    const { escapeHtml } = ChatbotUtils;
+    var chatBox      = document.getElementById("chatBox");
+    var faqList      = document.getElementById("faqList");
+    var categoryTabs = document.getElementById("categoryTabs");
+    var userInput    = document.getElementById("userInput");
+    var sendButton   = document.getElementById("sendButton");
+    var escapeHtml   = ChatbotUtils.escapeHtml;
+    var fetchWithTimeout = ChatbotUtils.fetchWithTimeout;
 
-    let selectedCategory = "all";
-    let isSending  = false;
-    let CONTACT_MAP = [];
+    var selectedCategory = "all";
+    var isSending  = false;
+    var isComposing = false;
+    var CONTACT_MAP = [];
+
+    // ── 한글 IME 조합 감지 ──
+    userInput.addEventListener("compositionstart", function () { isComposing = true; });
+    userInput.addEventListener("compositionend", function () { isComposing = false; });
 
     async function loadContacts() {
       if (!window.CHATBOT_CONFIG.contactsApiUrl) return;
       try {
-        const res = await fetchWithTimeout(
+        var res = await fetchWithTimeout(
           window.CHATBOT_CONFIG.contactsApiUrl, { method: "GET" }, 5000
         );
         if (!res.ok) throw new Error("contacts API " + res.status);
@@ -228,37 +234,52 @@
       } catch (err) {
         console.warn("담당자 로드 실패, fallback 사용:", err);
         CONTACT_MAP = [{
-          name: "차현정", phone: "051-950-8138",
-          email: "hyeonjung.cha@wilo.com", keywords: [],
+          name: "SCM팀", phone: "",
+          email: "scm@willopump.com", keywords: [],
           category: "default", isDefault: true
         }];
       }
     }
 
     function findContact(questionText, category) {
-      const text = String(questionText || "").toLowerCase();
-      for (const contact of CONTACT_MAP) {
+      var text = String(questionText || "").toLowerCase();
+
+      // 1. 키워드 매칭
+      for (var i = 0; i < CONTACT_MAP.length; i++) {
+        var contact = CONTACT_MAP[i];
         if (!contact.isDefault && Array.isArray(contact.keywords)) {
-          if (contact.keywords.some(function (kw) {
+          var matched = contact.keywords.some(function (kw) {
             return kw && text.includes(kw.toLowerCase());
-          })) return contact;
+          });
+          if (matched) return contact;
         }
       }
-      const byCategory = CONTACT_MAP.find(function (c) {
-        return !c.isDefault && c.category === category;
-      });
+
+      // 2. 카테고리 매칭
+      var byCategory = null;
+      for (var j = 0; j < CONTACT_MAP.length; j++) {
+        if (!CONTACT_MAP[j].isDefault && CONTACT_MAP[j].category === category) {
+          byCategory = CONTACT_MAP[j];
+          break;
+        }
+      }
       if (byCategory) return byCategory;
-      return CONTACT_MAP.find(function (c) { return c.isDefault; }) ||
-             CONTACT_MAP[CONTACT_MAP.length - 1] ||
-             { name: "SCM팀", phone: "", email: "scm@willopump.com",
-               keywords: [], category: "default", isDefault: true };
+
+      // 3. 기본 담당자
+      for (var k = 0; k < CONTACT_MAP.length; k++) {
+        if (CONTACT_MAP[k].isDefault) return CONTACT_MAP[k];
+      }
+
+      return CONTACT_MAP[CONTACT_MAP.length - 1] ||
+        { name: "SCM팀", phone: "", email: "scm@willopump.com", keywords: [], category: "default", isDefault: true };
     }
 
     function findContactById(contactId) {
       if (!contactId) return null;
-      return CONTACT_MAP.find(function(c) {
-        return c.id === contactId;
-      }) || null;
+      for (var i = 0; i < CONTACT_MAP.length; i++) {
+        if (CONTACT_MAP[i].id === contactId) return CONTACT_MAP[i];
+      }
+      return null;
     }
 
     function addContactCardCompact(questionText, category, overrideContact) {
@@ -301,7 +322,7 @@
     }
 
     function getTimeText() {
-      return new Date().toLocaleTimeString("ko-KR", { hour:"2-digit", minute:"2-digit" });
+      return new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
     }
 
     function scrollToBottom() {
@@ -345,15 +366,6 @@
 
     function removeRow(row) {
       if (row && row.parentNode) row.parentNode.removeChild(row);
-    }
-
-    function fetchWithTimeout(url, options, timeoutMs) {
-      options   = options   || {};
-      timeoutMs = timeoutMs || window.CHATBOT_CONFIG.requestTimeoutMs || 10000;
-      var controller = new AbortController();
-      var timer = setTimeout(function () { controller.abort(); }, timeoutMs);
-      return fetch(url, Object.assign({}, options, { signal: controller.signal }))
-        .finally(function () { clearTimeout(timer); });
     }
 
     async function sendToServer(data) {
@@ -441,7 +453,13 @@
           if (btn.disabled || isSending) return;
           btn.disabled = true;
           try {
-            await sendMessage(item.question, true, item.category, item.answer, item.contactId);
+            await sendMessage({
+              text: item.question,
+              isFaqClick: true,
+              faqCategory: item.category,
+              directAnswer: item.answer,
+              directContactId: item.contactId
+            });
           } finally {
             setTimeout(function () { btn.disabled = false; }, 500);
           }
@@ -450,8 +468,18 @@
       });
     }
 
-    async function sendMessage(customText, isFaqClick, faqCategory, directAnswer, directContactId) {
-      var text = (customText != null ? customText : userInput.value).trim();
+    function handleSend() {
+      sendMessage({ text: userInput.value });
+    }
+
+    async function sendMessage(opts) {
+      opts = opts || {};
+      var text = String(opts.text != null ? opts.text : "").trim();
+      var isFaqClick = !!opts.isFaqClick;
+      var faqCategory = opts.faqCategory || "";
+      var directAnswer = opts.directAnswer || "";
+      var directContactId = opts.directContactId || "";
+
       if (!text || isSending) return;
 
       isSending           = true;
@@ -526,21 +554,30 @@
       }
     }
 
+    // ── 한글 IME 조합 중 전송 방지 ──
     userInput.addEventListener("keydown", function (e) {
-      if (e.key === "Enter") sendMessage();
+      if (e.key === "Enter" && !isComposing) {
+        e.preventDefault();
+        handleSend();
+      }
     });
 
-    // ── 초기화 (서버에서 QA 로드 후 렌더링) ─────────────────────
+    // ── 초기화 ──
     addMessage("안녕하세요.\n문의사항을 입력하거나 아래 FAQ를 선택해주세요.", "bot", "SCM봇");
 
     async function init() {
-      await Promise.all([
-        ChatbotStore.loadFromServer(),
-        loadContacts()
-      ]);
-      selectedCategory = ChatbotStore.getCategories()[0] || "all";
-      renderCategoryTabs();
-      await renderFAQ();
+      try {
+        await Promise.all([
+          ChatbotStore.loadFromServer(),
+          loadContacts()
+        ]);
+        selectedCategory = ChatbotStore.getCategories()[0] || "all";
+        renderCategoryTabs();
+        await renderFAQ();
+      } catch (err) {
+        console.error("초기화 실패:", err);
+        addMessage("일부 데이터를 불러오지 못했습니다. 페이지를 새로고침해 주세요.", "bot", "SCM봇");
+      }
     }
 
     init();
