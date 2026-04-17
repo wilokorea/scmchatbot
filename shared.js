@@ -141,13 +141,19 @@ const matchedKeywords = validKeywords.filter(function (kw) {
     const qWords = q.split(/\s+/).filter(function(w) { return w.length >= 2; });
     const itemWords = itemQuestion.split(/\s+/).filter(function(w) { return w.length >= 2; });
 
-    if (qWords.length >= 2 && itemWords.length >= 2) {
-      var wordOverlap = 0;
-      qWords.forEach(function(qw) {
-        if (itemWords.some(function(iw) { return iw.includes(qw) || qw.includes(iw); })) {
-          wordOverlap++;
-        }
-      });
+if (qWords.length >= 2 && itemWords.length >= 2) {
+  var wordOverlap = 0;
+  qWords.forEach(function(qw) {
+    if (itemWords.some(function(iw) {
+      if (iw === qw) return true;
+      var shorter = iw.length < qw.length ? iw : qw;
+      if (shorter.length < 3) return false;
+      return iw.includes(qw) || qw.includes(iw);
+    })) {
+      wordOverlap++;
+    }
+  });
+
       var overlapRatio = wordOverlap / Math.max(qWords.length, 1);
       if (overlapRatio >= 0.5) {
         var phraseScore = 30 + (overlapRatio * 40);
