@@ -125,10 +125,12 @@
     const validKeywords = item.keywords.filter(function(kw) {
       return normalizeText(kw).length >= 2;
     });
-    const matchedKeywords = validKeywords.filter(function (kw) {
-      const k = normalizeText(kw);
-      return q.includes(k);
-    });
+const matchedKeywords = validKeywords.filter(function (kw) {
+  const k = normalizeText(kw);
+  const kStripped = k.replace(/\s+/g, "");
+  const qStripped = q.replace(/\s+/g, "");
+  return q.includes(k) || qStripped.includes(kStripped);
+});
 
     if (matchedKeywords.length > 0 && validKeywords.length > 0) {
       var keywordRatio = matchedKeywords.length / validKeywords.length;
