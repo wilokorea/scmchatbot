@@ -573,12 +573,15 @@
           overrideContact = findContactById(matchedContactId);
         }
 
-        if (answer !== null) {
-          addMessage(answer, "bot", "SCM봇");
-          addContactCardCompact(text, matchedCategory, overrideContact); // ✅ override 전달
-        } else {
-          addContactCard(text, matchedCategory, overrideContact); // ✅ override 전달
-        }
+if (answer !== null) {
+  addMessage(answer, "bot", "SCM봇");
+  addContactCardCompact(text, matchedCategory, overrideContact);
+} else {
+  // 미매칭 안내 메시지는 별도 버블로, 카드는 축소형으로 통일
+  addMessage("등록된 답변을 찾지 못했습니다.\n아래 담당자에게 직접 문의해 주세요.", "bot", "SCM봇");
+  addContactCardCompact(text, matchedCategory, overrideContact);
+}
+
 
         var payload = {
           question:  text,
