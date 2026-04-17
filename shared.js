@@ -3,8 +3,6 @@
   const HISTORY_KEY      = "chatbot_history";
   const PENDING_LOGS_KEY = "chatbot_pending_logs";
 
-  const DEFAULT_QA = [];
-
   const CATEGORY_LABELS = {
     all: "전체", delivery: "배송", documents: "문서",
     production: "생산", purchase: "구매", other: "기타"
@@ -12,6 +10,12 @@
 
   const VALID_CATEGORIES = new Set(Object.keys(CATEGORY_LABELS).filter(function (c) { return c !== "all"; }));
 
+  // ── 서버 QA API 설정 ─────────────────────────────────────────
+  const QA_API_BASE = (window.CHATBOT_CONFIG && window.CHATBOT_CONFIG.qaApiBase) ||
+                      (window.ADMIN_CONFIG && window.ADMIN_CONFIG.qaApiBase) ||
+                      "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/qa";
+
+  // ── 유틸 함수 ────────────────────────────────────────────────
   function safeParse(value, fallback) {
     try {
       const parsed = JSON.parse(value);
@@ -50,7 +54,7 @@
 
   function normalizeItem(item) {
     return {
-      __id:      item.__id || createQAId(),
+      __id:      item.__id || item.id || createQAId(),
       category:  normalizeCategory(item.category),
       question:  String(item.question || "").trim(),
       keywords:  normalizeKeywords(item.keywords),
@@ -73,8 +77,24 @@
       .replace(/'/g, "&#039;");
   }
 
-  // ── QA 로드 / 저장 ──────────────────────────────────────────
-  function loadQA() {
+  function _fetchWithTimeout(url, options, timeoutMs) {
+    timeoutMs = timeoutMs || 10000;
+    const controller = new AbortController();
+    const timer = setTimeout(function () { controller.abort(); }, timeoutMs);
+    return fetch(url, Object.assign({}, options, { signal: controller.signal }))
+      .finally(function () { clearTimeout(timer); });
+  }
+
+  // ── QA 캐시 (서버 → 로컬 캐시) ──────────────────────────────
+  let _qaCache = null;
+  let _qaCacheTime = 0;
+  const CACHE_TTL = 60000; // 1분
+
+  function getQAFromCache() {
+    if (_qaCache && (Date.now() - _qaCacheTime < CACHE_TTL)) {
+      return _qaCache;
+    }
+    // 캐시 만료 시 localStorage fallback
     const stored = safeParse(localStorage.getItem(QA_KEY), null);
     if (Array.isArray(stored) && stored.length) {
       return stored.map(normalizeItem).filter(function (i) { return i.question && i.answer; });
@@ -82,9 +102,39 @@
     return [];
   }
 
-  function saveQA(items) {
+  function setQACache(items) {
+    _qaCache = items;
+    _qaCacheTime = Date.now();
+    // localStorage에도 동기화 (오프라인 대비)
+    localStorage.setItem(QA_KEY, JSON.stringify(items));
+  }
+
+  // ── 서버에서 QA 로드 ─────────────────────────────────────────
+  async function loadQAFromServer() {
+    try {
+      const res = await _fetchWithTimeout(QA_API_BASE + "/getAll", { method: "GET" }, 8000);
+      if (!res.ok) throw new Error("QA API " + res.status);
+      const data = await res.json();
+      if (data.success && Array.isArray(data.items)) {
+        const items = data.items.map(normalizeItem).filter(function (i) { return i.question && i.answer; });
+        setQACache(items);
+        console.log("서버 QA 로드 완료:", items.length + "건");
+        return items;
+      }
+      throw new Error("Invalid response");
+    } catch (err) {
+      console.warn("서버 QA 로드 실패, 로컬 캐시 사용:", err.message);
+      return getQAFromCache();
+    }
+  }
+
+  function loadQA() {
+    return getQAFromCache();
+  }
+
+  function saveQALocal(items) {
     const normalized = items.map(normalizeItem).filter(function (i) { return i.question && i.answer; });
-    localStorage.setItem(QA_KEY, JSON.stringify(normalized));
+    setQACache(normalized);
   }
 
   // ── 히스토리 ─────────────────────────────────────────────────
@@ -125,12 +175,12 @@
     const validKeywords = item.keywords.filter(function(kw) {
       return normalizeText(kw).length >= 2;
     });
-const matchedKeywords = validKeywords.filter(function (kw) {
-  const k = normalizeText(kw);
-  const kStripped = k.replace(/\s+/g, "");
-  const qStripped = q.replace(/\s+/g, "");
-  return q.includes(k) || qStripped.includes(kStripped);
-});
+    const matchedKeywords = validKeywords.filter(function (kw) {
+      const k = normalizeText(kw);
+      const kStripped = k.replace(/\s+/g, "");
+      const qStripped = q.replace(/\s+/g, "");
+      return q.includes(k) || qStripped.includes(kStripped);
+    });
 
     if (matchedKeywords.length > 0 && validKeywords.length > 0) {
       var keywordRatio = matchedKeywords.length / validKeywords.length;
@@ -141,18 +191,18 @@ const matchedKeywords = validKeywords.filter(function (kw) {
     const qWords = q.split(/\s+/).filter(function(w) { return w.length >= 2; });
     const itemWords = itemQuestion.split(/\s+/).filter(function(w) { return w.length >= 2; });
 
-if (qWords.length >= 2 && itemWords.length >= 2) {
-  var wordOverlap = 0;
-  qWords.forEach(function(qw) {
-    if (itemWords.some(function(iw) {
-      if (iw === qw) return true;
-      var shorter = iw.length < qw.length ? iw : qw;
-      if (shorter.length < 3) return false;
-      return iw.includes(qw) || qw.includes(iw);
-    })) {
-      wordOverlap++;
-    }
-  });
+    if (qWords.length >= 2 && itemWords.length >= 2) {
+      var wordOverlap = 0;
+      qWords.forEach(function(qw) {
+        if (itemWords.some(function(iw) {
+          if (iw === qw) return true;
+          var shorter = iw.length < qw.length ? iw : qw;
+          if (shorter.length < 3) return false;
+          return iw.includes(qw) || qw.includes(iw);
+        })) {
+          wordOverlap++;
+        }
+      });
 
       var overlapRatio = wordOverlap / Math.max(qWords.length, 1);
       if (overlapRatio >= 0.5) {
@@ -203,14 +253,6 @@ if (qWords.length >= 2 && itemWords.length >= 2) {
   }
   function clearPendingLogs() { localStorage.removeItem(PENDING_LOGS_KEY); }
 
-  function _fetchWithTimeout(url, options, timeoutMs) {
-    timeoutMs = timeoutMs || 10000;
-    const controller = new AbortController();
-    const timer = setTimeout(function () { controller.abort(); }, timeoutMs);
-    return fetch(url, Object.assign({}, options, { signal: controller.signal }))
-      .finally(function () { clearTimeout(timer); });
-  }
-
   async function retryPendingLogs(logApiUrl) {
     if (!logApiUrl) return;
     const pending = getPendingLogs();
@@ -235,6 +277,9 @@ if (qWords.length >= 2 && itemWords.length >= 2) {
 
   // ── Public API ───────────────────────────────────────────────
   window.ChatbotStore = {
+    // 서버에서 QA 로드 (비동기 — 초기화 시 호출)
+    loadFromServer: loadQAFromServer,
+
     getQA()                    { return loadQA(); },
     getQAByCategory(category)  {
       const all = loadQA();
@@ -257,6 +302,10 @@ if (qWords.length >= 2 && itemWords.length >= 2) {
     saveHistory(item)  { saveHistoryItem(item); },
     getHistory()       { return getHistory(); },
     clearHistory()     { localStorage.removeItem(HISTORY_KEY); },
+
+    // 로컬 캐시 업데이트 (admin에서 서버 저장 후 호출)
+    updateLocalCache(items) { saveQALocal(items); },
+
     importTemplate(payload) {
       const mode     = payload && payload.mode === "append" ? "append" : "replace";
       const incoming = Array.isArray(payload && payload.data) ? payload.data.map(normalizeItem) : [];
@@ -267,27 +316,27 @@ if (qWords.length >= 2 && itemWords.length >= 2) {
         incoming.forEach(function (item) {
           if (item.question && item.answer) mergedMap.set(normalizeText(item.question), item);
         });
-        saveQA(Array.from(mergedMap.values()));
+        saveQALocal(Array.from(mergedMap.values()));
       } else {
-        saveQA(incoming);
+        saveQALocal(incoming);
       }
     },
     deleteQAById(id) {
       const current = loadQA();
       const next    = current.filter(function (item) { return item.__id !== id; });
       if (next.length === current.length) return false;
-      saveQA(next); return true;
+      saveQALocal(next); return true;
     },
     deleteQAByIndex(index) {
       const current = loadQA();
       if (index < 0 || index >= current.length) return false;
-      current.splice(index, 1); saveQA(current); return true;
+      current.splice(index, 1); saveQALocal(current); return true;
     },
     clearQA() {
-      localStorage.setItem(QA_KEY, JSON.stringify([]));
+      setQACache([]);
     },
     resetToDefault() {
-      localStorage.setItem(QA_KEY, JSON.stringify([]));
+      setQACache([]);
     },
     searchQA(query) {
       if (!query) return this.getQA();
