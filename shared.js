@@ -184,9 +184,8 @@
 
     if (matchedKeywords.length > 0 && validKeywords.length > 0) {
       var keywordRatio = matchedKeywords.length / validKeywords.length;
-      var keywordScore = 15 + (matchedKeywords.length * 8) + (keywordRatio * 25);
-      score = Math.max(score, Math.min(65, keywordScore));
-    }
+var keywordScore = 20 + (matchedKeywords.length * 12) + (keywordRatio * 20);
+score = Math.max(score, Math.min(70, keywordScore));
 
     const qWords = q.split(/\s+/).filter(function(w) { return w.length >= 2; });
     const itemWords = itemQuestion.split(/\s+/).filter(function(w) { return w.length >= 2; });
