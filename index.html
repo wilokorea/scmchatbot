@@ -103,32 +103,7 @@
     }
     .input-wrap button:disabled{ opacity:.7; cursor:not-allowed; }
 
-    /* 담당자 카드 (미매칭용) */
-    .contact-card{
-      background:#fff; border:1px solid #b2ddd5;
-      border-radius:16px; border-bottom-left-radius:6px;
-      padding:16px 18px; display:flex; flex-direction:column; gap:10px;
-    }
-    .cc-title{ font-weight:700; font-size:15px; color:#1f2937; }
-    .cc-sub{ font-size:14px; color:#4a5568; margin-top:-4px; }
-    .cc-info{ display:flex; gap:10px; font-size:14px; align-items:center; }
-    .cc-label{
-      background:#e7f7f3; color:#007a66; border-radius:6px;
-      padding:3px 10px; font-size:13px; font-weight:700;
-      white-space:nowrap; min-width:52px; text-align:center;
-    }
-    .cc-value{ color:#1f2937; font-weight:500; }
-    .cc-value a{ color:#007a66; text-decoration:none; font-weight:600; }
-    .cc-value a:hover{ text-decoration:underline; }
-    .cc-mail-btn{
-      display:block; margin-top:8px; background:#009C82; color:#fff;
-      text-align:center; padding:12px; border-radius:10px;
-      font-size:14px; font-weight:700; text-decoration:none;
-      cursor:pointer; transition:background .2s;
-    }
-    .cc-mail-btn:hover{ background:#007a66; }
-
-    /* 축소형 담당자 카드 (매칭용) */
+    /* 축소형 담당자 카드 */
     .compact-contact{
       background:#f0faf7 !important;
       border:1px solid #b2ddd5 !important;
@@ -184,7 +159,6 @@
       background:#d0f0e8;
     }
 
-    /* 버블 내 링크 */
     .bubble a{ color:#009C82; word-break:break-all; text-decoration:underline; }
     .user .bubble a{ color:#fff; }
 
@@ -223,6 +197,7 @@
       logApiUrl:          "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/logQuestion",
       topQuestionsApiUrl: "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/getTopQuestions",
       contactsApiUrl:     "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/contacts/getContacts",
+      qaApiBase:          "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/qa",
       requestTimeoutMs:   10000,
       faqButtonCount:     4,
       pendingRetryIntervalMs: 60000
@@ -237,11 +212,10 @@
     const sendButton   = document.getElementById("sendButton");
     const { escapeHtml } = ChatbotUtils;
 
-    let selectedCategory = (window.ChatbotStore && ChatbotStore.getCategories()[0]) || "all";
+    let selectedCategory = "all";
     let isSending  = false;
     let CONTACT_MAP = [];
 
-    // ── 담당자 로드 ──────────────────────────────────────────────
     async function loadContacts() {
       if (!window.CHATBOT_CONFIG.contactsApiUrl) return;
       try {
@@ -261,7 +235,6 @@
       }
     }
 
-    // ── 담당자 매칭 ──────────────────────────────────────────────
     function findContact(questionText, category) {
       const text = String(questionText || "").toLowerCase();
       for (const contact of CONTACT_MAP) {
@@ -281,7 +254,6 @@
                keywords: [], category: "default", isDefault: true };
     }
 
-    // ✅ 추가: contactId로 담당자 직접 찾기
     function findContactById(contactId) {
       if (!contactId) return null;
       return CONTACT_MAP.find(function(c) {
@@ -289,28 +261,20 @@
       }) || null;
     }
 
-    // ── 담당자 카드 (미매칭용) ────────────────────────────────────
-    // ✅ 변경: overrideContact 매개변수 추가
-    function addContactCard(questionText, category, overrideContact) {
-      if (!CONTACT_MAP.length && !overrideContact) {
-        addMessage("등록된 답변을 찾지 못했습니다.\nSCM팀 담당자에게 문의 부탁드립니다.", "bot", "SCM봇");
-        return;
-      }
-   var contact = overrideContact || findContact(questionText, category);
-  
-  var subject = encodeURIComponent("[FAQ봇 문의] " + String(questionText).slice(0, 40));
-  var mailBody = encodeURIComponent(
-    "안녕하세요, 아래 내용 관련 문의드립니다.\n" +
-    "담당이 아닌 경우 담당자에게 전달 부탁드립니다.\n\n" +
-    "【문의 내용】\n" + questionText + "\n\n" +
-    "───────────────\n" +
-    "* 본 메일은 SCM FAQ봇에서 자동 생성되었습니다."
-  );
+    function addContactCardCompact(questionText, category, overrideContact) {
+      if (!CONTACT_MAP.length && !overrideContact) return;
+      var contact = overrideContact || findContact(questionText, category);
+      var subject  = encodeURIComponent("[FAQ봇 문의] " + String(questionText).slice(0, 50));
+      var mailBody = encodeURIComponent(
+        "안녕하세요, 아래 내용 관련 문의드립니다.\n" +
+        "담당이 아닌 경우 담당자에게 전달 부탁드립니다.\n\n" +
+        "【문의 내용】\n" + questionText + "\n\n" +
+        "───────────────\n" +
+        "* 본 메일은 SCM FAQ봇에서 자동 생성되었습니다."
+      );
       var mailtoLink = "mailto:" + contact.email + "?subject=" + subject + "&body=" + mailBody;
       var phoneHtml  = contact.phone
-        ? '<div class="cc-info"><span class="cc-label">전화</span>' +
-          '<span class="cc-value"><a href="tel:' + escapeHtml(contact.phone) + '">' +
-          escapeHtml(contact.phone) + '</a></span></div>'
+        ? '<span class="cc-compact-divider">·</span><a href="tel:' + escapeHtml(contact.phone) + '">' + escapeHtml(contact.phone) + '</a>'
         : "";
 
       var row = document.createElement("div");
@@ -318,68 +282,24 @@
       row.innerHTML =
         '<div class="bot-icon">Q</div>' +
         '<div class="bubble-group bot">' +
-          '<div class="sender">SCM봇</div>' +
-          '<div class="bubble contact-card">' +
-            '<div class="cc-title">📋 등록된 답변을 찾지 못했습니다.</div>' +
-            '<div class="cc-sub">아래 담당자에게 직접 문의해 주세요.</div>' +
-            '<div class="cc-info"><span class="cc-label">담당자</span>' +
-              '<span class="cc-value">' + escapeHtml(contact.name) + '</span></div>' +
-            phoneHtml +
-            '<div class="cc-info"><span class="cc-label">이메일</span>' +
-              '<span class="cc-value"><a href="mailto:' + escapeHtml(contact.email) + '">' +
-              escapeHtml(contact.email) + '</a></span></div>' +
-            '<a class="cc-mail-btn" href="' + mailtoLink + '" target="_blank">' +
-              '✉️ 이 질문 내용으로 이메일 보내기</a>' +
+          '<div class="bubble compact-contact">' +
+            '<div class="cc-compact-header">' +
+              '<span class="cc-compact-label">담당자</span>' +
+              '<span class="cc-compact-name">' + escapeHtml(contact.name) + '</span>' +
+              phoneHtml +
+              '<span class="cc-compact-divider">·</span>' +
+              '<a href="mailto:' + escapeHtml(contact.email) + '">' + escapeHtml(contact.email) + '</a>' +
+            '</div>' +
+            '<div class="cc-compact-desc">원하는 답변을 찾지 못하셨다면, 아래 \'메일 보내기\' 버튼을 통해 문의해 주세요.</div>' +
+            '<a class="cc-compact-mail-btn" href="' + mailtoLink + '" target="_blank">' +
+              '✉️ 추가 문의 메일 보내기</a>' +
           '</div>' +
-          '<div class="time">' + getTimeText() + '</div>' +
         '</div>';
 
       chatBox.appendChild(row);
       scrollToBottom();
     }
 
-    // ── 축소형 담당자 카드 (매칭용) ──────────────────────────────
-function addContactCardCompact(questionText, category, overrideContact) {
-  if (!CONTACT_MAP.length && !overrideContact) return;
-  var contact = overrideContact || findContact(questionText, category);
-  var subject  = encodeURIComponent("[FAQ봇 문의] " + String(questionText).slice(0, 50));
-  var mailBody = encodeURIComponent(
-    "안녕하세요, 아래 내용 관련 문의드립니다.\n" +
-    "담당이 아닌 경우 담당자에게 전달 부탁드립니다.\n\n" +
-    "【문의 내용】\n" + questionText + "\n\n" +
-    "───────────────\n" +
-    "* 본 메일은 SCM FAQ봇에서 자동 생성되었습니다."
-  );
-  var mailtoLink = "mailto:" + contact.email + "?subject=" + subject + "&body=" + mailBody;
-  var phoneHtml  = contact.phone
-    ? '<span class="cc-compact-divider">·</span><a href="tel:' + escapeHtml(contact.phone) + '">' + escapeHtml(contact.phone) + '</a>'
-    : "";
-
-  var row = document.createElement("div");
-  row.className = "row bot";
-  row.innerHTML =
-    '<div class="bot-icon">Q</div>' +
-    '<div class="bubble-group bot">' +
-      '<div class="bubble compact-contact">' +
-        '<div class="cc-compact-header">' +
-          '<span class="cc-compact-label">담당자</span>' +
-          '<span class="cc-compact-name">' + escapeHtml(contact.name) + '</span>' +
-          phoneHtml +
-          '<span class="cc-compact-divider">·</span>' +
-          '<a href="mailto:' + escapeHtml(contact.email) + '">' + escapeHtml(contact.email) + '</a>' +
-        '</div>' +
-        '<div class="cc-compact-desc">원하는 답변을 찾지 못하셨다면, 아래 \'메일 보내기\' 버튼을 통해 문의해 주세요.</div>' +
-        '<a class="cc-compact-mail-btn" href="' + mailtoLink + '" target="_blank">' +
-          '✉️ 추가 문의 메일 보내기</a>' +
-      '</div>' +
-    '</div>';
-
-  chatBox.appendChild(row);
-  scrollToBottom();
-}
-
-
-    // ── 유틸 ─────────────────────────────────────────────────────
     function getTimeText() {
       return new Date().toLocaleTimeString("ko-KR", { hour:"2-digit", minute:"2-digit" });
     }
@@ -451,7 +371,6 @@ function addContactCardCompact(questionText, category, overrideContact) {
       }
     }
 
-    // ── 카테고리 탭 ──────────────────────────────────────────────
     function renderCategoryTabs() {
       var categories = ChatbotStore.getCategories();
       var labels     = ChatbotStore.getCategoryLabels();
@@ -473,7 +392,6 @@ function addContactCardCompact(questionText, category, overrideContact) {
       });
     }
 
-    // ── FAQ 렌더링 ───────────────────────────────────────────────
     async function renderFAQ() {
       faqList.innerHTML = "";
       var topQA = [];
@@ -523,7 +441,6 @@ function addContactCardCompact(questionText, category, overrideContact) {
           if (btn.disabled || isSending) return;
           btn.disabled = true;
           try {
-            // ✅ 변경: FAQ 클릭 시에도 contactId 전달
             await sendMessage(item.question, true, item.category, item.answer, item.contactId);
           } finally {
             setTimeout(function () { btn.disabled = false; }, 500);
@@ -533,7 +450,6 @@ function addContactCardCompact(questionText, category, overrideContact) {
       });
     }
 
-    // ✅ 변경: sendMessage — contactId 파라미터 추가, 지정 담당자 우선 표시
     async function sendMessage(customText, isFaqClick, faqCategory, directAnswer, directContactId) {
       var text = (customText != null ? customText : userInput.value).trim();
       if (!text || isSending) return;
@@ -553,7 +469,7 @@ function addContactCardCompact(questionText, category, overrideContact) {
           answer           = directAnswer;
           matched          = true;
           matchedCategory  = faqCategory || selectedCategory;
-          matchedContactId = directContactId || ""; // ✅ FAQ에서 전달된 contactId
+          matchedContactId = directContactId || "";
         } else {
           var searchCategory = faqCategory || selectedCategory;
           var result = ChatbotStore.findAnswer(text, searchCategory);
@@ -562,28 +478,25 @@ function addContactCardCompact(questionText, category, overrideContact) {
           }
           matched          = !!result;
           matchedCategory  = result ? result.category : searchCategory;
-          matchedContactId = result ? (result.contactId || "") : ""; // ✅ 매칭 결과의 contactId
+          matchedContactId = result ? (result.contactId || "") : "";
           answer           = result ? result.answer : null;
         }
 
         await new Promise(function (resolve) { setTimeout(resolve, 250); });
         removeRow(typingRow);
 
-        // ✅ 핵심 변경: contactId가 있으면 해당 담당자를 우선 사용
         var overrideContact = null;
         if (matchedContactId) {
           overrideContact = findContactById(matchedContactId);
         }
 
-if (answer !== null) {
-  addMessage(answer, "bot", "SCM봇");
-  addContactCardCompact(text, matchedCategory, overrideContact);
-} else {
-  // 미매칭 안내 메시지는 별도 버블로, 카드는 축소형으로 통일
-  addMessage("등록된 답변을 찾지 못했습니다.\n아래 담당자에게 직접 문의해 주세요.", "bot", "SCM봇");
-  addContactCardCompact(text, matchedCategory, overrideContact);
-}
-
+        if (answer !== null) {
+          addMessage(answer, "bot", "SCM봇");
+          addContactCardCompact(text, matchedCategory, overrideContact);
+        } else {
+          addMessage("등록된 답변을 찾지 못했습니다.\n아래 담당자에게 직접 문의해 주세요.", "bot", "SCM봇");
+          addContactCardCompact(text, matchedCategory, overrideContact);
+        }
 
         var payload = {
           question:  text,
@@ -617,11 +530,20 @@ if (answer !== null) {
       if (e.key === "Enter") sendMessage();
     });
 
-    // ── 초기화 ──────────────────────────────────────────────────
+    // ── 초기화 (서버에서 QA 로드 후 렌더링) ─────────────────────
     addMessage("안녕하세요.\n문의사항을 입력하거나 아래 FAQ를 선택해주세요.", "bot", "SCM봇");
-    renderCategoryTabs();
 
-    Promise.all([loadContacts(), renderFAQ()]);
+    async function init() {
+      await Promise.all([
+        ChatbotStore.loadFromServer(),
+        loadContacts()
+      ]);
+      selectedCategory = ChatbotStore.getCategories()[0] || "all";
+      renderCategoryTabs();
+      await renderFAQ();
+    }
+
+    init();
 
     ChatbotStore.retryPendingLogs(window.CHATBOT_CONFIG.logApiUrl);
     setInterval(function () {
