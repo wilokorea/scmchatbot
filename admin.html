@@ -193,7 +193,7 @@
             <option value="true">매칭됨</option>
             <option value="false">미매칭</option>
           </select>
-          <button class="btn" onclick="loadAllQuestionsFromServer()">조회</button>
+          <button class="btn" onclick="loadAllQuestionsFromServer(true)">조회</button>
           <button class="btn" onclick="exportAllQuestions()">CSV 다운로드</button>
           <button class="btn" style="background:linear-gradient(135deg,#e53e3e,#c53030);" onclick="resetAllQuestions()">전체 이력 삭제</button>
         </div>
@@ -371,6 +371,7 @@
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
   <script src="shared.js"></script>
   <script>
+    /* ── NOTE: devPassword는 개발용입니다. 운영 시 서버 기반 인증으로 전환하세요. ── */
     var ADMIN_CONFIG = {
       authMode: "dev",
       devPassword: "wpkscm",
@@ -394,26 +395,12 @@
     var normalizeKeywords = ChatbotUtils.normalizeKeywords;
     var normalizeBoolean = ChatbotUtils.normalizeBoolean;
     var createQAId = ChatbotUtils.createQAId;
+    var fetchWithTimeout = ChatbotUtils.fetchWithTimeout;
 
     function toKoreanTime(timestamp) {
       if (!timestamp) return '-';
       try { return new Date(timestamp).toLocaleString('ko-KR'); }
       catch (e) { return '-'; }
-    }
-
-    async function fetchWithTimeout(url, options, timeoutMs) {
-      options = options || {};
-      timeoutMs = timeoutMs || ADMIN_CONFIG.requestTimeoutMs;
-      var controller = new AbortController();
-      var timeout = setTimeout(function() { controller.abort(); }, timeoutMs);
-      try {
-        var response = await fetch(url, Object.assign({}, options, { signal: controller.signal }));
-        clearTimeout(timeout);
-        return response;
-      } catch (error) {
-        clearTimeout(timeout);
-        throw error;
-      }
     }
 
     // ========== 로그인 ==========
@@ -437,12 +424,16 @@
     });
 
     async function loadAllData() {
-      await Promise.all([
-        loadAllQuestionsFromServer(),
-        loadContacts(),
-        loadSavedQAFromServer()
-      ]);
-      refreshContactSelectOptions();
+      try {
+        await Promise.all([
+          loadAllQuestionsFromServer(false),
+          loadContacts(),
+          loadSavedQAFromServer()
+        ]);
+        refreshContactSelectOptions();
+      } catch (err) {
+        console.error('초기 데이터 로드 오류:', err);
+      }
     }
 
     function updateStats() {
@@ -483,7 +474,11 @@
       if (error) error.style.display = 'none';
 
       try {
-        var res = await fetchWithTimeout(ADMIN_CONFIG.qaApiBase + '/getAll', { method: 'GET' });
+        var res = await fetchWithTimeout(
+          ADMIN_CONFIG.qaApiBase + '/getAll',
+          { method: 'GET' },
+          ADMIN_CONFIG.requestTimeoutMs
+        );
         if (!res.ok) throw new Error('서버 응답 오류 (' + res.status + ')');
         var data = await res.json();
         if (!data.success) throw new Error(data.error || '로드 실패');
@@ -496,7 +491,6 @@
       } catch (err) {
         console.error('QA 서버 로드 실패:', err);
         if (error) { error.textContent = '오류: ' + err.message; error.style.display = 'block'; }
-        // fallback: 로컬 캐시
         savedQACache = ChatbotStore.getQA();
         displaySavedQA(savedQACache);
         updateStats();
@@ -610,11 +604,15 @@
       };
 
       try {
-        var res = await fetchWithTimeout(ADMIN_CONFIG.qaApiBase + '/save', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
+        var res = await fetchWithTimeout(
+          ADMIN_CONFIG.qaApiBase + '/save',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          },
+          ADMIN_CONFIG.requestTimeoutMs
+        );
 
         if (!res.ok) throw new Error('서버 응답 오류 (' + res.status + ')');
         var data = await res.json();
@@ -633,11 +631,15 @@
       if (!confirm('정말 삭제하시겠습니까?')) return;
 
       try {
-        var res = await fetchWithTimeout(ADMIN_CONFIG.qaApiBase + '/delete', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: id, category: category })
-        });
+        var res = await fetchWithTimeout(
+          ADMIN_CONFIG.qaApiBase + '/delete',
+          {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: id, category: category })
+          },
+          ADMIN_CONFIG.requestTimeoutMs
+        );
 
         if (!res.ok) throw new Error('서버 응답 오류 (' + res.status + ')');
         var data = await res.json();
@@ -654,10 +656,14 @@
       if (!confirm('모든 Q&A 데이터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return;
 
       try {
-        var res = await fetchWithTimeout(ADMIN_CONFIG.qaApiBase + '/deleteAll', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' }
-        });
+        var res = await fetchWithTimeout(
+          ADMIN_CONFIG.qaApiBase + '/deleteAll',
+          {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' }
+          },
+          ADMIN_CONFIG.requestTimeoutMs
+        );
 
         if (!res.ok) throw new Error('서버 응답 오류 (' + res.status + ')');
 
@@ -697,18 +703,23 @@
           if (items.length === 0) { alert('유효한 데이터가 없습니다.'); return; }
 
           try {
-            var res = await fetchWithTimeout(ADMIN_CONFIG.qaApiBase + '/saveBulk', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ items: items, mode: 'replace' })
-            });
+            var res = await fetchWithTimeout(
+              ADMIN_CONFIG.qaApiBase + '/saveBulk',
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ items: items, mode: 'replace' })
+              },
+              ADMIN_CONFIG.requestTimeoutMs
+            );
 
             if (!res.ok) throw new Error('서버 응답 오류 (' + res.status + ')');
             var data = await res.json();
             if (!data.success) throw new Error(data.error || '업로드 실패');
 
             await loadSavedQAFromServer();
-            alert(data.savedCount + '개의 Q&A가 업로드되었습니다.');
+            alert(data.savedCount + '개의 Q&A가 업로드되었습니다.' +
+              (data.failedCount > 0 ? ' (' + data.failedCount + '건 실패)' : ''));
             fileInput.value = '';
 
           } catch (err) {
@@ -740,13 +751,19 @@
       link.href = URL.createObjectURL(blob);
       link.download = 'faq_data_' + new Date().getTime() + '.csv';
       link.click();
+      URL.revokeObjectURL(link.href);
     }
 
     // ========== 전체 질문 이력 ==========
-    async function loadAllQuestionsFromServer() {
+    async function loadAllQuestionsFromServer(resetPage) {
       var loading = document.getElementById('allQuestionsLoading');
       var error = document.getElementById('allQuestionsError');
       var tbody = document.getElementById('allQuestionsList');
+
+      // 필터 변경 시 페이지 리셋
+      if (resetPage) {
+        currentPage = 1;
+      }
 
       if (loading) loading.style.display = 'block';
       if (error) error.style.display = 'none';
@@ -761,7 +778,11 @@
         if (category && category !== 'all') url += '&category=' + category;
         if (matched && matched !== 'all') url += '&matched=' + matched;
 
-        var res = await fetchWithTimeout(url, { method: 'GET', headers: { 'Accept': 'application/json' } });
+        var res = await fetchWithTimeout(
+          url,
+          { method: 'GET', headers: { 'Accept': 'application/json' } },
+          ADMIN_CONFIG.requestTimeoutMs
+        );
         if (!res.ok) throw new Error('서버 응답 오류 (' + res.status + ')');
 
         var data = await res.json();
@@ -769,12 +790,13 @@
 
         allQuestionsData = data.items || [];
         var totalCount = data.totalCount || 0;
+        var serverMatchedCount = data.matchedCount || 0;
+        var serverUnmatchedCount = data.unmatchedCount || 0;
         totalPages = Math.ceil(totalCount / limit) || 1;
 
         displayAllQuestions(allQuestionsData);
-        updateHistoryStats(totalCount, matched);
+        updateHistoryStats(totalCount, serverMatchedCount, serverUnmatchedCount);
         updatePagination();
-        document.getElementById('serverQuestionCount').textContent = totalCount;
 
       } catch (err) {
         console.error('전체 질문 이력 로드 실패:', err);
@@ -796,15 +818,11 @@
         return;
       }
 
-      var matchedTotal = 0, unmatchedTotal = 0;
-
       items.forEach(function(item) {
         var row = document.createElement('tr');
         var matchedClass = item.matched ? 'matched-yes' : 'matched-no';
         var matchedText = item.matched ? '매칭' : '미매칭';
         var userAgent = item.userAgent || item.browser || '-';
-
-        if (item.matched) matchedTotal++; else unmatchedTotal++;
 
         row.innerHTML =
           '<td>' + escapeHtml(toKoreanTime(item.createdAt || item.timestamp)) + '</td>' +
@@ -819,33 +837,22 @@
       });
 
       document.getElementById('historyPageCount').textContent = items.length;
-      document.getElementById('matchedCount').textContent = matchedTotal;
-      document.getElementById('unmatchedCount').textContent = unmatchedTotal;
     }
 
-    function updateHistoryStats(total, matchedFilter) {
-      document.getElementById('historyTotalCount').textContent = total;
-      document.getElementById('serverQuestionCount').textContent = total;
-
-      if (matchedFilter === 'true') {
-        document.getElementById('historyMatchedCount').textContent = total;
-        document.getElementById('historyUnmatchedCount').textContent = 0;
-      } else if (matchedFilter === 'false') {
-        document.getElementById('historyMatchedCount').textContent = 0;
-        document.getElementById('historyUnmatchedCount').textContent = total;
-      } else {
-        var matched = allQuestionsData.filter(function(item) { return item.matched; }).length;
-        var unmatched = allQuestionsData.filter(function(item) { return !item.matched; }).length;
-        document.getElementById('historyMatchedCount').textContent = matched;
-        document.getElementById('historyUnmatchedCount').textContent = unmatched;
-      }
+    function updateHistoryStats(totalCount, matchedCount, unmatchedCount) {
+      document.getElementById('historyTotalCount').textContent = totalCount;
+      document.getElementById('serverQuestionCount').textContent = totalCount;
+      document.getElementById('historyMatchedCount').textContent = matchedCount;
+      document.getElementById('historyUnmatchedCount').textContent = unmatchedCount;
+      document.getElementById('matchedCount').textContent = matchedCount;
+      document.getElementById('unmatchedCount').textContent = unmatchedCount;
     }
 
     function changePage(delta) {
       var newPage = currentPage + delta;
       if (newPage < 1 || newPage > totalPages) return;
       currentPage = newPage;
-      loadAllQuestionsFromServer();
+      loadAllQuestionsFromServer(false);
     }
 
     function updatePagination() {
@@ -875,6 +882,7 @@
       link.href = URL.createObjectURL(blob);
       link.download = 'all_questions_' + new Date().getTime() + '.csv';
       link.click();
+      URL.revokeObjectURL(link.href);
     }
 
     async function resetAllQuestions() {
@@ -889,10 +897,14 @@
       if (error) error.style.display = 'none';
 
       try {
-        var res = await fetchWithTimeout(ADMIN_CONFIG.deleteQuestionsApiUrl, {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' }
-        });
+        var res = await fetchWithTimeout(
+          ADMIN_CONFIG.deleteQuestionsApiUrl,
+          {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' }
+          },
+          ADMIN_CONFIG.requestTimeoutMs
+        );
 
         if (res.ok) {
           var data = await res.json();
@@ -911,12 +923,9 @@
       currentPage = 1;
       totalPages = 1;
       displayAllQuestions([]);
-      updateHistoryStats(0, 'all');
+      updateHistoryStats(0, 0, 0);
       updatePagination();
       ChatbotStore.clearHistory();
-      document.getElementById('serverQuestionCount').textContent = '0';
-      document.getElementById('matchedCount').textContent = '0';
-      document.getElementById('unmatchedCount').textContent = '0';
       if (loading) loading.style.display = 'none';
     }
 
@@ -930,9 +939,11 @@
       if (error) error.style.display = 'none';
 
       try {
-        var res = await fetchWithTimeout(ADMIN_CONFIG.contactsApiBase + '/getContacts', {
-          method: 'GET', headers: { 'Accept': 'application/json' }
-        });
+        var res = await fetchWithTimeout(
+          ADMIN_CONFIG.contactsApiBase + '/getContacts',
+          { method: 'GET', headers: { 'Accept': 'application/json' } },
+          ADMIN_CONFIG.requestTimeoutMs
+        );
         if (!res.ok) throw new Error('서버 응답 오류 (' + res.status + ')');
 
         var data = await res.json();
@@ -1034,10 +1045,15 @@
       if (id) payload.id = id;
 
       try {
-        var res = await fetchWithTimeout(ADMIN_CONFIG.contactsApiBase + '/saveContact', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
+        var res = await fetchWithTimeout(
+          ADMIN_CONFIG.contactsApiBase + '/saveContact',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          },
+          ADMIN_CONFIG.requestTimeoutMs
+        );
         if (!res.ok) throw new Error('서버 응답 오류 (' + res.status + ')');
         var data = await res.json();
         if (data.success) {
@@ -1050,13 +1066,24 @@
     }
 
     async function deleteContact(id, category) {
-      if (!confirm('이 담당자를 삭제하시겠습니까?')) return;
+      // 해당 담당자가 지정된 QA가 있는지 확인
+      var linkedQA = savedQACache.filter(function(q) { return q.contactId === id; });
+      var confirmMsg = '이 담당자를 삭제하시겠습니까?';
+      if (linkedQA.length > 0) {
+        confirmMsg += '\n\n이 담당자가 지정된 Q&A가 ' + linkedQA.length + '개 있습니다.\n삭제 후 해당 Q&A는 자동 매칭으로 전환됩니다.';
+      }
+      if (!confirm(confirmMsg)) return;
 
       try {
-        var res = await fetchWithTimeout(ADMIN_CONFIG.contactsApiBase + '/deleteContact', {
-          method: 'DELETE', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: id, category: category })
-        });
+        var res = await fetchWithTimeout(
+          ADMIN_CONFIG.contactsApiBase + '/deleteContact',
+          {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: id, category: category })
+          },
+          ADMIN_CONFIG.requestTimeoutMs
+        );
         if (!res.ok) throw new Error('서버 응답 오류 (' + res.status + ')');
         var data = await res.json();
         if (data.success) {
