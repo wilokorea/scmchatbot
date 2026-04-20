@@ -401,7 +401,7 @@
       });
     }
 
-   async function renderFAQ() {
+async function renderFAQ() {
   faqList.innerHTML = "";
   var topQA = [];
   var maxCount = window.CHATBOT_CONFIG.faqButtonCount || 4;
@@ -420,6 +420,7 @@
             if (topQA.length >= maxCount) return;
             var matched = ChatbotStore.findAnswer(si.question, si.category || "all");
             if (!matched) return;
+            if (selectedCategory !== "all" && matched.category !== selectedCategory) return;
             var key = matched.__id || matched.question;
             if (seenId[key]) return;
             seenId[key] = true;
