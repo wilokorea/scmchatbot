@@ -43,13 +43,17 @@
 
   /* ================== Utils ================== */
 
-  function safeParse(v, fb) {
-    try {
-      return JSON.parse(v);
-    } catch (e) {
-      return fb;
-    }
+ function safeParse(v, fb) {
+  try {
+    var result = JSON.parse(v);
+    // null이나 undefined면 fallback 반환
+    if (result === null || result === undefined) return fb;
+    return result;
+  } catch (e) {
+    return fb;
   }
+}
+
 
   function normalizeText(v) {
     return String(v || "").trim().toLowerCase();
