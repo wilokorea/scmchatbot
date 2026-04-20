@@ -42,17 +42,16 @@
   }
 
   /* ================== Utils ================== */
-
- function safeParse(v, fb) {
+function safeParse(v, fb) {
   try {
     var result = JSON.parse(v);
-    // null이나 undefined면 fallback 반환
     if (result === null || result === undefined) return fb;
     return result;
   } catch (e) {
     return fb;
   }
 }
+
 
 
   function normalizeText(v) {
@@ -296,10 +295,11 @@
     }
   }
 
-  async function retryPendingLogs(url) {
-    if (!url) return;
-    var p = getPendingLogs();
-    if (p.length === 0) return;
+async function retryPendingLogs(url) {
+  if (!url) return;
+  var p = getPendingLogs();
+  if (!Array.isArray(p) || p.length === 0) return;
+
     var remain = [];
     for (var i = 0; i < p.length; i++) {
       try {
