@@ -401,92 +401,90 @@
       });
     }
 
-    async function renderFAQ() {
-      faqList.innerHTML = "";
-      var topQA = [];
+   async function renderFAQ() {
+  faqList.innerHTML = "";
+  var topQA = [];
+  var maxCount = window.CHATBOT_CONFIG.faqButtonCount || 4;
 
-      try {
-        if (window.CHATBOT_CONFIG.topQuestionsApiUrl) {
-          var url = window.CHATBOT_CONFIG.topQuestionsApiUrl +
-            "?category=" + encodeURIComponent(selectedCategory) +
-            "&limit=" + (window.CHATBOT_CONFIG.faqButtonCount || 4);
-          var res = await fetchWithTimeout(url, { method: "GET" }, 5000);
-          if (res.ok) {
-            var data = await res.json();
-            if (data.success && Array.isArray(data.items) && data.items.length) {
-              var mapped = data.items
-                .map(function (si) {
-                  return ChatbotStore.findAnswer(si.question, si.category || "all") || null;
-                })
-                .filter(Boolean);
-if (mapped.length) {
-  // 중복 질문 제거
-  var seen = {};
-  topQA = mapped.filter(function(item) {
-    if (seen[item.question]) return false;
-    seen[item.question] = true;
-    return true;
-  });
-}
-            }
-          }
+  try {
+    if (window.CHATBOT_CONFIG.topQuestionsApiUrl) {
+      var url = window.CHATBOT_CONFIG.topQuestionsApiUrl +
+        "?category=" + encodeURIComponent(selectedCategory) +
+        "&limit=" + (maxCount * 3);
+      var res = await fetchWithTimeout(url, { method: "GET" }, 5000);
+      if (res.ok) {
+        var data = await res.json();
+        if (data.success && Array.isArray(data.items) && data.items.length) {
+          var seenId = {};
+          data.items.forEach(function (si) {
+            if (topQA.length >= maxCount) return;
+            var matched = ChatbotStore.findAnswer(si.question, si.category || "all");
+            if (!matched) return;
+            var key = matched.__id || matched.question;
+            if (seenId[key]) return;
+            seenId[key] = true;
+            topQA.push(matched);
+          });
         }
-      } catch (e) {
-        console.warn("TOP 질문 서버 로드 실패, 로컬 폴백:", e.message);
       }
-
-var maxCount = window.CHATBOT_CONFIG.faqButtonCount || 4;
-
-if (topQA.length < maxCount) {
-  var qa = ChatbotStore.getQAByCategory(selectedCategory);
-  var extras = qa.filter(function (item) { return item.top; });
-  if (!extras.length) extras = qa;
-
-  var seen = {};
-  topQA.forEach(function(item) { seen[item.question] = true; });
-
-  extras.forEach(function(item) {
-    if (topQA.length >= maxCount) return;
-    if (!seen[item.question]) {
-      seen[item.question] = true;
-      topQA.push(item);
     }
+  } catch (e) {
+    console.warn("TOP 질문 서버 로드 실패, 로컬 폴백:", e.message);
+  }
+
+  if (topQA.length < maxCount) {
+    var qa = ChatbotStore.getQAByCategory(selectedCategory);
+    var extras = qa.filter(function (item) { return item.top; });
+    if (!extras.length) extras = qa;
+
+    var seenFill = {};
+    topQA.forEach(function (item) {
+      seenFill[item.__id || item.question] = true;
+    });
+
+    extras.forEach(function (item) {
+      if (topQA.length >= maxCount) return;
+      var key = item.__id || item.question;
+      if (!seenFill[key]) {
+        seenFill[key] = true;
+        topQA.push(item);
+      }
+    });
+  }
+
+  topQA = topQA.slice(0, maxCount);
+
+  if (!topQA.length) {
+    var empty = document.createElement("div");
+    empty.className = "empty-faq";
+    empty.textContent = "이 카테고리에 등록된 FAQ가 없습니다.";
+    faqList.appendChild(empty);
+    return;
+  }
+
+  topQA.forEach(function (item) {
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = item.question;
+    btn.onclick = async function () {
+      if (btn.disabled || isSending) return;
+      btn.disabled = true;
+      try {
+        await sendMessage({
+          text: item.question,
+          isFaqClick: true,
+          faqCategory: item.category,
+          directAnswer: item.answer,
+          directContactId: item.contactId
+        });
+      } finally {
+        setTimeout(function () { btn.disabled = false; }, 500);
+      }
+    };
+    faqList.appendChild(btn);
   });
 }
 
-topQA = topQA.slice(0, maxCount);
-
-
-      if (!topQA.length) {
-        var empty = document.createElement("div");
-        empty.className   = "empty-faq";
-        empty.textContent = "이 카테고리에 등록된 FAQ가 없습니다.";
-        faqList.appendChild(empty);
-        return;
-      }
-
-      topQA.forEach(function (item) {
-        var btn = document.createElement("button");
-        btn.type        = "button";
-        btn.textContent = item.question;
-        btn.onclick = async function () {
-          if (btn.disabled || isSending) return;
-          btn.disabled = true;
-          try {
-            await sendMessage({
-              text: item.question,
-              isFaqClick: true,
-              faqCategory: item.category,
-              directAnswer: item.answer,
-              directContactId: item.contactId
-            });
-          } finally {
-            setTimeout(function () { btn.disabled = false; }, 500);
-          }
-        };
-        faqList.appendChild(btn);
-      });
-    }
 
     function handleSend() {
       sendMessage({ text: userInput.value });
