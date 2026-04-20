@@ -234,8 +234,8 @@
       } catch (err) {
         console.warn("담당자 로드 실패, fallback 사용:", err);
         CONTACT_MAP = [{
-          name: "SCM팀", phone: "",
-          email: "scm@willopump.com", keywords: [],
+          name: "차현정", phone: "",
+          email: "hyeonjung.cha@wilo.com", keywords: [],
           category: "default", isDefault: true
         }];
       }
@@ -268,7 +268,7 @@
       }
 
       return CONTACT_MAP[CONTACT_MAP.length - 1] ||
-        { name: "SCM팀", phone: "", email: "scm@willopump.com", keywords: [], category: "default", isDefault: true };
+        { name: "차현정", phone: "", email: "hyeonjung.cha@wilo.com", keywords: [], category: "default", isDefault: true };
     }
 
     function findContactById(contactId) {
