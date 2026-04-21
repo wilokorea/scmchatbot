@@ -139,6 +139,24 @@
       .pagination { flex-direction: column; }
       .action-buttons { flex-direction: column; }
     }
+ #historyTable { table-layout: fixed; width: 100%; }
+    #historyTable th:nth-child(1), #historyTable td:nth-child(1) { width: 12%; }
+    #historyTable th:nth-child(2), #historyTable td:nth-child(2) { width: 18%; }
+    #historyTable th:nth-child(3), #historyTable td:nth-child(3) { width: 28%; }
+    #historyTable th:nth-child(4), #historyTable td:nth-child(4) { width: 10%; }
+    #historyTable th:nth-child(5), #historyTable td:nth-child(5) { width: 7%; }
+    #historyTable th:nth-child(6), #historyTable td:nth-child(6) { width: 7%; }
+    #historyTable th:nth-child(7), #historyTable td:nth-child(7) { width: 18%; }
+    #historyTable td {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    #historyTable td:hover {
+      white-space: normal;
+      overflow: visible;
+    }
+
   </style>
 </head>
 <body>
@@ -201,10 +219,10 @@
         <div id="allQuestionsLoading" class="loading" style="display:none;">데이터 로딩 중...</div>
         <div id="allQuestionsError" class="error" style="display:none;"></div>
 
-        <table>
-          <thead><tr><th>시간</th><th>질문</th><th>답변</th><th>카테고리</th><th>매칭</th><th>출처</th><th>브라우저</th></tr></thead>
-          <tbody id="allQuestionsList"></tbody>
-        </table>
+<table id="historyTable">
+  <thead><tr><th>시간</th><th>질문</th><th>답변</th><th>카테고리</th><th>매칭</th><th>출처</th><th>브라우저</th></tr></thead>
+  <tbody id="allQuestionsList"></tbody>
+</table>
 
         <div class="pagination">
           <button id="prevPageBtn" onclick="changePage(-1)">이전</button>
