@@ -1,9 +1,23 @@
 (function () {
   "use strict";
 
+  /* =========================================================
+     SCM FAQ BOT - shared.js
+     - 한국어 토큰 매칭 개선
+     - 동의어 처리
+     - keywords / aliases 지원
+     - Intent 보조 판정
+     - 카테고리 가산점
+     - TOP 후보 및 확신도 판정
+     ========================================================= */
+
   var QA_KEY = "chatbot_qa";
   var HISTORY_KEY = "chatbot_history";
   var PENDING_LOGS_KEY = "chatbot_pending_logs";
+
+  /* =========================
+     카테고리
+     ========================= */
 
   var CATEGORY_LABELS = {
     all: "전체",
@@ -14,512 +28,2370 @@
     other: "기타"
   };
 
-  var VALID_CATEGORIES_LIST = Object.keys(CATEGORY_LABELS).filter(function (c) {
-    return c !== "all";
-  });
   var VALID_CATEGORIES = {};
-  VALID_CATEGORIES_LIST.forEach(function (c) {
-    VALID_CATEGORIES[c] = true;
-  });
 
-  /* ── 한글 조사 필터링 ── */
+  Object.keys(CATEGORY_LABELS)
+    .filter(function (c) {
+      return c !== "all";
+    })
+    .forEach(function (c) {
+      VALID_CATEGORIES[c] = true;
+    });
+
+
+  /* =========================
+     한국어 불용어
+     ========================= */
+
   var STOP_WORDS = [
-    "은", "는", "이", "가", "을", "를", "의", "에", "에서",
-    "로", "으로", "와", "과", "도", "만", "까지", "부터",
-    "에게", "한테", "께", "처럼", "보다", "라고", "하고",
-    "좀", "좀요", "해주세요", "부탁", "합니다", "입니다",
-    "있나요", "있을까요", "알려주세요", "말해주세요",
-    "필요해", "필요합니다", "싶습니다", "싶어요",
-    "뭐", "머", "어떻게", "어디", "무엇"
+    "은", "는", "이", "가",
+    "을", "를", "의",
+    "에", "에서",
+    "로", "으로",
+    "와", "과",
+    "도", "만",
+    "까지", "부터",
+    "에게", "한테", "께",
+    "처럼", "보다",
+    "라고", "하고",
+
+    "좀",
+    "좀요",
+    "해주세요",
+    "부탁",
+    "합니다",
+    "입니다",
+
+    "있나요",
+    "있을까요",
+    "알려주세요",
+    "말해주세요",
+
+    "필요해",
+    "필요합니다",
+    "싶습니다",
+    "싶어요",
+
+    "뭐",
+    "머",
+    "무엇"
   ];
+
   var STOP_WORDS_SET = {};
-  STOP_WORDS.forEach(function (w) {
-    STOP_WORDS_SET[w] = true;
+
+  STOP_WORDS.forEach(function (word) {
+    STOP_WORDS_SET[word] = true;
   });
 
-  // ★ 변경: 의도(Intent) 분류 패턴
-  var INTENT_PATTERNS = [
-    { intent: "file_request",   patterns: [/엑셀/, /파일/, /다운로드/, /보내줘/, /공유/] },
-    { intent: "cost_inquiry",   patterns: [/비용/, /요금/, /가격/, /얼마/, /관세/, /운임/, /단가/] },
-    { intent: "customs",        patterns: [/통관/, /관세/, /세관/, /수입신고/, /hs코드/] },
-    { intent: "lead_time",      patterns: [/납기/, /리드타임/, /소요기간/, /언제/, /며칠/, /기간/] },
-    { intent: "stock_check",    patterns: [/재고/, /수량/, /몇개/, /남아/] },
-    { intent: "product_info",   patterns: [/제품/, /종류/, /모델/, /사양/, /스펙/, /라인업/] },
-    { intent: "certificate",    patterns: [/원산지/, /증명서/, /인증서/, /성적서/, /서류/] },
-    { intent: "delivery_track", patterns: [/배송/, /추적/, /운송/, /도착/, /선적/] },
-    { intent: "org_info",       patterns: [/업무분장/, /조직/, /담당자/, /연락처/, /누구/] },
-    { intent: "process",        patterns: [/절차/, /프로세스/, /방법/, /어떻게/, /진행/] }
+
+  /* =========================================================
+     동의어 사전
+
+     회사에서 사용하는 용어가 생기면 여기에 추가하면 됩니다.
+
+     예:
+     ["발주", "po", "발주서"]
+     ========================================================= */
+
+  var SYNONYM_GROUPS = [
+
+    [
+      "발주",
+      "po",
+      "purchase order",
+      "발주서"
+    ],
+
+    [
+      "변경",
+      "수정",
+      "정정",
+      "바꾸기",
+      "바꿔",
+      "고치기"
+    ],
+
+    [
+      "취소",
+      "삭제",
+      "캔슬",
+      "cancel"
+    ],
+
+    [
+      "납기",
+      "납기일",
+      "입고일",
+      "도착일",
+      "리드타임",
+      "lead time"
+    ],
+
+    [
+      "업체",
+      "거래처",
+      "vendor",
+      "supplier",
+      "공급사"
+    ],
+
+    [
+      "재고",
+      "stock",
+      "재고량"
+    ],
+
+    [
+      "배송",
+      "운송",
+      "delivery",
+      "출하"
+    ],
+
+    [
+      "구매",
+      "purchase"
+    ],
+
+    [
+      "가격",
+      "금액",
+      "비용",
+      "단가",
+      "price"
+    ],
+
+    [
+      "담당자",
+      "담당",
+      "연락처"
+    ],
+
+    [
+      "서류",
+      "문서",
+      "document"
+    ],
+
+    [
+      "증명서",
+      "인증서",
+      "certificate"
+    ],
+
+    [
+      "원산지",
+      "coo"
+    ],
+
+    [
+      "제품",
+      "상품",
+      "모델",
+      "product"
+    ]
   ];
+
+
+  /* =========================
+     동의어 MAP 생성
+     ========================= */
+
+  var SYNONYM_MAP = {};
+
+  SYNONYM_GROUPS.forEach(function (group) {
+
+    var canonical = group[0];
+
+    group.forEach(function (word) {
+
+      SYNONYM_MAP[
+        String(word).toLowerCase()
+      ] = canonical;
+
+    });
+
+  });
+
+
+  /* =========================================================
+     Intent 패턴
+
+     너무 일반적인 "언제", "보내줘" 등은
+     오탐 방지를 위해 제외했습니다.
+     ========================================================= */
+
+  var INTENT_PATTERNS = [
+
+    {
+      intent: "file_request",
+      patterns: [
+        /엑셀/,
+        /파일/,
+        /다운로드/,
+        /양식/,
+        /템플릿/
+      ]
+    },
+
+    {
+      intent: "cost_inquiry",
+      patterns: [
+        /비용/,
+        /요금/,
+        /가격/,
+        /얼마/,
+        /관세/,
+        /운임/,
+        /단가/
+      ]
+    },
+
+    {
+      intent: "customs",
+      patterns: [
+        /통관/,
+        /관세/,
+        /세관/,
+        /수입신고/,
+        /hs\s*코드/
+      ]
+    },
+
+    {
+      intent: "lead_time",
+      patterns: [
+        /납기/,
+        /납기일/,
+        /리드타임/,
+        /소요기간/,
+        /배송기간/
+      ]
+    },
+
+    {
+      intent: "stock_check",
+      patterns: [
+        /재고/,
+        /재고량/,
+        /재고수량/
+      ]
+    },
+
+    {
+      intent: "product_info",
+      patterns: [
+        /제품/,
+        /종류/,
+        /모델/,
+        /사양/,
+        /스펙/,
+        /라인업/
+      ]
+    },
+
+    {
+      intent: "certificate",
+      patterns: [
+        /원산지/,
+        /증명서/,
+        /인증서/,
+        /성적서/
+      ]
+    },
+
+    {
+      intent: "delivery_track",
+      patterns: [
+        /배송/,
+        /배송조회/,
+        /추적/,
+        /운송/,
+        /도착/,
+        /선적/,
+        /출하/
+      ]
+    },
+
+    {
+      intent: "org_info",
+      patterns: [
+        /업무분장/,
+        /조직/,
+        /담당자/,
+        /연락처/
+      ]
+    },
+
+    {
+      intent: "process",
+      patterns: [
+        /절차/,
+        /프로세스/,
+        /방법/,
+        /진행방법/
+      ]
+    }
+
+  ];
+
+
+  /* =========================================================
+     QA API 주소
+     ========================================================= */
 
   function getQAApiBase() {
+
     return (
-      (window.CHATBOT_CONFIG && window.CHATBOT_CONFIG.qaApiBase) ||
-      (window.ADMIN_CONFIG && window.ADMIN_CONFIG.qaApiBase) ||
+      (
+        window.CHATBOT_CONFIG &&
+        window.CHATBOT_CONFIG.qaApiBase
+      ) ||
+
+      (
+        window.ADMIN_CONFIG &&
+        window.ADMIN_CONFIG.qaApiBase
+      ) ||
+
       "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/qa"
     );
+
   }
 
-  /* ================== Utils ================== */
-  function safeParse(v, fb) {
+
+  /* =========================================================
+     기본 Utils
+     ========================================================= */
+
+  function safeParse(value, fallback) {
+
     try {
-      var result = JSON.parse(v);
-      if (result === null || result === undefined) return fb;
+
+      var result = JSON.parse(value);
+
+      if (
+        result === null ||
+        result === undefined
+      ) {
+        return fallback;
+      }
+
       return result;
-    } catch (e) {
-      return fb;
+
+    } catch (error) {
+
+      return fallback;
+
     }
+
   }
 
-  function normalizeText(v) {
-    return String(v || "").trim().toLowerCase();
+
+  function normalizeText(value) {
+
+    return String(value || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+
   }
 
-  function stripText(v) {
-    return normalizeText(v).replace(/[\s?!.,·…\-_()（）「」『』""''~]/g, "");
+
+  /*
+   * 완전 일치 / 부분 문장 비교용
+   *
+   * 여기서는 공백을 제거합니다.
+   */
+  function stripText(value) {
+
+    return normalizeText(value)
+      .replace(
+        /[\s?!.,·…\-_()（）「」『』"“”'‘’~]/g,
+        ""
+      );
+
   }
 
-  function tokenize(text) {
-    var raw = stripText(text).match(/[가-힣a-z0-9]+/g) || [];
-    return raw.filter(function (t) {
-      return t.length >= 2 || !STOP_WORDS_SET[t];
-    });
+
+  /*
+   * 토큰화용
+   *
+   * 중요:
+   * 공백을 없애면 안 됩니다.
+   *
+   * 기존 코드에서 매칭률을 떨어뜨리던
+   * 가장 중요한 부분입니다.
+   */
+  function cleanForTokens(value) {
+
+    return normalizeText(value)
+      .replace(
+        /[?!.,·…\-_()（）「」『』"“”'‘’~]/g,
+        " "
+      );
+
   }
 
-  // ★ 변경: 의미 있는 토큰만 추출 (불용어 제거 강화)
+
+  /* =========================================================
+     동의어 정규화
+     ========================================================= */
+
+  function normalizeToken(token) {
+
+    var value = normalizeText(token);
+
+    return SYNONYM_MAP[value] || value;
+
+  }
+
+
+  /* =========================================================
+     토큰 생성
+     ========================================================= */
+
   function tokenizeContent(text) {
-    var raw = stripText(text).match(/[가-힣a-z0-9]+/g) || [];
-    return raw.filter(function (t) {
-      return t.length >= 2 && !STOP_WORDS_SET[t];
-    });
+
+    var cleaned = cleanForTokens(text);
+
+    var raw =
+      cleaned.match(/[가-힣a-z0-9]+/g) || [];
+
+    return raw
+
+      .filter(function (token) {
+
+        return (
+          token.length >= 2 &&
+          !STOP_WORDS_SET[token]
+        );
+
+      })
+
+      .map(function (token) {
+
+        return normalizeToken(token);
+
+      });
+
   }
 
-  function normalizeKeywords(v) {
-    var arr;
-    if (Array.isArray(v)) {
-      arr = v.map(function (x) { return normalizeText(x); }).filter(Boolean);
+
+  /* =========================================================
+     keywords / aliases 정규화
+     ========================================================= */
+
+  function normalizeKeywords(value) {
+
+    var array;
+
+    if (Array.isArray(value)) {
+
+      array = value;
+
     } else {
-      arr = String(v || "")
-        .split(/[|,;\/]/)
-        .map(function (x) { return normalizeText(x); })
-        .filter(Boolean);
+
+      array = String(value || "")
+        .split(/[|,;\/]/);
+
     }
+
     var seen = {};
-    return arr.filter(function (item) {
-      if (seen[item]) return false;
-      seen[item] = true;
-      return true;
-    });
+
+    return array
+
+      .map(function (item) {
+
+        return normalizeText(item);
+
+      })
+
+      .filter(function (item) {
+
+        if (!item) {
+          return false;
+        }
+
+        if (seen[item]) {
+          return false;
+        }
+
+        seen[item] = true;
+
+        return true;
+
+      });
+
   }
 
-  function normalizeCategory(v) {
-    var c = normalizeText(v);
-    return VALID_CATEGORIES[c] ? c : "other";
+
+  /* =========================================================
+     Category
+     ========================================================= */
+
+  function normalizeCategory(value) {
+
+    var category =
+      normalizeText(value);
+
+    return VALID_CATEGORIES[category]
+      ? category
+      : "other";
+
   }
 
-  function normalizeCategoryDisplay(v) {
-    var c = normalizeCategory(v);
-    return CATEGORY_LABELS[c] || c;
+
+  function normalizeCategoryDisplay(value) {
+
+    var category =
+      normalizeCategory(value);
+
+    return (
+      CATEGORY_LABELS[category] ||
+      category
+    );
+
   }
 
-  function normalizeBoolean(v) {
-    if (typeof v === "boolean") return v;
-    if (typeof v === "string") {
-      var s = v.trim().toLowerCase();
-      return s === "true" || s === "1" || s === "o" || s === "yes" || s === "y";
+
+  /* =========================================================
+     Boolean
+     ========================================================= */
+
+  function normalizeBoolean(value) {
+
+    if (typeof value === "boolean") {
+
+      return value;
+
     }
-    return !!v;
+
+    if (typeof value === "string") {
+
+      var text =
+        value.trim().toLowerCase();
+
+      return (
+        text === "true" ||
+        text === "1" ||
+        text === "o" ||
+        text === "yes" ||
+        text === "y"
+      );
+
+    }
+
+    return !!value;
+
   }
+
+
+  /* =========================================================
+     QA ID
+     ========================================================= */
 
   function createQAId() {
-    return "qa_" + Date.now() + "_" + Math.random().toString(36).slice(2, 10);
+
+    return (
+      "qa_" +
+      Date.now() +
+      "_" +
+      Math.random()
+        .toString(36)
+        .slice(2, 10)
+    );
+
   }
+
+
+  /* =========================================================
+     QA 데이터 정규화
+     ========================================================= */
 
   function normalizeItem(item) {
+
     return {
-      __id: item.__id || item.id || createQAId(),
-      category: normalizeCategory(item.category),
-      question: String(item.question || "").trim(),
-      keywords: normalizeKeywords(item.keywords),
-      answer: String(item.answer || "").trim(),
-      top: !!item.top,
-      contactId: item.contactId || ""
+
+      __id:
+        item.__id ||
+        item.id ||
+        createQAId(),
+
+      category:
+        normalizeCategory(
+          item.category
+        ),
+
+      question:
+        String(
+          item.question || ""
+        ).trim(),
+
+      keywords:
+        normalizeKeywords(
+          item.keywords
+        ),
+
+      /*
+       * aliases가 서버에 없어도
+       * 자동으로 [] 처리됩니다.
+       */
+      aliases:
+        normalizeKeywords(
+          item.aliases
+        ),
+
+      answer:
+        String(
+          item.answer || ""
+        ).trim(),
+
+      top:
+        !!item.top,
+
+      contactId:
+        item.contactId || ""
+
     };
+
   }
+
+
+  /* =========================================================
+     HTML Escape
+     ========================================================= */
 
   function escapeHtml(text) {
+
     return String(text)
+
       .replace(/&/g, "&amp;")
+
       .replace(/</g, "&lt;")
+
       .replace(/>/g, "&gt;")
+
       .replace(/"/g, "&quot;")
+
       .replace(/'/g, "&#039;");
+
   }
 
-  function fetchWithTimeout(url, options, timeoutMs) {
-    options = options || {};
-    timeoutMs = timeoutMs || 10000;
-    var controller = new AbortController();
-    var timer = setTimeout(function () {
-      controller.abort();
-    }, timeoutMs);
-    return fetch(url, Object.assign({}, options, { signal: controller.signal }))
-      .finally(function () {
-        clearTimeout(timer);
-      });
-  }
 
-  /* ================== ★ 변경: Intent 분류 ================== */
-  function detectIntents(text) {
-    var t = normalizeText(text);
-    var intents = [];
-    INTENT_PATTERNS.forEach(function (ip) {
-      var matched = ip.patterns.some(function (p) { return p.test(t); });
-      if (matched) intents.push(ip.intent);
-    });
-    return intents;
-  }
+  /* =========================================================
+     Fetch Timeout
+     ========================================================= */
 
-  /* ================== ★ 변경: 개선된 매칭 엔진 ================== */
-  function calculateMatchScore(item, input) {
-    var q = normalizeText(input);
-    var iq = normalizeText(item.question);
-    if (!q || !iq) return 0;
+  function fetchWithTimeout(
+    url,
+    options,
+    timeoutMs
+  ) {
 
-    var strippedQ = stripText(q);
-    var strippedIQ = stripText(iq);
+    options =
+      options || {};
 
-    // ── 1단계: 완전 일치 (최고 점수) ──
-    if (strippedQ === strippedIQ) return 100;
+    timeoutMs =
+      timeoutMs || 10000;
 
-    // ── 2단계: 의도(Intent) 비교 ──
-    var qIntents = detectIntents(q);
-    var iIntents = detectIntents(iq);
-    // 답변 텍스트에서도 의도를 추출 (질문이 짧을 때 답변으로 보완)
-    var aIntents = detectIntents(item.answer);
+    var controller =
+      new AbortController();
 
-    var intentMatch = false;
-    var intentMismatch = false;
+    var timer =
+      setTimeout(function () {
 
-    if (qIntents.length > 0) {
-      // 질문의 의도가 감지된 경우
-      var itemIntents = iIntents.concat(aIntents);
-      intentMatch = qIntents.some(function (qi) {
-        return itemIntents.indexOf(qi) !== -1;
-      });
-      // 의도가 명확히 다르면 강한 감점
-      if (!intentMatch && itemIntents.length > 0) {
-        intentMismatch = true;
-      }
-    }
+        controller.abort();
 
-    // ── 3단계: 토큰 기반 유사도 ──
-    var qTokens = tokenizeContent(q);
-    var iTokens = tokenizeContent(iq);
-    var keywords = item.keywords.map(function (k) { return normalizeText(k); });
+      }, timeoutMs);
 
-    // QA 측 전체 토큰 풀 (질문 토큰 + 키워드)
-    var qaTokenPool = iTokens.concat(keywords);
+    return fetch(
 
-    var score = 0;
+      url,
 
-    if (qTokens.length > 0 && qaTokenPool.length > 0) {
-      // 양방향 매칭 계산
-      var qMatchCount = 0; // 사용자 토큰 중 QA에 매칭된 수
-      var iMatchCount = 0; // QA 토큰 중 사용자에 매칭된 수
-
-      qTokens.forEach(function (qt) {
-        var found = qaTokenPool.some(function (it) {
-          return it.includes(qt) || qt.includes(it);
-        });
-        if (found) qMatchCount++;
-      });
-
-      iTokens.forEach(function (it) {
-        var found = qTokens.some(function (qt) {
-          return qt.includes(it) || it.includes(qt);
-        });
-        if (found) iMatchCount++;
-      });
-
-      // 사용자 입력 커버리지 (사용자가 말한 것 중 얼마나 매칭?)
-      var qCoverage = qTokens.length > 0 ? qMatchCount / qTokens.length : 0;
-      // QA 질문 커버리지 (QA 질문 중 얼마나 매칭?)
-      var iCoverage = iTokens.length > 0 ? iMatchCount / iTokens.length : 0;
-
-      // 양방향 조합 (F1-score 방식)
-      if (qCoverage > 0 && iCoverage > 0) {
-        var f1 = 2 * (qCoverage * iCoverage) / (qCoverage + iCoverage);
-        score = f1 * 80; // 최대 80점
-      } else if (qCoverage > 0) {
-        score = qCoverage * 50; // 한쪽만 매칭: 최대 50점
-      }
-
-      // ★ 키워드 직접 매칭 보너스
-      if (keywords.length > 0) {
-        var kwMatch = 0;
-        keywords.forEach(function (kw) {
-          if (q.includes(kw) || kw.includes(strippedQ)) kwMatch++;
-        });
-        if (kwMatch > 0) {
-          var kwBonus = Math.min(kwMatch / keywords.length, 1) * 15;
-          score += kwBonus;
+      Object.assign(
+        {},
+        options,
+        {
+          signal:
+            controller.signal
         }
-      }
-    }
+      )
 
-    // ── 4단계: 부분 문장 포함 보너스 (길이 비례) ──
-    if (strippedIQ.includes(strippedQ) && strippedQ.length >= 4) {
-      var lengthRatio = strippedQ.length / strippedIQ.length;
-      var containBonus = lengthRatio * 85;
-      score = Math.max(score, containBonus);
-    }
-    if (strippedQ.includes(strippedIQ) && strippedIQ.length >= 4) {
-      var lengthRatio2 = strippedIQ.length / strippedQ.length;
-      var containBonus2 = lengthRatio2 * 80;
-      score = Math.max(score, containBonus2);
-    }
+    ).finally(function () {
 
-    // ── 5단계: 의도 보정 ──
-    if (intentMatch) {
-      score += 10; // 의도 일치 보너스
-    }
-    if (intentMismatch) {
-      score -= 25; // 의도 불일치 감점 (기존 15 → 25로 강화)
-    }
+      clearTimeout(timer);
 
-    // ── 6단계: 단일 토큰 매칭 방지 ──
-    // 사용자 토큰이 2개 이상인데 매칭된 게 1개뿐이면 점수 제한
-    if (qTokens.length >= 2 && qMatchCount <= 1) {
-      score = Math.min(score, 40); // 임계값 미만으로 제한
-    }
-
-    return Math.max(0, Math.min(100, Math.round(score)));
-  }
-
-  // ★ 변경: 임계값 상향 (45 → 55) + 디버그 로깅
-  var MATCH_THRESHOLD = 55;
-
-  function findBestMatch(list, text) {
-    var best = null;
-    var bestScore = 0;
-    var debugTop3 = []; // 디버깅용
-
-    list.forEach(function (item) {
-      var s = calculateMatchScore(item, text);
-      debugTop3.push({ question: item.question, score: s, category: item.category });
-      if (s > bestScore) {
-        bestScore = s;
-        best = item;
-      }
     });
 
-    // 디버그 로깅 (개발 중 확인용, 운영 시 제거 가능)
-    debugTop3.sort(function (a, b) { return b.score - a.score; });
-    console.log(
-      "[매칭 디버그] 입력: \"" + text + "\" | 최고점: " + bestScore +
-      " | 임계값: " + MATCH_THRESHOLD +
-      " | 결과: " + (bestScore >= MATCH_THRESHOLD ? "매칭" : "미매칭")
-    );
-    console.table(debugTop3.slice(0, 5));
-
-    return bestScore >= MATCH_THRESHOLD ? best : null;
   }
 
-  /* ================== Cache ================== */
+
+  /* =========================================================
+     Intent 감지
+     ========================================================= */
+
+  function detectIntents(text) {
+
+    var value =
+      normalizeText(text);
+
+    var intents = [];
+
+    INTENT_PATTERNS.forEach(
+      function (intentPattern) {
+
+        var matched =
+          intentPattern.patterns.some(
+            function (pattern) {
+
+              return pattern.test(value);
+
+            }
+          );
+
+        if (matched) {
+
+          intents.push(
+            intentPattern.intent
+          );
+
+        }
+
+      }
+    );
+
+    return intents;
+
+  }
+
+
+  /* =========================================================
+     배열 중복 제거
+     ========================================================= */
+
+  function unique(array) {
+
+    var seen = {};
+
+    return array.filter(
+      function (value) {
+
+        if (seen[value]) {
+          return false;
+        }
+
+        seen[value] = true;
+
+        return true;
+
+      }
+    );
+
+  }
+
+
+  /* =========================================================
+     토큰 유사도
+
+     양방향 F1 방식
+     ========================================================= */
+
+  function tokenSimilarity(a, b) {
+
+    var tokensA =
+      unique(
+        tokenizeContent(a)
+      );
+
+    var tokensB =
+      unique(
+        tokenizeContent(b)
+      );
+
+    if (
+      !tokensA.length ||
+      !tokensB.length
+    ) {
+
+      return 0;
+
+    }
+
+    var matchedA = 0;
+    var matchedB = 0;
+
+
+    tokensA.forEach(
+      function (tokenA) {
+
+        var found =
+          tokensB.some(
+            function (tokenB) {
+
+              return (
+                tokenA === tokenB ||
+
+                (
+                  tokenA.length >= 2 &&
+                  tokenB.length >= 2 &&
+
+                  (
+                    tokenA.indexOf(tokenB) >= 0 ||
+                    tokenB.indexOf(tokenA) >= 0
+                  )
+                )
+              );
+
+            }
+          );
+
+        if (found) {
+          matchedA++;
+        }
+
+      }
+    );
+
+
+    tokensB.forEach(
+      function (tokenB) {
+
+        var found =
+          tokensA.some(
+            function (tokenA) {
+
+              return (
+                tokenA === tokenB ||
+
+                (
+                  tokenA.length >= 2 &&
+                  tokenB.length >= 2 &&
+
+                  (
+                    tokenA.indexOf(tokenB) >= 0 ||
+                    tokenB.indexOf(tokenA) >= 0
+                  )
+                )
+              );
+
+            }
+          );
+
+        if (found) {
+          matchedB++;
+        }
+
+      }
+    );
+
+
+    var precision =
+      matchedA /
+      tokensA.length;
+
+    var recall =
+      matchedB /
+      tokensB.length;
+
+
+    if (
+      precision === 0 ||
+      recall === 0
+    ) {
+
+      return 0;
+
+    }
+
+
+    return (
+      2 *
+      precision *
+      recall /
+      (
+        precision +
+        recall
+      )
+    );
+
+  }
+
+
+  /* =========================================================
+     핵심 매칭 점수
+     ========================================================= */
+
+  function calculateMatchScore(
+    item,
+    input,
+    selectedCategory
+  ) {
+
+    var userQuestion =
+      normalizeText(input);
+
+    var faqQuestion =
+      normalizeText(
+        item.question
+      );
+
+
+    if (
+      !userQuestion ||
+      !faqQuestion
+    ) {
+
+      return 0;
+
+    }
+
+
+    var strippedUser =
+      stripText(
+        userQuestion
+      );
+
+    var strippedFAQ =
+      stripText(
+        faqQuestion
+      );
+
+
+    /*
+     * 1.
+     * 완전 일치
+     */
+    if (
+      strippedUser ===
+      strippedFAQ
+    ) {
+
+      return 100;
+
+    }
+
+
+    /*
+     * 2.
+     * 기본 토큰 유사도
+     */
+    var score =
+      tokenSimilarity(
+        userQuestion,
+        faqQuestion
+      ) * 65;
+
+
+    /*
+     * 3.
+     * 부분 문장 포함
+     */
+    if (
+      strippedUser.length >= 4 &&
+      strippedFAQ.indexOf(
+        strippedUser
+      ) >= 0
+    ) {
+
+      score =
+        Math.max(
+          score,
+
+          60 +
+          Math.min(
+            25,
+            (
+              strippedUser.length /
+              strippedFAQ.length
+            ) * 25
+          )
+        );
+
+    }
+
+
+    if (
+      strippedFAQ.length >= 4 &&
+      strippedUser.indexOf(
+        strippedFAQ
+      ) >= 0
+    ) {
+
+      score =
+        Math.max(
+          score,
+
+          58 +
+          Math.min(
+            22,
+            (
+              strippedFAQ.length /
+              strippedUser.length
+            ) * 22
+          )
+        );
+
+    }
+
+
+    /*
+     * 4.
+     * Keywords
+     */
+    var keywordHits = 0;
+
+    var userTokens =
+      tokenizeContent(
+        userQuestion
+      );
+
+
+    (
+      item.keywords || []
+    ).forEach(
+      function (keyword) {
+
+        var normalizedKeyword =
+          normalizeText(
+            keyword
+          );
+
+        var canonicalKeyword =
+          normalizeToken(
+            normalizedKeyword
+          );
+
+
+        if (
+          userQuestion.indexOf(
+            normalizedKeyword
+          ) >= 0 ||
+
+          userTokens.indexOf(
+            canonicalKeyword
+          ) >= 0
+        ) {
+
+          keywordHits++;
+
+        }
+
+      }
+    );
+
+
+    /*
+     * 키워드 하나당 +6
+     * 최대 +18
+     */
+    score +=
+      Math.min(
+        18,
+        keywordHits * 6
+      );
+
+
+    /*
+     * 5.
+     * Aliases
+     *
+     * 실제 직원이 사용하는 표현을
+     * 등록해 두면 가장 강력합니다.
+     */
+    var bestAliasScore = 0;
+
+
+    (
+      item.aliases || []
+    ).forEach(
+      function (alias) {
+
+        var strippedAlias =
+          stripText(alias);
+
+
+        /*
+         * alias 완전 일치
+         */
+        if (
+          strippedAlias &&
+          strippedAlias ===
+          strippedUser
+        ) {
+
+          bestAliasScore =
+            Math.max(
+              bestAliasScore,
+              96
+            );
+
+          return;
+
+        }
+
+
+        /*
+         * alias 토큰 유사도
+         */
+        var aliasSimilarity =
+          tokenSimilarity(
+            userQuestion,
+            alias
+          );
+
+
+        bestAliasScore =
+          Math.max(
+            bestAliasScore,
+            aliasSimilarity * 88
+          );
+
+
+        /*
+         * alias 부분 포함
+         */
+        if (
+          strippedAlias.length >= 4 &&
+
+          (
+            strippedAlias.indexOf(
+              strippedUser
+            ) >= 0 ||
+
+            strippedUser.indexOf(
+              strippedAlias
+            ) >= 0
+          )
+        ) {
+
+          bestAliasScore =
+            Math.max(
+              bestAliasScore,
+              78
+            );
+
+        }
+
+      }
+    );
+
+
+    score =
+      Math.max(
+        score,
+        bestAliasScore
+      );
+
+
+    /*
+     * 6.
+     * Intent
+     *
+     * Intent는 보조 신호로만 사용
+     */
+    var userIntents =
+      detectIntents(
+        userQuestion
+      );
+
+
+    var faqIntents =
+      unique(
+
+        detectIntents(
+          faqQuestion
+        ).concat(
+
+          detectIntents(
+            item.answer
+          )
+
+        )
+
+      );
+
+
+    if (
+      userIntents.length
+    ) {
+
+      var intentMatched =
+        userIntents.some(
+          function (intent) {
+
+            return (
+              faqIntents.indexOf(
+                intent
+              ) >= 0
+            );
+
+          }
+        );
+
+
+      if (intentMatched) {
+
+        score += 7;
+
+      } else if (
+        faqIntents.length
+      ) {
+
+        /*
+         * 너무 강하게 깎지 않음
+         */
+        score -= 10;
+
+      }
+
+    }
+
+
+    /*
+     * 7.
+     * 현재 선택 카테고리
+     *
+     * 필터가 아니라 +5점 보너스
+     */
+    if (
+      selectedCategory &&
+      selectedCategory !== "all" &&
+      item.category ===
+      selectedCategory
+    ) {
+
+      score += 5;
+
+    }
+
+
+    /*
+     * 최종 점수
+     * 0 ~ 100
+     */
+    return Math.max(
+      0,
+
+      Math.min(
+        100,
+        Math.round(score)
+      )
+    );
+
+  }
+
+
+  /* =========================================================
+     매칭 기준
+     ========================================================= */
+
+  /*
+   * 65점 이상:
+   * 바로 답변 후보
+   */
+  var DIRECT_THRESHOLD = 65;
+
+
+  /*
+   * 35점 이상:
+   * 관련 질문 후보로 표시
+   */
+  var SUGGEST_THRESHOLD = 35;
+
+
+  /*
+   * 1위와 2위가 최소 8점 차이나야
+   * 자동 답변
+   */
+  var MIN_GAP_FOR_DIRECT = 8;
+
+
+  /* =========================================================
+     전체 FAQ Ranking
+     ========================================================= */
+
+  function rankMatches(
+    list,
+    text,
+    category
+  ) {
+
+    var ranked =
+      list.map(
+        function (item) {
+
+          return {
+
+            item: item,
+
+            score:
+              calculateMatchScore(
+                item,
+                text,
+                category
+              )
+
+          };
+
+        }
+      );
+
+
+    ranked.sort(
+      function (a, b) {
+
+        return (
+          b.score -
+          a.score
+        );
+
+      }
+    );
+
+
+    /*
+     * 개발자도구 콘솔에서
+     * TOP 5 확인 가능
+     */
+    if (
+      window.console &&
+      console.table
+    ) {
+
+      console.log(
+        "[SCM FAQ 매칭] 입력:",
+        text
+      );
+
+
+      console.table(
+
+        ranked
+          .slice(0, 5)
+          .map(
+            function (result) {
+
+              return {
+
+                score:
+                  result.score,
+
+                category:
+                  result.item.category,
+
+                question:
+                  result.item.question
+
+              };
+
+            }
+          )
+
+      );
+
+    }
+
+
+    return ranked;
+
+  }
+
+
+  /* =========================================================
+     최종 매칭 판정
+     ========================================================= */
+
+  function getMatchResult(
+    list,
+    text,
+    category
+  ) {
+
+    var ranked =
+      rankMatches(
+        list,
+        text,
+        category
+      );
+
+
+    if (!ranked.length) {
+
+      return {
+
+        status: "none",
+
+        item: null,
+
+        score: 0,
+
+        candidates: []
+
+      };
+
+    }
+
+
+    var first =
+      ranked[0];
+
+    var second =
+      ranked[1];
+
+
+    var gap =
+      second
+        ? first.score -
+          second.score
+        : first.score;
+
+
+    /*
+     * 확실한 경우
+     */
+    if (
+      first.score >=
+      DIRECT_THRESHOLD &&
+
+      (
+        gap >=
+        MIN_GAP_FOR_DIRECT ||
+
+        first.score >= 88
+      )
+    ) {
+
+      return {
+
+        status:
+          "matched",
+
+        item:
+          first.item,
+
+        score:
+          first.score,
+
+        candidates:
+          ranked.slice(
+            0,
+            3
+          )
+
+      };
+
+    }
+
+
+    /*
+     * 애매하지만 관련 FAQ가 있는 경우
+     */
+    if (
+      first.score >=
+      SUGGEST_THRESHOLD
+    ) {
+
+      return {
+
+        status:
+          "suggest",
+
+        item:
+          null,
+
+        score:
+          first.score,
+
+        candidates:
+          ranked
+            .filter(
+              function (result) {
+
+                return (
+                  result.score >=
+                  SUGGEST_THRESHOLD
+                );
+
+              }
+            )
+            .slice(
+              0,
+              3
+            )
+
+      };
+
+    }
+
+
+    /*
+     * 관련 답변 없음
+     */
+    return {
+
+      status:
+        "none",
+
+      item:
+        null,
+
+      score:
+        first.score,
+
+      candidates:
+        ranked.slice(
+          0,
+          3
+        )
+
+    };
+
+  }
+
+
+  /* =========================================================
+     QA Cache
+     ========================================================= */
+
   var _qaCache = null;
+
   var _qaCacheTime = 0;
-  var CACHE_TTL = 60000;
+
+  var CACHE_TTL =
+    60000;
+
 
   function setQACache(items) {
-    _qaCache = items;
-    _qaCacheTime = Date.now();
+
+    _qaCache =
+      items;
+
+    _qaCacheTime =
+      Date.now();
+
+
     try {
-      localStorage.setItem(QA_KEY, JSON.stringify(items));
-    } catch (e) {
-      console.warn("localStorage 저장 실패:", e);
+
+      localStorage.setItem(
+        QA_KEY,
+        JSON.stringify(items)
+      );
+
+    } catch (error) {
+
+      console.warn(
+        "localStorage 저장 실패:",
+        error
+      );
+
     }
+
   }
+
 
   function getQAFromCache() {
-    if (_qaCache && Date.now() - _qaCacheTime < CACHE_TTL) return _qaCache;
-    var stored = safeParse(localStorage.getItem(QA_KEY), []);
-    var items = stored.map(normalizeItem).filter(function (i) {
-      return i.question && i.answer;
-    });
-    _qaCache = items;
-    _qaCacheTime = Date.now();
+
+    if (
+      _qaCache &&
+      Date.now() -
+      _qaCacheTime <
+      CACHE_TTL
+    ) {
+
+      return _qaCache;
+
+    }
+
+
+    var stored =
+      safeParse(
+        localStorage.getItem(
+          QA_KEY
+        ),
+        []
+      );
+
+
+    var items =
+      stored
+
+        .map(
+          normalizeItem
+        )
+
+        .filter(
+          function (item) {
+
+            return (
+              item.question &&
+              item.answer
+            );
+
+          }
+        );
+
+
+    _qaCache =
+      items;
+
+    _qaCacheTime =
+      Date.now();
+
+
     return items;
+
   }
+
+
+  /* =========================================================
+     QA 서버 로드
+     ========================================================= */
 
   async function loadQAFromServer() {
+
     try {
-      var res = await fetchWithTimeout(getQAApiBase() + "/getAll", { method: "GET" }, 10000);
-      var data = await res.json();
-      if (data.success && Array.isArray(data.items)) {
-        var items = data.items.map(normalizeItem);
-        setQACache(items);
+
+      var response =
+        await fetchWithTimeout(
+
+          getQAApiBase() +
+          "/getAll",
+
+          {
+            method: "GET"
+          },
+
+          10000
+
+        );
+
+
+      var data =
+        await response.json();
+
+
+      if (
+        data.success &&
+        Array.isArray(
+          data.items
+        )
+      ) {
+
+        var items =
+          data.items.map(
+            normalizeItem
+          );
+
+
+        setQACache(
+          items
+        );
+
+
         return items;
+
       }
-    } catch (e) {
-      console.warn("QA API 실패, 로컬 사용:", e);
+
+    } catch (error) {
+
+      console.warn(
+        "QA API 실패, 로컬 사용:",
+        error
+      );
+
     }
+
+
     return getQAFromCache();
+
   }
 
-  /* ================== History ================== */
+
+  /* =========================================================
+     History
+     ========================================================= */
+
   function getHistory() {
-    return safeParse(localStorage.getItem(HISTORY_KEY), []);
+
+    return safeParse(
+
+      localStorage.getItem(
+        HISTORY_KEY
+      ),
+
+      []
+
+    );
+
   }
+
 
   function saveHistoryItem(item) {
-    var h = getHistory();
-    h.unshift(Object.assign({}, item, { timestamp: Date.now() }));
+
+    var history =
+      getHistory();
+
+
+    history.unshift(
+
+      Object.assign(
+        {},
+        item,
+        {
+          timestamp:
+            Date.now()
+        }
+      )
+
+    );
+
+
     try {
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(h.slice(0, 500)));
-    } catch (e) {
-      console.warn("히스토리 저장 실패:", e);
+
+      localStorage.setItem(
+
+        HISTORY_KEY,
+
+        JSON.stringify(
+          history.slice(
+            0,
+            500
+          )
+        )
+
+      );
+
+    } catch (error) {
+
+      console.warn(
+        "히스토리 저장 실패:",
+        error
+      );
+
     }
+
   }
 
-  /* ================== Pending Logs ================== */
+
+  /* =========================================================
+     Pending Logs
+     ========================================================= */
+
   function getPendingLogs() {
-    return safeParse(localStorage.getItem(PENDING_LOGS_KEY), []);
+
+    return safeParse(
+
+      localStorage.getItem(
+        PENDING_LOGS_KEY
+      ),
+
+      []
+
+    );
+
   }
 
-  function savePendingLog(d) {
-    var p = getPendingLogs();
-    p.push(d);
+
+  function savePendingLog(data) {
+
+    var pending =
+      getPendingLogs();
+
+
+    pending.push(
+      data
+    );
+
+
     try {
-      localStorage.setItem(PENDING_LOGS_KEY, JSON.stringify(p.slice(-100)));
-    } catch (e) {
-      console.warn("pending log 저장 실패:", e);
+
+      localStorage.setItem(
+
+        PENDING_LOGS_KEY,
+
+        JSON.stringify(
+          pending.slice(
+            -100
+          )
+        )
+
+      );
+
+    } catch (error) {
+
+      console.warn(
+        "pending log 저장 실패:",
+        error
+      );
+
     }
+
   }
+
 
   async function retryPendingLogs(url) {
-    if (!url) return;
-    var p = getPendingLogs();
-    if (!Array.isArray(p) || p.length === 0) return;
+
+    if (!url) {
+      return;
+    }
+
+
+    var pending =
+      getPendingLogs();
+
+
+    if (
+      !Array.isArray(
+        pending
+      ) ||
+      !pending.length
+    ) {
+
+      return;
+
+    }
+
 
     var remain = [];
-    for (var i = 0; i < p.length; i++) {
+
+
+    for (
+      var i = 0;
+      i < pending.length;
+      i++
+    ) {
+
       try {
-        await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(p[i])
-        });
-      } catch (e) {
-        remain.push(p[i]);
+
+        var response =
+          await fetch(
+            url,
+            {
+
+              method:
+                "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json"
+              },
+
+              body:
+                JSON.stringify(
+                  pending[i]
+                )
+
+            }
+          );
+
+
+        /*
+         * fetch는 HTTP 500에서도
+         * reject되지 않기 때문에
+         * ok 확인 필요
+         */
+        if (
+          !response.ok
+        ) {
+
+          throw new Error(
+            "HTTP " +
+            response.status
+          );
+
+        }
+
+      } catch (error) {
+
+        remain.push(
+          pending[i]
+        );
+
       }
+
     }
+
+
     try {
-      localStorage.setItem(PENDING_LOGS_KEY, JSON.stringify(remain));
-    } catch (e) {
-      console.warn("pending log 업데이트 실패:", e);
+
+      localStorage.setItem(
+
+        PENDING_LOGS_KEY,
+
+        JSON.stringify(
+          remain
+        )
+
+      );
+
+    } catch (error) {
+
+      console.warn(
+        "pending log 업데이트 실패:",
+        error
+      );
+
     }
+
   }
 
-  /* ================== Public API ================== */
+
+  /* =========================================================
+     Public API
+     ========================================================= */
+
   window.ChatbotStore = {
-    loadFromServer: loadQAFromServer,
 
-    getQA: function () {
-      return getQAFromCache();
-    },
 
-    getQAByCategory: function (c) {
-      var all = getQAFromCache();
-      if (!c || c === "all") return all;
-      return all.filter(function (i) {
-        return i.category === c;
-      });
-    },
+    /* -------------------------
+       서버 QA 로드
+       ------------------------- */
 
-    getCategories: function () {
-      var seen = {};
-      var cats = [];
-      getQAFromCache().forEach(function (i) {
-        if (!seen[i.category]) {
-          seen[i.category] = true;
-          cats.push(i.category);
-        }
-      });
-      cats.sort();
-      return ["all"].concat(cats);
-    },
+    loadFromServer:
+      loadQAFromServer,
 
-    getCategoryLabels: function () {
-      return Object.assign({}, CATEGORY_LABELS);
-    },
 
-    findAnswer: function (text, cat) {
-      var list = this.getQAByCategory(cat);
-      var result = findBestMatch(list, text);
-      if (result) return result;
-      if (cat !== "all") return findBestMatch(getQAFromCache(), text);
-      return null;
-    },
+    /* -------------------------
+       전체 QA
+       ------------------------- */
 
-    saveHistory: saveHistoryItem,
-    getHistory: getHistory,
+    getQA:
+      function () {
 
-    clearHistory: function () {
-      try {
-        localStorage.removeItem(HISTORY_KEY);
-      } catch (e) {
-        console.warn("히스토리 삭제 실패:", e);
-      }
-    },
-
-    updateLocalCache: function (items) {
-      setQACache(items.map(normalizeItem));
-    },
-
-    searchQA: function (q) {
-      var t = normalizeText(q);
-      return getQAFromCache().filter(function (i) {
         return (
-          normalizeText(i.question).includes(t) ||
-          normalizeText(i.answer).includes(t) ||
-          i.keywords.some(function (k) {
-            return normalizeText(k).includes(t);
-          })
+          getQAFromCache()
         );
-      });
-    },
 
-    getStats: function () {
-      var qa = getQAFromCache();
-      var h = getHistory();
-      var cats = {};
-      qa.forEach(function (i) {
-        cats[i.category] = (cats[i.category] || 0) + 1;
-      });
-      return {
-        totalQA: qa.length,
-        totalHistory: h.length,
-        matchedHistory: h.filter(function (x) { return x.matched; }).length,
-        unmatchedHistory: h.filter(function (x) { return !x.matched; }).length,
-        categoryCounts: cats,
-        topQuestions: qa.filter(function (i) { return i.top; }).length
-      };
-    },
+      },
 
-    getPendingLogs: getPendingLogs,
-    savePendingLog: savePendingLog,
-    retryPendingLogs: retryPendingLogs
+
+    /* -------------------------
+       카테고리별 QA
+       ------------------------- */
+
+    getQAByCategory:
+      function (category) {
+
+        var all =
+          getQAFromCache();
+
+
+        if (
+          !category ||
+          category === "all"
+        ) {
+
+          return all;
+
+        }
+
+
+        return all.filter(
+          function (item) {
+
+            return (
+              item.category ===
+              category
+            );
+
+          }
+        );
+
+      },
+
+
+    /* -------------------------
+       카테고리 목록
+       ------------------------- */
+
+    getCategories:
+      function () {
+
+        var seen = {};
+
+        var categories = [];
+
+
+        getQAFromCache()
+          .forEach(
+            function (item) {
+
+              if (
+                !seen[
+                  item.category
+                ]
+              ) {
+
+                seen[
+                  item.category
+                ] = true;
+
+                categories.push(
+                  item.category
+                );
+
+              }
+
+            }
+          );
+
+
+        categories.sort();
+
+
+        return (
+          ["all"].concat(
+            categories
+          )
+        );
+
+      },
+
+
+    /* -------------------------
+       카테고리 Label
+       ------------------------- */
+
+    getCategoryLabels:
+      function () {
+
+        return Object.assign(
+          {},
+          CATEGORY_LABELS
+        );
+
+      },
+
+
+    /* =====================================================
+       기존 코드 호환용
+
+       확실한 경우에만 item 반환
+       ===================================================== */
+
+    findAnswer:
+      function (
+        text,
+        category
+      ) {
+
+        var result =
+          getMatchResult(
+
+            getQAFromCache(),
+
+            text,
+
+            category ||
+            "all"
+
+          );
+
+
+        if (
+          result.status ===
+          "matched"
+        ) {
+
+          return result.item;
+
+        }
+
+
+        return null;
+
+      },
+
+
+    /* =====================================================
+       신규 스마트 검색
+
+       index.html에서 사용
+
+       반환:
+       {
+         status: "matched" | "suggest" | "none",
+         item,
+         score,
+         candidates
+       }
+       ===================================================== */
+
+    findAnswerSmart:
+      function (
+        text,
+        category
+      ) {
+
+        return getMatchResult(
+
+          getQAFromCache(),
+
+          text,
+
+          category ||
+          "all"
+
+        );
+
+      },
+
+
+    /* -------------------------
+       History
+       ------------------------- */
+
+    saveHistory:
+      saveHistoryItem,
+
+
+    getHistory:
+      getHistory,
+
+
+    clearHistory:
+      function () {
+
+        try {
+
+          localStorage.removeItem(
+            HISTORY_KEY
+          );
+
+        } catch (error) {
+
+          console.warn(
+            "히스토리 삭제 실패:",
+            error
+          );
+
+        }
+
+      },
+
+
+    /* -------------------------
+       관리자 캐시 갱신
+       ------------------------- */
+
+    updateLocalCache:
+      function (items) {
+
+        setQACache(
+
+          items.map(
+            normalizeItem
+          )
+
+        );
+
+      },
+
+
+    /* -------------------------
+       관리자 검색
+       ------------------------- */
+
+    searchQA:
+      function (query) {
+
+        var text =
+          normalizeText(
+            query
+          );
+
+
+        return getQAFromCache()
+          .filter(
+            function (item) {
+
+              return (
+
+                normalizeText(
+                  item.question
+                ).includes(
+                  text
+                )
+
+                ||
+
+                normalizeText(
+                  item.answer
+                ).includes(
+                  text
+                )
+
+                ||
+
+                item.keywords.some(
+                  function (keyword) {
+
+                    return (
+                      normalizeText(
+                        keyword
+                      ).includes(
+                        text
+                      )
+                    );
+
+                  }
+                )
+
+                ||
+
+                (
+                  item.aliases ||
+                  []
+                ).some(
+                  function (alias) {
+
+                    return (
+                      normalizeText(
+                        alias
+                      ).includes(
+                        text
+                      )
+                    );
+
+                  }
+                )
+
+              );
+
+            }
+          );
+
+      },
+
+
+    /* -------------------------
+       통계
+       ------------------------- */
+
+    getStats:
+      function () {
+
+        var qa =
+          getQAFromCache();
+
+        var history =
+          getHistory();
+
+        var categories = {};
+
+
+        qa.forEach(
+          function (item) {
+
+            categories[
+              item.category
+            ] =
+              (
+                categories[
+                  item.category
+                ] || 0
+              ) + 1;
+
+          }
+        );
+
+
+        return {
+
+          totalQA:
+            qa.length,
+
+          totalHistory:
+            history.length,
+
+          matchedHistory:
+            history.filter(
+              function (item) {
+
+                return (
+                  item.matched
+                );
+
+              }
+            ).length,
+
+          unmatchedHistory:
+            history.filter(
+              function (item) {
+
+                return (
+                  !item.matched
+                );
+
+              }
+            ).length,
+
+          categoryCounts:
+            categories,
+
+          topQuestions:
+            qa.filter(
+              function (item) {
+
+                return item.top;
+
+              }
+            ).length
+
+        };
+
+      },
+
+
+    /* -------------------------
+       Pending Logs
+       ------------------------- */
+
+    getPendingLogs:
+      getPendingLogs,
+
+    savePendingLog:
+      savePendingLog,
+
+    retryPendingLogs:
+      retryPendingLogs
+
   };
+
+
+  /* =========================================================
+     Utils 공개
+     ========================================================= */
 
   window.ChatbotUtils = {
-    escapeHtml: escapeHtml,
-    normalizeCategory: normalizeCategory,
-    normalizeCategoryDisplay: normalizeCategoryDisplay,
-    normalizeKeywords: normalizeKeywords,
-    normalizeBoolean: normalizeBoolean,
-    normalizeText: normalizeText,
-    createQAId: createQAId,
-    safeParse: safeParse,
-    fetchWithTimeout: fetchWithTimeout
+
+    escapeHtml:
+      escapeHtml,
+
+    normalizeCategory:
+      normalizeCategory,
+
+    normalizeCategoryDisplay:
+      normalizeCategoryDisplay,
+
+    normalizeKeywords:
+      normalizeKeywords,
+
+    normalizeBoolean:
+      normalizeBoolean,
+
+    normalizeText:
+      normalizeText,
+
+    createQAId:
+      createQAId,
+
+    safeParse:
+      safeParse,
+
+    fetchWithTimeout:
+      fetchWithTimeout
+
   };
+
 })();
