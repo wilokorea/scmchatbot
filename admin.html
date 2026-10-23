@@ -432,7 +432,6 @@ devPassword: "wpkscm",
     var normalizeBoolean = ChatbotUtils.normalizeBoolean;
     var createQAId = ChatbotUtils.createQAId;
     var fetchWithTimeout = ChatbotUtils.fetchWithTimeout;
-    var adminToken = sessionStorage.getItem('scmAdminToken') || '';
     function adminFetch(url, options, timeout) {
       options = options || {};
       options.headers = Object.assign({}, options.headers || {}, adminToken ? { 'Authorization': 'Bearer ' + adminToken } : {});
@@ -454,32 +453,35 @@ devPassword: "wpkscm",
 
     // ========== 로그인 ==========
     async function login() {
-      var password = document.getElementById('passwordInput').value;
-      var loginError = document.getElementById('loginError');
-      loginError.style.display = 'none';
-      if (!password) { loginError.textContent = '비밀번호를 입력해주세요.'; loginError.style.display = 'block'; return; }
-      try {
-        var res = await fetchWithTimeout(ADMIN_CONFIG.authApiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password: password })
-        }, ADMIN_CONFIG.requestTimeoutMs);
-        var data = await res.json().catch(function(){ return {}; });
-        if (!res.ok || !data.token) throw new Error(data.error || '인증에 실패했습니다.');
-        adminToken = data.token;
-        sessionStorage.setItem('scmAdminToken', adminToken);
-        document.getElementById('loginSection').style.display = 'none';
-        document.getElementById('adminPanel').style.display = 'block';
-        await loadAllData();
-      } catch (err) {
-        loginError.textContent = '로그인 실패: ' + err.message;
-        loginError.style.display = 'block';
-      }
-    }
-    document.getElementById('passwordInput').addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') login();
-    });
-
+    var password = document.getElementById('passwordInput').value;
+3
+var loginError = document.getElementById('loginError');
+4
+ 
+5
+loginError.style.display = 'none';
+6
+ 
+7
+if (password === ADMIN_CONFIG.devPassword) {
+8
+document.getElementById('loginSection').style.display = 'none';
+9
+document.getElementById('adminPanel').style.display = 'block';
+10
+ 
+11
+loadAllData();
+12
+} else {
+13
+loginError.textContent = '비밀번호가 올바르지 않습니다.';
+14
+loginError.style.display = 'block';
+15
+}
+16
+}
     async function loadAllData() {
       try {
         await Promise.all([
