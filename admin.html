@@ -171,7 +171,7 @@
 <body>
   <div class="container">
     <header>
-      <h1>SCM SCM FAQ 관리자</h1>
+      <h1>SCM FAQ 관리자</h1>
       <p>FAQ·담당자·질문 이력 관리 시스템</p>
     </header>
 
@@ -408,16 +408,17 @@
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
   <script src="shared.js"></script>
   <script>
-    /* 관리자 비밀번호는 HTML에 저장하지 않습니다. 서버가 토큰을 발급해야 합니다. */
-var ADMIN_CONFIG = {
-2
-authMode: "dev",
-3
-devPassword: "wpkscm",
-4
-...
-5
-};
+    /* 간단 관리자 비밀번호 로그인 */
+    var ADMIN_CONFIG = {
+      authMode: "dev",
+      devPassword: "wpkscm",
+      allQuestionsApiUrl: "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/getAllQuestions",
+      deleteQuestionsApiUrl: "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/deleteAllQuestions",
+      contactsApiBase: "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/contacts",
+      qaApiBase: "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/qa",
+      requestTimeoutMs: 15000,
+      pageSize: 50
+    };
 
     var currentPage = 1;
     var totalPages = 1;
@@ -433,55 +434,31 @@ devPassword: "wpkscm",
     var createQAId = ChatbotUtils.createQAId;
     var fetchWithTimeout = ChatbotUtils.fetchWithTimeout;
     function adminFetch(url, options, timeout) {
-      options = options || {};
-      options.headers = Object.assign({}, options.headers || {}, adminToken ? { 'Authorization': 'Bearer ' + adminToken } : {});
-      return fetchWithTimeout(url, options, timeout || ADMIN_CONFIG.requestTimeoutMs);
+      return fetchWithTimeout(url, options || {}, timeout || ADMIN_CONFIG.requestTimeoutMs);
+    }
+    function login() {
+      var password = document.getElementById('passwordInput').value;
+      var loginError = document.getElementById('loginError');
+      loginError.style.display = 'none';
+      if (password === ADMIN_CONFIG.devPassword) {
+        sessionStorage.setItem('scmAdminLoggedIn', 'true');
+        document.getElementById('loginSection').style.display = 'none';
+        document.getElementById('adminPanel').style.display = 'block';
+        loadAllData();
+      } else {
+        loginError.textContent = '비밀번호가 올바르지 않습니다.';
+        loginError.style.display = 'block';
+      }
     }
     function logout() {
-      sessionStorage.removeItem('scmAdminToken');
-      adminToken = '';
+      sessionStorage.removeItem('scmAdminLoggedIn');
       document.getElementById('adminPanel').style.display = 'none';
       document.getElementById('loginSection').style.display = 'block';
       document.getElementById('passwordInput').value = '';
     }
-
-    function toKoreanTime(timestamp) {
-      if (!timestamp) return '-';
-      try { return new Date(timestamp).toLocaleString('ko-KR'); }
-      catch (e) { return '-'; }
-    }
-
-    // ========== 로그인 ==========
-    async function login() {
-    var password = document.getElementById('passwordInput').value;
-3
-var loginError = document.getElementById('loginError');
-4
- 
-5
-loginError.style.display = 'none';
-6
- 
-7
-if (password === ADMIN_CONFIG.devPassword) {
-8
-document.getElementById('loginSection').style.display = 'none';
-9
-document.getElementById('adminPanel').style.display = 'block';
-10
- 
-11
-loadAllData();
-12
-} else {
-13
-loginError.textContent = '비밀번호가 올바르지 않습니다.';
-14
-loginError.style.display = 'block';
-15
-}
-16
-}
+    document.getElementById('passwordInput').addEventListener('keydown', function(event) {
+      if (event.key === 'Enter') login();
+    });
     async function loadAllData() {
       try {
         await Promise.all([
@@ -777,9 +754,10 @@ loginError.style.display = 'block';
           }).filter(function(item) { return item.question && item.answer; });
 
           if (items.length === 0) { alert('유효한 데이터가 없습니다.'); return; }
-
+          var uploadMode = (document.getElementById('csvUploadMode') || {}).value || 'merge';
+          if (uploadMode === 'replace' && !confirm('기존 FAQ 전체를 CSV 내용으로 교체합니다. 계속하시겠습니까?')) return;
           try {
-            var res = await fetchWithTimeout(
+            var res = await adminFetch(
               ADMIN_CONFIG.qaApiBase + '/saveBulk',
               {
                 method: 'POST',
@@ -1197,7 +1175,7 @@ loginError.style.display = 'block';
     window.addEventListener('DOMContentLoaded', function() {
       console.log('관리자 페이지 로드됨');
       updatePagination();
-      if (adminToken) {
+      if (sessionStorage.getItem('scmAdminLoggedIn') === 'true') {
         document.getElementById('loginSection').style.display = 'none';
         document.getElementById('adminPanel').style.display = 'block';
         loadAllData();
