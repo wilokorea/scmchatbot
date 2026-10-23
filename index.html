@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>SCM FAQ봇</title>
+  <title>SCM FAQ</title>
 
   <style>
     :root {
@@ -371,6 +371,27 @@
       color: #fff;
     }
 
+    .faq-toggle {
+      display: none;
+      width: 100%;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: #135f53;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-bottom: 8px;
+    }
+    .compact-contact summary {
+      cursor: pointer;
+      color: #007a66;
+      font-weight: 700;
+      list-style: none;
+    }
+    .compact-contact summary::-webkit-details-marker { display: none; }
+    .compact-contact summary::after { content: " ▾"; }
+    .compact-contact details[open] summary::after { content: " ▴"; }
     @media (max-width: 520px) {
       .wrap {
         margin: 0;
@@ -378,6 +399,9 @@
         border-radius: 0;
         min-height: 100vh;
       }
+      .faq-toggle { display: block; }
+      .faq.collapsed .faq-content { display: none; }
+      .chat { min-height: 42vh; }
     }
   </style>
 </head>
@@ -390,7 +414,7 @@
       <div class="avatar">💬</div>
 
       <div>
-        <h1>SCM봇</h1>
+        <h1>SCM FAQ</h1>
         <p>문의 내용을 입력하시면 등록된 답변을 안내드립니다.</p>
       </div>
     </div>
@@ -404,7 +428,11 @@
       id="chatBox">
     </div>
 
-    <div class="faq">
+    <div class="faq" id="faqSection">
+
+      <button type="button" class="faq-toggle" id="faqToggle" aria-expanded="true">자주 묻는 질문 접기</button>
+
+      <div class="faq-content">
 
       <div class="faq-title">
         카테고리
@@ -424,6 +452,8 @@
       <div
         class="faq-list"
         id="faqList">
+      </div>
+
       </div>
 
     </div>
@@ -475,7 +505,19 @@
 
       faqButtonCount: 4,
 
-      pendingRetryIntervalMs: 60000
+      pendingRetryIntervalMs: 60000,
+
+      categories: ["all", "product", "logistics", "origin", "production", "cost", "system"],
+
+      categoryLabels: {
+        all: "전체",
+        product: "📦 제품 주문/도입",
+        logistics: "🚚 배송/통관",
+        origin: "🌍 원산지/FTA",
+        production: "🏭 생산/공급계획",
+        cost: "💰 비용/결재",
+        system: "💻 시스템/조회"
+      }
 
     }, window.CHATBOT_CONFIG || {});
   </script>
@@ -507,6 +549,15 @@
 
       var sendButton =
         document.getElementById("sendButton");
+      var faqSection = document.getElementById("faqSection");
+      var faqToggle = document.getElementById("faqToggle");
+      if (faqToggle && faqSection) {
+        faqToggle.addEventListener("click", function () {
+          var collapsed = faqSection.classList.toggle("collapsed");
+          faqToggle.setAttribute("aria-expanded", String(!collapsed));
+          faqToggle.textContent = collapsed ? "자주 묻는 질문 펼치기" : "자주 묻는 질문 접기";
+        });
+      }
 
 
       /* ===============================================
@@ -696,52 +747,24 @@
         var contact;
 
 
-        /* 키워드 담당자 */
-
-        for (
-          i = 0;
-          i < CONTACT_MAP.length;
-          i++
-        ) {
-
-          contact =
-            CONTACT_MAP[i];
-
-
-          if (
-            !contact.isDefault &&
-            Array.isArray(
-              contact.keywords
-            )
-          ) {
-
-            var matched =
-              contact.keywords.some(
-                function (keyword) {
-
-                  return (
-                    keyword &&
-                    text.indexOf(
-                      String(keyword)
-                        .toLowerCase()
-                    ) >= 0
-                  );
-
-                }
-              );
-
-
-            if (matched) {
-
-              return contact;
-
+        /* 키워드 담당자: 단순 선착순이 아니라 일치 개수와 표시 순서로 결정 */
+        var bestContact = null;
+        var bestScore = 0;
+        for (i = 0; i < CONTACT_MAP.length; i++) {
+          contact = CONTACT_MAP[i];
+          if (!contact.isDefault && Array.isArray(contact.keywords)) {
+            var score = contact.keywords.reduce(function (sum, keyword) {
+              return sum + (keyword && text.indexOf(String(keyword).toLowerCase()) >= 0 ? 1 : 0);
+            }, 0);
+            if (score > bestScore || (score === bestScore && score > 0 && Number(contact.order || 99) < Number((bestContact || {}).order || 99))) {
+              bestContact = contact;
+              bestScore = score;
             }
-
           }
-
         }
-
-
+        if (bestContact) {
+          return bestContact;
+        }
         /* 카테고리 담당자 */
 
         for (
@@ -926,7 +949,7 @@
 
               '<div class="sender">' +
                 escapeHtml(
-                  name || "SCM봇"
+                  name || "SCM FAQ"
                 ) +
               '</div>' +
 
@@ -1000,7 +1023,8 @@
       function addContactCardCompact(
         questionText,
         category,
-        overrideContact
+        overrideContact,
+        collapsed
       ) {
 
         var contact =
@@ -1026,7 +1050,7 @@
 
         var subject =
           encodeURIComponent(
-            "[FAQ봇 문의] " +
+            "[SCM FAQ 문의] " +
             String(
               questionText
             ).slice(
@@ -1049,7 +1073,7 @@
 
             "\n\n───────────────\n" +
 
-            "* 본 메일은 SCM FAQ봇에서 자동 생성되었습니다."
+            "* 본 메일은 SCM FAQ에서 자동 생성되었습니다."
 
           );
 
@@ -1136,12 +1160,9 @@
                 emailHtml +
 
               '</div>' +
-
-              '<div class="cc-compact-desc">' +
-                '원하는 답변을 찾지 못하셨다면 아래 버튼으로 문의해 주세요.' +
-              '</div>' +
-
-              buttonHtml +
+              (collapsed
+                ? '<details><summary>추가 문의가 필요한가요?</summary><div class="cc-compact-desc">담당자에게 직접 문의할 수 있습니다.</div>' + buttonHtml + '</details>'
+                : '<div class="cc-compact-desc">원하는 답변을 찾지 못하셨다면 아래 버튼으로 문의해 주세요.</div>' + buttonHtml) +
 
             '</div>' +
 
@@ -1236,14 +1257,17 @@
 
       function renderCategoryTabs() {
 
-        var categories =
-          ChatbotStore
-            .getCategories();
+        var categories = (window.CHATBOT_CONFIG.categories || []).slice();
+        if (!categories.length) {
+          categories = ChatbotStore.getCategories();
+        }
 
 
-        var labels =
-          ChatbotStore
-            .getCategoryLabels();
+        var labels = Object.assign(
+          {},
+          ChatbotStore.getCategoryLabels ? ChatbotStore.getCategoryLabels() : {},
+          window.CHATBOT_CONFIG.categoryLabels || {}
+        );
 
 
         if (
@@ -1732,7 +1756,7 @@
 
 
         sender.textContent =
-          "SCM봇";
+          "SCM FAQ";
 
 
         var bubble =
@@ -2002,7 +2026,7 @@
           addMessage(
             "답변을 찾는 중입니다...",
             "bot",
-            "SCM봇",
+            "SCM FAQ",
             "typing"
           );
 
@@ -2058,12 +2082,16 @@
            */
           else {
 
-            var result =
-              ChatbotStore
-                .findAnswerSmart(
-                  text,
-                  selectedCategory
-                );
+            var result = ChatbotStore.findAnswerSmart(text, selectedCategory);
+            /* 선택 카테고리에서 확실한 결과가 없으면 전체 FAQ를 다시 검색 */
+            if (selectedCategory !== "all" && (!result || result.status !== "matched")) {
+              var globalResult = ChatbotStore.findAnswerSmart(text, "all");
+              if (globalResult && (globalResult.status === "matched" ||
+                  (globalResult.status === "suggest" && result.status === "none") ||
+                  Number(globalResult.score || 0) > Number(result.score || 0))) {
+                result = globalResult;
+              }
+            }
 
 
             matchStatus =
@@ -2148,14 +2176,15 @@
               addMessage(
                 "등록된 답변 중 확실하게 일치하는 내용을 찾지 못했습니다.\n아래 담당자에게 직접 문의해 주세요.",
                 "bot",
-                "SCM봇"
+                "SCM FAQ"
               );
 
 
               addContactCardCompact(
                 text,
                 category,
-                null
+                null,
+                false
               );
 
             }
@@ -2202,7 +2231,7 @@
             addMessage(
               answer,
               "bot",
-              "SCM봇"
+              "SCM FAQ"
             );
 
 
@@ -2219,7 +2248,8 @@
             addContactCardCompact(
               text,
               category,
-              overrideContact
+              overrideContact,
+              true
             );
 
           }
@@ -2309,7 +2339,7 @@
           addMessage(
             "죄송합니다. 일시적인 오류가 발생했습니다. 다시 시도해 주세요.",
             "bot",
-            "SCM봇"
+            "SCM FAQ"
           );
 
 
@@ -2381,7 +2411,7 @@
       addMessage(
         "안녕하세요.\n문의사항을 입력하거나 아래 FAQ를 선택해주세요.",
         "bot",
-        "SCM봇"
+        "SCM FAQ"
       );
 
 
