@@ -1,0 +1,3060 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>SCM FAQ봇</title>
+
+  <style>
+    :root {
+      --main: #009C82;
+      --main-dark: #007a66;
+      --bg: #f4f8f7;
+      --line: #d8e5e2;
+      --text: #1f2937;
+      --sub: #6b7280;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+      background: linear-gradient(135deg, #f4fbf9, #eef7f5);
+      color: var(--text);
+    }
+
+    .wrap {
+      max-width: 500px;
+      margin: 24px auto;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, .08);
+      min-height: 90vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header {
+      background: var(--main);
+      color: #fff;
+      padding: 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .avatar {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, .18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .header p {
+      margin: 6px 0 0;
+      font-size: 13px;
+      opacity: .95;
+    }
+
+    .notice {
+      background: #f8fbfb;
+      border-bottom: 1px solid var(--line);
+      padding: 10px 14px;
+      font-size: 12px;
+      color: var(--sub);
+      text-align: center;
+    }
+
+    .chat {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      background: #f8fbfb;
+    }
+
+    .row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+      align-items: flex-end;
+    }
+
+    .row.user {
+      justify-content: flex-end;
+    }
+
+    .bot-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: #e7f7f3;
+      color: var(--main-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+
+    .bubble-group {
+      max-width: 82%;
+    }
+
+    .sender {
+      font-size: 12px;
+      color: #64748b;
+      margin: 0 0 4px 4px;
+    }
+
+    .bubble {
+      padding: 12px 14px;
+      border-radius: 18px;
+      line-height: 1.55;
+      font-size: 14px;
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+
+    .bot .bubble {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-bottom-left-radius: 6px;
+    }
+
+    .user .bubble {
+      background: var(--main);
+      color: #fff;
+      border-bottom-right-radius: 6px;
+    }
+
+    .time {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-top: 4px;
+      padding: 0 4px;
+    }
+
+    .user .time {
+      text-align: right;
+    }
+
+    .typing {
+      opacity: .8;
+      font-style: italic;
+    }
+
+    /* FAQ 영역 */
+
+    .faq {
+      padding: 12px;
+      border-top: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .faq-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #334155;
+      margin-bottom: 8px;
+    }
+
+    .category-tabs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .category-tab {
+      border: none;
+      background: #e8f7f3;
+      color: #006f5c;
+      padding: 9px 13px;
+      border-radius: 999px;
+      cursor: pointer;
+      white-space: nowrap;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+
+    .category-tab.active {
+      background: var(--main);
+      color: #fff;
+    }
+
+    .faq-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .faq-list button,
+    .suggest-btn {
+      width: 100%;
+      border: none;
+      background: #eef7f5;
+      color: #135f53;
+      padding: 11px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 14px;
+      text-align: left;
+      line-height: 1.45;
+    }
+
+    .faq-list button:hover,
+    .suggest-btn:hover {
+      background: #dff3ef;
+    }
+
+    .faq-list button:disabled,
+    .suggest-btn:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+    }
+
+    .empty-faq {
+      font-size: 13px;
+      color: var(--sub);
+      padding: 8px 2px;
+    }
+
+    /* 추천 질문 */
+
+    .suggest-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      margin-top: 10px;
+    }
+
+    .suggest-btn {
+      border: 1px solid #d4e8e3;
+    }
+
+    .suggest-title {
+      margin-bottom: 3px;
+      font-weight: 600;
+    }
+
+    /* 담당자 카드 */
+
+    .compact-contact {
+      background: #f0faf7 !important;
+      border: 1px solid #b2ddd5 !important;
+      padding: 12px 16px !important;
+    }
+
+    .cc-compact-header {
+      color: #1f2937;
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .cc-compact-label {
+      background: #e7f7f3;
+      color: #007a66;
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-right: 4px;
+    }
+
+    .cc-compact-name {
+      font-weight: 700;
+    }
+
+    .cc-compact-divider {
+      color: #94a3b8;
+      margin: 0 4px;
+    }
+
+    .cc-compact-header a {
+      color: #007a66;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .cc-compact-desc {
+      margin-top: 8px;
+      font-size: 12.5px;
+      color: #64748b;
+      line-height: 1.5;
+    }
+
+    .cc-compact-mail-btn {
+      display: block;
+      margin-top: 10px;
+      background: #e7f7f3;
+      color: #007a66;
+      text-align: center;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration: none;
+      border: 1px solid #b2ddd5;
+    }
+
+    .cc-compact-mail-btn:hover {
+      background: #d0f0e8;
+    }
+
+    /* 입력 영역 */
+
+    .input-area {
+      border-top: 1px solid var(--line);
+      padding: 12px;
+      background: #fff;
+    }
+
+    .input-wrap {
+      display: flex;
+      gap: 8px;
+      background: #f7fbfb;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 8px;
+    }
+
+    .input-wrap input {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      padding: 10px;
+      font-size: 14px;
+      min-width: 0;
+    }
+
+    .input-wrap button {
+      border: none;
+      background: var(--main);
+      color: #fff;
+      border-radius: 12px;
+      width: 48px;
+      cursor: pointer;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .input-wrap button:disabled {
+      opacity: .7;
+      cursor: not-allowed;
+    }
+
+    .bubble a {
+      color: #009C82;
+      word-break: break-all;
+      text-decoration: underline;
+    }
+
+    .user .bubble a {
+      color: #fff;
+    }
+
+    @media (max-width: 520px) {
+      .wrap {
+        margin: 0;
+        max-width: none;
+        border-radius: 0;
+        min-height: 100vh;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="wrap">
+
+    <div class="header">
+      <div class="avatar">💬</div>
+
+      <div>
+        <h1>SCM봇</h1>
+        <p>문의 내용을 입력하시면 등록된 답변을 안내드립니다.</p>
+      </div>
+    </div>
+
+    <div class="notice">
+      카테고리를 선택하면 관련 FAQ를 확인할 수 있습니다.
+    </div>
+
+    <div
+      class="chat"
+      id="chatBox">
+    </div>
+
+    <div class="faq">
+
+      <div class="faq-title">
+        카테고리
+      </div>
+
+      <div
+        class="category-tabs"
+        id="categoryTabs">
+      </div>
+
+      <div
+        class="faq-title"
+        style="margin-top:12px;">
+        자주 묻는 질문
+      </div>
+
+      <div
+        class="faq-list"
+        id="faqList">
+      </div>
+
+    </div>
+
+    <div class="input-area">
+
+      <div class="input-wrap">
+
+        <input
+          id="userInput"
+          type="text"
+          autocomplete="off"
+          placeholder="질문을 입력하세요">
+
+        <button
+          id="sendButton"
+          type="button"
+          aria-label="질문 보내기">
+          ➤
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- ================================================
+       챗봇 설정
+       ================================================ -->
+
+  <script>
+    window.CHATBOT_CONFIG = Object.assign({
+
+      logApiUrl:
+        "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/logQuestion",
+
+      topQuestionsApiUrl:
+        "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/getTopQuestions",
+
+      contactsApiUrl:
+        "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/contacts/getContacts",
+
+      qaApiBase:
+        "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/qa",
+
+      requestTimeoutMs: 30000,
+
+      faqButtonCount: 4,
+
+      categories: ["all", "product", "logistics", "origin", "production", "cost", "system"],
+
+      categoryLabels: {
+        all: "전체",
+        product: "제품 주문/도입",
+        logistics: "배송/통관",
+        origin: "원산지/FTA",
+        production: "생산/공급계획",
+        cost: "비용/결재",
+        system: "시스템/조회"
+      },
+
+      pendingRetryIntervalMs: 60000
+
+    }, window.CHATBOT_CONFIG || {});
+  </script>
+
+
+  <!-- shared.js는 반드시 index.html과 같은 폴더 -->
+  <script>
+
+(function (window) {
+  "use strict";
+
+  var STORAGE_KEYS = {
+    qa: "scmFaqQaCacheV2",
+    history: "scmFaqHistoryV2",
+    pendingLogs: "scmFaqPendingLogsV2"
+  };
+
+  var CATEGORY_ORDER = [
+    "all",
+    "product",
+    "logistics",
+    "origin",
+    "production",
+    "cost",
+    "system"
+  ];
+
+  var CATEGORY_LABELS = {
+    all: "전체",
+    product: "제품 주문/도입",
+    logistics: "배송/통관",
+    origin: "원산지/FTA",
+    production: "생산/공급계획",
+    cost: "비용/결재",
+    system: "시스템/조회"
+  };
+
+  var CATEGORY_ALIASES = {
+    all: "all",
+    전체: "all",
+
+    product: "product",
+    products: "product",
+    order: "product",
+    purchase: "product",
+    purchasing: "product",
+    procurement: "product",
+    "제품 주문/도입": "product",
+    "제품주문/도입": "product",
+    "제품 주문": "product",
+    제품주문: "product",
+    "주문/도입": "product",
+    주문: "product",
+    도입: "product",
+    발주: "product",
+    구매: "product",
+
+    logistics: "logistics",
+    logistic: "logistics",
+    delivery: "logistics",
+    shipping: "logistics",
+    customs: "logistics",
+    "배송/통관": "logistics",
+    배송: "logistics",
+    통관: "logistics",
+    물류: "logistics",
+
+    origin: "origin",
+    fta: "origin",
+    documents: "origin",
+    document: "origin",
+    "원산지/FTA": "origin",
+    "원산지/fta": "origin",
+    원산지: "origin",
+    서류: "origin",
+
+    production: "production",
+    supply: "production",
+    planning: "production",
+    "생산/공급계획": "production",
+    생산: "production",
+    공급계획: "production",
+    "공급 계획": "production",
+
+    cost: "cost",
+    expense: "cost",
+    approval: "cost",
+    "비용/결재": "cost",
+    비용: "cost",
+    결재: "cost",
+    품의: "cost",
+
+    system: "system",
+    lookup: "system",
+    inquiry: "system",
+    "시스템/조회": "system",
+    시스템: "system",
+    조회: "system",
+
+    other: "system",
+    기타: "system",
+    default: "default",
+    기본: "default"
+  };
+
+  var qaCache = [];
+
+  function safeJsonParse(value, fallback) {
+    try {
+      var parsed = JSON.parse(value);
+      return parsed == null ? fallback : parsed;
+    } catch (error) {
+      return fallback;
+    }
+  }
+
+  function storageGet(key, fallback) {
+    try {
+      return safeJsonParse(window.localStorage.getItem(key), fallback);
+    } catch (error) {
+      return fallback;
+    }
+  }
+
+  function storageSet(key, value) {
+    try {
+      window.localStorage.setItem(key, JSON.stringify(value));
+      return true;
+    } catch (error) {
+      console.warn("로컬 저장 실패:", error);
+      return false;
+    }
+  }
+
+  function escapeHtml(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function normalizeCategoryText(value) {
+    return String(value == null ? "" : value).trim();
+  }
+
+  function normalizeCategory(value) {
+    var raw = normalizeCategoryText(value);
+    if (!raw) {
+      return "system";
+    }
+
+    if (CATEGORY_ALIASES[raw] != null) {
+      return CATEGORY_ALIASES[raw];
+    }
+
+    var lower = raw.toLowerCase();
+    if (CATEGORY_ALIASES[lower] != null) {
+      return CATEGORY_ALIASES[lower];
+    }
+
+    if (lower.indexOf("제품") >= 0 || lower.indexOf("주문") >= 0 || lower.indexOf("도입") >= 0 || lower.indexOf("발주") >= 0 || lower.indexOf("구매") >= 0) {
+      return "product";
+    }
+    if (lower.indexOf("배송") >= 0 || lower.indexOf("통관") >= 0 || lower.indexOf("물류") >= 0 || lower.indexOf("운송") >= 0) {
+      return "logistics";
+    }
+    if (lower.indexOf("원산지") >= 0 || lower.indexOf("fta") >= 0 || lower.indexOf("증명서") >= 0) {
+      return "origin";
+    }
+    if (lower.indexOf("생산") >= 0 || lower.indexOf("공급") >= 0 || lower.indexOf("mrp") >= 0) {
+      return "production";
+    }
+    if (lower.indexOf("비용") >= 0 || lower.indexOf("결재") >= 0 || lower.indexOf("품의") >= 0) {
+      return "cost";
+    }
+    if (lower.indexOf("시스템") >= 0 || lower.indexOf("조회") >= 0 || lower.indexOf("sap") >= 0 || lower.indexOf("report") >= 0) {
+      return "system";
+    }
+
+    return lower === "all" ? "all" : "system";
+  }
+
+  function normalizeCategoryDisplay(value) {
+    var category = normalizeCategory(value);
+    return CATEGORY_LABELS[category] || normalizeCategoryText(value) || "미분류";
+  }
+
+  function normalizeKeywords(value) {
+    var values;
+    if (Array.isArray(value)) {
+      values = value;
+    } else {
+      values = String(value == null ? "" : value).split(/[,;|/\n]+/);
+    }
+
+    var seen = {};
+    return values
+      .map(function (item) {
+        return String(item == null ? "" : item).trim();
+      })
+      .filter(function (item) {
+        if (!item) {
+          return false;
+        }
+        var key = item.toLowerCase();
+        if (seen[key]) {
+          return false;
+        }
+        seen[key] = true;
+        return true;
+      });
+  }
+
+  function normalizeBoolean(value) {
+    if (typeof value === "boolean") {
+      return value;
+    }
+    if (typeof value === "number") {
+      return value !== 0;
+    }
+    var normalized = String(value == null ? "" : value).trim().toLowerCase();
+    return ["true", "1", "y", "yes", "o", "on", "예", "사용", "노출"].indexOf(normalized) >= 0;
+  }
+
+  function createQAId() {
+    if (window.crypto && typeof window.crypto.randomUUID === "function") {
+      return window.crypto.randomUUID();
+    }
+    return "qa_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 10);
+  }
+
+  function fetchWithTimeout(url, options, timeoutMs) {
+    var timeout = Number(timeoutMs || 15000);
+    var controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+    var timer = null;
+    var requestOptions = Object.assign({}, options || {});
+
+    if (controller) {
+      requestOptions.signal = controller.signal;
+      timer = window.setTimeout(function () {
+        controller.abort();
+      }, timeout);
+    }
+
+    return window.fetch(url, requestOptions).finally(function () {
+      if (timer) {
+        window.clearTimeout(timer);
+      }
+    });
+  }
+
+  function normalizeSearchText(value) {
+    return String(value == null ? "" : value)
+      .toLowerCase()
+      .replace(/[.,!?()[\]{}'"`~:;|/\\_-]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function compactSearchText(value) {
+    return normalizeSearchText(value).replace(/\s+/g, "");
+  }
+
+  function tokenize(value) {
+    var normalized = normalizeSearchText(value);
+    if (!normalized) {
+      return [];
+    }
+    var seen = {};
+    return normalized.split(" ").filter(function (token) {
+      if (!token || token.length < 2 || seen[token]) {
+        return false;
+      }
+      seen[token] = true;
+      return true;
+    });
+  }
+
+  function scoreItem(question, item) {
+    var input = normalizeSearchText(question);
+    var inputCompact = compactSearchText(question);
+    var itemQuestion = normalizeSearchText(item.question || "");
+    var itemQuestionCompact = compactSearchText(item.question || "");
+    var inputTokens = tokenize(question);
+    var questionTokens = tokenize(item.question || "");
+    var keywords = normalizeKeywords(item.keywords || []);
+    var score = 0;
+    var keywordHits = 0;
+    var tokenHits = 0;
+
+    if (!input) {
+      return 0;
+    }
+
+    if (inputCompact === itemQuestionCompact) {
+      return 100;
+    }
+
+    if (inputCompact.length >= 4 && itemQuestionCompact.indexOf(inputCompact) >= 0) {
+      score += 68;
+    } else if (itemQuestionCompact.length >= 4 && inputCompact.indexOf(itemQuestionCompact) >= 0) {
+      score += 62;
+    }
+
+    keywords.forEach(function (keyword) {
+      var normalizedKeyword = compactSearchText(keyword);
+      if (normalizedKeyword && inputCompact.indexOf(normalizedKeyword) >= 0) {
+        keywordHits += 1;
+        score += normalizedKeyword.length >= 4 ? 18 : 12;
+      }
+    });
+
+    questionTokens.forEach(function (token) {
+      if (inputTokens.indexOf(token) >= 0) {
+        tokenHits += 1;
+      }
+    });
+
+    if (questionTokens.length) {
+      score += Math.round((tokenHits / questionTokens.length) * 30);
+    }
+    if (inputTokens.length) {
+      score += Math.round((tokenHits / inputTokens.length) * 18);
+    }
+
+    if (keywordHits >= 2) {
+      score += 10;
+    }
+
+    return Math.min(100, score);
+  }
+
+  function normalizeQAItem(item) {
+    var normalized = Object.assign({}, item || {});
+    normalized.__id = normalized.__id || normalized.id || createQAId();
+    normalized.category = normalizeCategory(normalized.category);
+    normalized.question = String(normalized.question || "").trim();
+    normalized.answer = String(normalized.answer || "").trim();
+    normalized.keywords = normalizeKeywords(normalized.keywords || []);
+    normalized.top = normalizeBoolean(normalized.top);
+    normalized.contactId = String(normalized.contactId || "");
+    return normalized;
+  }
+
+  function normalizeQAList(items) {
+    if (!Array.isArray(items)) {
+      return [];
+    }
+    return items.map(normalizeQAItem).filter(function (item) {
+      return !!item.question && !!item.answer;
+    });
+  }
+
+  function updateLocalCache(items) {
+    qaCache = normalizeQAList(items);
+    storageSet(STORAGE_KEYS.qa, qaCache);
+    return qaCache.slice();
+  }
+
+  function getQA() {
+    if (!qaCache.length) {
+      qaCache = normalizeQAList(storageGet(STORAGE_KEYS.qa, []));
+    }
+    return qaCache.slice();
+  }
+
+  function getQAByCategory(category) {
+    var normalizedCategory = category === "all" ? "all" : normalizeCategory(category);
+    var items = getQA();
+    if (normalizedCategory === "all") {
+      return items;
+    }
+    return items.filter(function (item) {
+      return normalizeCategory(item.category) === normalizedCategory;
+    });
+  }
+
+  function getCategories() {
+    return CATEGORY_ORDER.slice();
+  }
+
+  function getCategoryLabels() {
+    return Object.assign({}, CATEGORY_LABELS);
+  }
+
+  async function loadFromServer() {
+    var config = window.CHATBOT_CONFIG || {};
+    var base = String(config.qaApiBase || "").replace(/\/$/, "");
+    if (!base) {
+      return getQA();
+    }
+
+    try {
+      var response = await fetchWithTimeout(
+        base + "/getAll",
+        { method: "GET", headers: { Accept: "application/json" } },
+        config.requestTimeoutMs || 15000
+      );
+      if (!response.ok) {
+        throw new Error("QA API " + response.status);
+      }
+      var data = await response.json();
+      var items = Array.isArray(data) ? data : data && Array.isArray(data.items) ? data.items : [];
+      if (!Array.isArray(items)) {
+        throw new Error("FAQ 데이터 형식 오류");
+      }
+      return updateLocalCache(items);
+    } catch (error) {
+      console.warn("서버 FAQ 로드 실패, 로컬 캐시 사용:", error);
+      return getQA();
+    }
+  }
+
+  function findAnswerSmart(question, category) {
+    var text = String(question == null ? "" : question).trim();
+    if (!text) {
+      return { status: "none", score: 0, item: null, candidates: [] };
+    }
+
+    var items = getQAByCategory(category || "all");
+    var ranked = items
+      .map(function (item) {
+        return { item: item, score: scoreItem(text, item) };
+      })
+      .filter(function (entry) {
+        return entry.score > 0;
+      })
+      .sort(function (a, b) {
+        if (b.score !== a.score) {
+          return b.score - a.score;
+        }
+        if (!!b.item.top !== !!a.item.top) {
+          return b.item.top ? 1 : -1;
+        }
+        return String(a.item.question).localeCompare(String(b.item.question), "ko");
+      });
+
+    if (!ranked.length) {
+      return { status: "none", score: 0, item: null, candidates: [] };
+    }
+
+    var best = ranked[0];
+    var secondScore = ranked[1] ? ranked[1].score : 0;
+
+    if (best.score >= 72 || (best.score >= 60 && best.score - secondScore >= 15)) {
+      return {
+        status: "matched",
+        score: best.score,
+        item: best.item,
+        candidates: ranked.slice(0, 3)
+      };
+    }
+
+    if (best.score >= 28) {
+      return {
+        status: "suggest",
+        score: best.score,
+        item: null,
+        candidates: ranked.slice(0, 3)
+      };
+    }
+
+    return { status: "none", score: best.score, item: null, candidates: [] };
+  }
+
+  function saveHistory(payload) {
+    var history = storageGet(STORAGE_KEYS.history, []);
+    if (!Array.isArray(history)) {
+      history = [];
+    }
+    history.unshift(Object.assign({}, payload || {}));
+    if (history.length > 500) {
+      history = history.slice(0, 500);
+    }
+    storageSet(STORAGE_KEYS.history, history);
+  }
+
+  function getHistory() {
+    var history = storageGet(STORAGE_KEYS.history, []);
+    return Array.isArray(history) ? history : [];
+  }
+
+  function clearHistory() {
+    storageSet(STORAGE_KEYS.history, []);
+  }
+
+  function savePendingLog(payload) {
+    var pending = storageGet(STORAGE_KEYS.pendingLogs, []);
+    if (!Array.isArray(pending)) {
+      pending = [];
+    }
+    pending.push(Object.assign({}, payload || {}, {
+      pendingSavedAt: new Date().toISOString()
+    }));
+    if (pending.length > 200) {
+      pending = pending.slice(-200);
+    }
+    storageSet(STORAGE_KEYS.pendingLogs, pending);
+  }
+
+  async function retryPendingLogs(logApiUrl) {
+    var url = String(logApiUrl || "").trim();
+    if (!url) {
+      return { sent: 0, remaining: 0 };
+    }
+
+    var pending = storageGet(STORAGE_KEYS.pendingLogs, []);
+    if (!Array.isArray(pending) || !pending.length) {
+      return { sent: 0, remaining: 0 };
+    }
+
+    var remaining = [];
+    var sent = 0;
+
+    for (var i = 0; i < pending.length; i += 1) {
+      try {
+        var response = await fetchWithTimeout(
+          url,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(pending[i])
+          },
+          10000
+        );
+        if (!response.ok) {
+          throw new Error("log API " + response.status);
+        }
+        sent += 1;
+      } catch (error) {
+        remaining.push(pending[i]);
+      }
+    }
+
+    storageSet(STORAGE_KEYS.pendingLogs, remaining);
+    return { sent: sent, remaining: remaining.length };
+  }
+
+  qaCache = normalizeQAList(storageGet(STORAGE_KEYS.qa, []));
+
+  window.ChatbotUtils = {
+    escapeHtml: escapeHtml,
+    normalizeCategory: normalizeCategory,
+    normalizeCategoryDisplay: normalizeCategoryDisplay,
+    normalizeKeywords: normalizeKeywords,
+    normalizeBoolean: normalizeBoolean,
+    createQAId: createQAId,
+    fetchWithTimeout: fetchWithTimeout
+  };
+
+  window.ChatbotStore = {
+    loadFromServer: loadFromServer,
+    updateLocalCache: updateLocalCache,
+    getQA: getQA,
+    getQAByCategory: getQAByCategory,
+    getCategories: getCategories,
+    getCategoryLabels: getCategoryLabels,
+    findAnswerSmart: findAnswerSmart,
+    saveHistory: saveHistory,
+    getHistory: getHistory,
+    clearHistory: clearHistory,
+    savePendingLog: savePendingLog,
+    retryPendingLogs: retryPendingLogs
+  };
+})(window);
+
+  
+  </script>
+
+
+  <script>
+    (function () {
+      "use strict";
+
+      /* ===============================================
+         DOM
+         =============================================== */
+
+      var chatBox =
+        document.getElementById("chatBox");
+
+      var faqList =
+        document.getElementById("faqList");
+
+      var categoryTabs =
+        document.getElementById("categoryTabs");
+
+      var userInput =
+        document.getElementById("userInput");
+
+      var sendButton =
+        document.getElementById("sendButton");
+
+
+      /* ===============================================
+         shared.js 확인
+         =============================================== */
+
+      if (
+        !window.ChatbotStore ||
+        !window.ChatbotUtils
+      ) {
+
+        console.error(
+          "shared.js를 불러오지 못했습니다."
+        );
+
+        chatBox.innerHTML =
+          '<div class="row bot">' +
+            '<div class="bot-icon">Q</div>' +
+            '<div class="bubble-group bot">' +
+              '<div class="bubble">' +
+                '챗봇 파일을 불러오지 못했습니다.<br>' +
+                'shared.js가 index.html과 같은 폴더에 있는지 확인해 주세요.' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+
+        return;
+      }
+
+
+      var escapeHtml =
+        ChatbotUtils.escapeHtml;
+
+      var fetchWithTimeout =
+        ChatbotUtils.fetchWithTimeout;
+
+
+      /* ===============================================
+         상태
+         =============================================== */
+
+      var selectedCategory =
+        "all";
+
+      var isSending =
+        false;
+
+      var isComposing =
+        false;
+
+      var CONTACT_MAP =
+        [];
+
+
+      /* ===============================================
+         IME
+         =============================================== */
+
+      userInput.addEventListener(
+        "compositionstart",
+        function () {
+
+          isComposing = true;
+
+        }
+      );
+
+
+      userInput.addEventListener(
+        "compositionend",
+        function () {
+
+          isComposing = false;
+
+        }
+      );
+
+
+      /* ===============================================
+         담당자
+         =============================================== */
+
+      async function loadContacts() {
+
+        if (
+          !window.CHATBOT_CONFIG.contactsApiUrl
+        ) {
+
+          return;
+
+        }
+
+
+        try {
+
+          var response =
+            await fetchWithTimeout(
+
+              window.CHATBOT_CONFIG.contactsApiUrl,
+
+              {
+                method: "GET"
+              },
+
+              15000
+
+            );
+
+
+          if (!response.ok) {
+
+            throw new Error(
+              "contacts API " +
+              response.status
+            );
+
+          }
+
+
+          var data =
+            await response.json();
+
+
+          if (Array.isArray(data)) {
+
+            CONTACT_MAP = data;
+
+          } else if (
+            data &&
+            Array.isArray(data.items)
+          ) {
+
+            CONTACT_MAP =
+              data.items;
+
+          } else {
+
+            throw new Error(
+              "담당자 데이터 형식 오류"
+            );
+
+          }
+
+
+          console.log(
+            "담당자 목록 로드:",
+            CONTACT_MAP.length + "명"
+          );
+
+
+        } catch (error) {
+
+          console.warn(
+            "담당자 로드 실패:",
+            error
+          );
+
+
+          CONTACT_MAP = [
+            {
+              name: "차현정",
+              phone: "",
+              email: "hyeonjung.cha@wilo.com",
+              keywords: [],
+              category: "default",
+              isDefault: true
+            }
+          ];
+
+        }
+
+      }
+
+
+      function findContact(
+        questionText,
+        category
+      ) {
+
+        var text =
+          String(
+            questionText || ""
+          ).toLowerCase();
+
+
+        var i;
+        var contact;
+
+
+        /* 키워드 담당자 */
+
+        for (
+          i = 0;
+          i < CONTACT_MAP.length;
+          i++
+        ) {
+
+          contact =
+            CONTACT_MAP[i];
+
+
+          if (
+            !contact.isDefault &&
+            Array.isArray(
+              contact.keywords
+            )
+          ) {
+
+            var matched =
+              contact.keywords.some(
+                function (keyword) {
+
+                  return (
+                    keyword &&
+                    text.indexOf(
+                      String(keyword)
+                        .toLowerCase()
+                    ) >= 0
+                  );
+
+                }
+              );
+
+
+            if (matched) {
+
+              return contact;
+
+            }
+
+          }
+
+        }
+
+
+        /* 카테고리 담당자 */
+
+        for (
+          i = 0;
+          i < CONTACT_MAP.length;
+          i++
+        ) {
+
+          contact =
+            CONTACT_MAP[i];
+
+
+          if (
+            !contact.isDefault &&
+            contact.category === category
+          ) {
+
+            return contact;
+
+          }
+
+        }
+
+
+        /* 기본 담당자 */
+
+        for (
+          i = 0;
+          i < CONTACT_MAP.length;
+          i++
+        ) {
+
+          if (
+            CONTACT_MAP[i].isDefault
+          ) {
+
+            return CONTACT_MAP[i];
+
+          }
+
+        }
+
+
+        return (
+          CONTACT_MAP[
+            CONTACT_MAP.length - 1
+          ] ||
+          {
+            name: "차현정",
+            phone: "",
+            email: "hyeonjung.cha@wilo.com"
+          }
+        );
+
+      }
+
+
+      function findContactById(
+        contactId
+      ) {
+
+        if (!contactId) {
+
+          return null;
+
+        }
+
+
+        for (
+          var i = 0;
+          i < CONTACT_MAP.length;
+          i++
+        ) {
+
+          if (
+            String(
+              CONTACT_MAP[i].id || ""
+            ) ===
+            String(contactId)
+          ) {
+
+            return CONTACT_MAP[i];
+
+          }
+
+        }
+
+
+        return null;
+
+      }
+
+
+      /* ===============================================
+         화면 공통
+         =============================================== */
+
+      function getTimeText() {
+
+        return new Date()
+          .toLocaleTimeString(
+            "ko-KR",
+            {
+              hour: "2-digit",
+              minute: "2-digit"
+            }
+          );
+
+      }
+
+
+      function scrollToBottom() {
+
+        setTimeout(
+          function () {
+
+            chatBox.scrollTop =
+              chatBox.scrollHeight;
+
+          },
+          80
+        );
+
+      }
+
+
+      function formatAnswer(text) {
+
+        var escaped =
+          escapeHtml(
+            String(text || "")
+          );
+
+
+        return escaped
+
+          .replace(
+            /(https?:\/\/[^\s<>"]+)/g,
+            '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
+          )
+
+          .replace(
+            /\n/g,
+            "<br>"
+          );
+
+      }
+
+
+      function addMessage(
+        text,
+        sender,
+        name,
+        extraClass
+      ) {
+
+        var row =
+          document.createElement(
+            "div"
+          );
+
+
+        row.className =
+          (
+            "row " +
+            sender +
+            " " +
+            (
+              extraClass || ""
+            )
+          ).trim();
+
+
+        if (
+          sender === "bot"
+        ) {
+
+          row.innerHTML =
+            '<div class="bot-icon">Q</div>' +
+
+            '<div class="bubble-group bot">' +
+
+              '<div class="sender">' +
+                escapeHtml(
+                  name || "SCM봇"
+                ) +
+              '</div>' +
+
+              '<div class="bubble"></div>' +
+
+              '<div class="time">' +
+                getTimeText() +
+              '</div>' +
+
+            '</div>';
+
+        } else {
+
+          row.innerHTML =
+            '<div class="bubble-group user">' +
+
+              '<div class="sender">나</div>' +
+
+              '<div class="bubble"></div>' +
+
+              '<div class="time">' +
+                getTimeText() +
+              '</div>' +
+
+            '</div>';
+
+        }
+
+
+        row
+          .querySelector(
+            ".bubble"
+          )
+          .innerHTML =
+            formatAnswer(text);
+
+
+        chatBox.appendChild(
+          row
+        );
+
+
+        scrollToBottom();
+
+
+        return row;
+
+      }
+
+
+      function removeRow(row) {
+
+        if (
+          row &&
+          row.parentNode
+        ) {
+
+          row.parentNode.removeChild(
+            row
+          );
+
+        }
+
+      }
+
+
+      /* ===============================================
+         담당자 카드
+         =============================================== */
+
+      function addContactCardCompact(
+        questionText,
+        category,
+        overrideContact
+      ) {
+
+        var contact =
+          overrideContact ||
+          findContact(
+            questionText,
+            category
+          );
+
+
+        if (!contact) {
+
+          return;
+
+        }
+
+
+        var email =
+          String(
+            contact.email || ""
+          );
+
+
+        var subject =
+          encodeURIComponent(
+            "[FAQ봇 문의] " +
+            String(
+              questionText
+            ).slice(
+              0,
+              50
+            )
+          );
+
+
+        var mailBody =
+          encodeURIComponent(
+
+            "안녕하세요, 아래 내용 관련 문의드립니다.\n" +
+
+            "담당이 아닌 경우 담당자에게 전달 부탁드립니다.\n\n" +
+
+            "【문의 내용】\n" +
+
+            questionText +
+
+            "\n\n───────────────\n" +
+
+            "* 본 메일은 SCM FAQ봇에서 자동 생성되었습니다."
+
+          );
+
+
+        var mailtoLink =
+          "mailto:" +
+          email +
+          "?subject=" +
+          subject +
+          "&body=" +
+          mailBody;
+
+
+        var phoneHtml =
+          contact.phone
+            ?
+            '<span class="cc-compact-divider">·</span>' +
+            '<a href="tel:' +
+            escapeHtml(contact.phone) +
+            '">' +
+            escapeHtml(contact.phone) +
+            '</a>'
+            :
+            "";
+
+
+        var emailHtml =
+          email
+            ?
+            '<span class="cc-compact-divider">·</span>' +
+            '<a href="mailto:' +
+            escapeHtml(email) +
+            '">' +
+            escapeHtml(email) +
+            '</a>'
+            :
+            "";
+
+
+        var buttonHtml =
+          email
+            ?
+            '<a class="cc-compact-mail-btn" href="' +
+            escapeHtml(mailtoLink) +
+            '">' +
+            '✉️ 추가 문의 메일 보내기' +
+            '</a>'
+            :
+            "";
+
+
+        var row =
+          document.createElement(
+            "div"
+          );
+
+
+        row.className =
+          "row bot";
+
+
+        row.innerHTML =
+          '<div class="bot-icon">Q</div>' +
+
+          '<div class="bubble-group bot">' +
+
+            '<div class="bubble compact-contact">' +
+
+              '<div class="cc-compact-header">' +
+
+                '<span class="cc-compact-label">' +
+                  '담당자' +
+                '</span>' +
+
+                '<span class="cc-compact-name">' +
+                  escapeHtml(
+                    contact.name ||
+                    "담당자"
+                  ) +
+                '</span>' +
+
+                phoneHtml +
+
+                emailHtml +
+
+              '</div>' +
+
+              '<div class="cc-compact-desc">' +
+                '원하는 답변을 찾지 못하셨다면 아래 버튼으로 문의해 주세요.' +
+              '</div>' +
+
+              buttonHtml +
+
+            '</div>' +
+
+          '</div>';
+
+
+        chatBox.appendChild(
+          row
+        );
+
+
+        scrollToBottom();
+
+      }
+
+
+      /* ===============================================
+         서버 로그
+         =============================================== */
+
+      async function sendToServer(
+        data
+      ) {
+
+        if (
+          !window.CHATBOT_CONFIG.logApiUrl
+        ) {
+
+          return;
+
+        }
+
+
+        try {
+
+          var response =
+            await fetchWithTimeout(
+
+              window.CHATBOT_CONFIG.logApiUrl,
+
+              {
+                method: "POST",
+
+                headers: {
+                  "Content-Type":
+                    "application/json"
+                },
+
+                body:
+                  JSON.stringify(
+                    data
+                  )
+              },
+
+              window.CHATBOT_CONFIG
+                .requestTimeoutMs ||
+                30000
+
+            );
+
+
+          if (!response.ok) {
+
+            throw new Error(
+              "log API " +
+              response.status
+            );
+
+          }
+
+
+        } catch (error) {
+
+          console.warn(
+            "로그 전송 실패:",
+            error
+          );
+
+
+          ChatbotStore.savePendingLog(
+            data
+          );
+
+        }
+
+      }
+
+
+      /* ===============================================
+         카테고리
+         =============================================== */
+
+      function renderCategoryTabs() {
+
+        var categories = (window.CHATBOT_CONFIG.categories || []).slice();
+        if (!categories.length) {
+          categories = ChatbotStore.getCategories();
+        }
+
+        var labels = Object.assign(
+          {},
+          ChatbotStore.getCategoryLabels ? ChatbotStore.getCategoryLabels() : {},
+          window.CHATBOT_CONFIG.categoryLabels || {}
+        );
+
+
+        if (
+          categories.indexOf(
+            selectedCategory
+          ) < 0
+        ) {
+
+          selectedCategory =
+            categories[0] ||
+            "all";
+
+        }
+
+
+        categoryTabs.innerHTML =
+          "";
+
+
+        categories.forEach(
+          function (category) {
+
+            var button =
+              document.createElement(
+                "button"
+              );
+
+
+            button.type =
+              "button";
+
+
+            button.className =
+              "category-tab " +
+              (
+                category ===
+                selectedCategory
+                  ?
+                  "active"
+                  :
+                  ""
+              );
+
+
+            button.textContent =
+              labels[category] ||
+              category;
+
+
+            button.addEventListener(
+              "click",
+              async function () {
+
+                if (isSending) {
+
+                  return;
+
+                }
+
+
+                selectedCategory =
+                  category;
+
+
+                renderCategoryTabs();
+
+
+                await renderFAQ();
+
+              }
+            );
+
+
+            categoryTabs.appendChild(
+              button
+            );
+
+          }
+        );
+
+      }
+
+
+      /* ===============================================
+         FAQ
+         =============================================== */
+
+      async function renderFAQ() {
+
+        faqList.innerHTML =
+          "";
+
+
+        var topQA =
+          [];
+
+
+        var maxCount =
+          window.CHATBOT_CONFIG
+            .faqButtonCount ||
+          4;
+
+
+        /*
+         * 서버 TOP 질문
+         */
+        try {
+
+          if (
+            window.CHATBOT_CONFIG
+              .topQuestionsApiUrl
+          ) {
+
+            var url =
+              window.CHATBOT_CONFIG
+                .topQuestionsApiUrl +
+
+              "?category=" +
+              encodeURIComponent(
+                selectedCategory
+              ) +
+
+              "&limit=" +
+              (
+                maxCount * 3
+              );
+
+
+            var response =
+              await fetchWithTimeout(
+
+                url,
+
+                {
+                  method: "GET"
+                },
+
+                5000
+
+              );
+
+
+            if (response.ok) {
+
+              var data =
+                await response.json();
+
+
+              if (
+                data &&
+                data.success &&
+                Array.isArray(
+                  data.items
+                )
+              ) {
+
+                var allQA =
+                  ChatbotStore.getQA();
+
+
+                var seen =
+                  {};
+
+
+                data.items.forEach(
+                  function (serverItem) {
+
+                    if (
+                      topQA.length >=
+                      maxCount
+                    ) {
+
+                      return;
+
+                    }
+
+
+                    var matched =
+                      allQA.find(
+                        function (item) {
+
+                          return (
+                            item.question ===
+                            serverItem.question
+                          );
+
+                        }
+                      );
+
+
+                    if (!matched) {
+
+                      return;
+
+                    }
+
+
+                    if (
+                      selectedCategory !==
+                      "all" &&
+
+                      ChatbotUtils.normalizeCategory(matched.category) !==
+                      selectedCategory
+                    ) {
+
+                      return;
+
+                    }
+
+
+                    var key =
+                      matched.__id ||
+                      matched.question;
+
+
+                    if (seen[key]) {
+
+                      return;
+
+                    }
+
+
+                    seen[key] =
+                      true;
+
+
+                    topQA.push(
+                      matched
+                    );
+
+                  }
+                );
+
+              }
+
+            }
+
+          }
+
+
+        } catch (error) {
+
+          console.warn(
+            "TOP 질문 서버 로드 실패:",
+            error
+          );
+
+        }
+
+
+        /*
+         * 서버 TOP 부족하면 로컬 FAQ로 채움
+         */
+        if (
+          topQA.length <
+          maxCount
+        ) {
+
+          var allLocalQA = ChatbotStore.getQA();
+          var localQA = selectedCategory === "all"
+            ? allLocalQA
+            : allLocalQA.filter(function (item) {
+                return ChatbotUtils.normalizeCategory(item.category) === selectedCategory;
+              });
+
+
+          var extras =
+            localQA.filter(
+              function (item) {
+
+                return !!item.top;
+
+              }
+            );
+
+
+          if (!extras.length) {
+
+            extras =
+              localQA;
+
+          }
+
+
+          var used =
+            {};
+
+
+          topQA.forEach(
+            function (item) {
+
+              used[
+                item.__id ||
+                item.question
+              ] = true;
+
+            }
+          );
+
+
+          extras.forEach(
+            function (item) {
+
+              if (
+                topQA.length >=
+                maxCount
+              ) {
+
+                return;
+
+              }
+
+
+              var key =
+                item.__id ||
+                item.question;
+
+
+              if (!used[key]) {
+
+                used[key] =
+                  true;
+
+
+                topQA.push(
+                  item
+                );
+
+              }
+
+            }
+          );
+
+        }
+
+
+        if (!topQA.length) {
+
+          faqList.innerHTML =
+            '<div class="empty-faq">' +
+            '이 카테고리에 등록된 FAQ가 없습니다.' +
+            '</div>';
+
+
+          return;
+
+        }
+
+
+        topQA
+          .slice(
+            0,
+            maxCount
+          )
+          .forEach(
+            function (item) {
+
+              var button =
+                document.createElement(
+                  "button"
+                );
+
+
+              button.type =
+                "button";
+
+
+              button.textContent =
+                item.question;
+
+
+              button.addEventListener(
+                "click",
+                async function () {
+
+                  if (
+                    button.disabled ||
+                    isSending
+                  ) {
+
+                    return;
+
+                  }
+
+
+                  button.disabled =
+                    true;
+
+
+                  try {
+
+                    await sendMessage({
+                      text:
+                        item.question,
+
+                      isFaqClick:
+                        true,
+
+                      faqCategory:
+                        item.category,
+
+                      directAnswer:
+                        item.answer,
+
+                      directContactId:
+                        item.contactId
+                    });
+
+
+                  } finally {
+
+                    setTimeout(
+                      function () {
+
+                        button.disabled =
+                          false;
+
+                      },
+                      500
+                    );
+
+                  }
+
+                }
+              );
+
+
+              faqList.appendChild(
+                button
+              );
+
+            }
+          );
+
+      }
+
+
+      /* ===============================================
+         추천 질문 카드
+         =============================================== */
+
+      function addSuggestionCard(
+        originalText,
+        candidates
+      ) {
+
+        if (
+          !Array.isArray(
+            candidates
+          ) ||
+          !candidates.length
+        ) {
+
+          return;
+
+        }
+
+
+        var row =
+          document.createElement(
+            "div"
+          );
+
+
+        row.className =
+          "row bot";
+
+
+        var group =
+          document.createElement(
+            "div"
+          );
+
+
+        group.className =
+          "bubble-group bot";
+
+
+        var sender =
+          document.createElement(
+            "div"
+          );
+
+
+        sender.className =
+          "sender";
+
+
+        sender.textContent =
+          "SCM봇";
+
+
+        var bubble =
+          document.createElement(
+            "div"
+          );
+
+
+        bubble.className =
+          "bubble";
+
+
+        var title =
+          document.createElement(
+            "div"
+          );
+
+
+        title.className =
+          "suggest-title";
+
+
+        title.textContent =
+          "관련된 질문을 찾았습니다. 아래에서 선택해 주세요.";
+
+
+        var wrap =
+          document.createElement(
+            "div"
+          );
+
+
+        wrap.className =
+          "suggest-wrap";
+
+
+        candidates
+          .slice(
+            0,
+            3
+          )
+          .forEach(
+            function (candidate) {
+
+              if (
+                !candidate ||
+                !candidate.item
+              ) {
+
+                return;
+
+              }
+
+
+              var button =
+                document.createElement(
+                  "button"
+                );
+
+
+              button.type =
+                "button";
+
+
+              button.className =
+                "suggest-btn";
+
+
+              button.textContent =
+                candidate.item.question;
+
+
+              button.addEventListener(
+                "click",
+                async function () {
+
+                  if (
+                    isSending ||
+                    button.disabled
+                  ) {
+
+                    return;
+
+                  }
+
+
+                  var allButtons =
+                    wrap.querySelectorAll(
+                      ".suggest-btn"
+                    );
+
+
+                  Array.prototype.forEach.call(
+                    allButtons,
+                    function (btn) {
+
+                      btn.disabled =
+                        true;
+
+                    }
+                  );
+
+
+                  await sendMessage({
+
+                    text:
+                      candidate.item
+                        .question,
+
+                    isFaqClick:
+                      true,
+
+                    faqCategory:
+                      candidate.item
+                        .category,
+
+                    directAnswer:
+                      candidate.item
+                        .answer,
+
+                    directContactId:
+                      candidate.item
+                        .contactId
+
+                  });
+
+                }
+              );
+
+
+              wrap.appendChild(
+                button
+              );
+
+            }
+          );
+
+
+        bubble.appendChild(
+          title
+        );
+
+
+        bubble.appendChild(
+          wrap
+        );
+
+
+        var time =
+          document.createElement(
+            "div"
+          );
+
+
+        time.className =
+          "time";
+
+
+        time.textContent =
+          getTimeText();
+
+
+        group.appendChild(
+          sender
+        );
+
+
+        group.appendChild(
+          bubble
+        );
+
+
+        group.appendChild(
+          time
+        );
+
+
+        var icon =
+          document.createElement(
+            "div"
+          );
+
+
+        icon.className =
+          "bot-icon";
+
+
+        icon.textContent =
+          "Q";
+
+
+        row.appendChild(
+          icon
+        );
+
+
+        row.appendChild(
+          group
+        );
+
+
+        chatBox.appendChild(
+          row
+        );
+
+
+        scrollToBottom();
+
+      }
+
+
+      /* ===============================================
+         메시지 전송
+         =============================================== */
+
+      async function sendMessage(
+        options
+      ) {
+
+        options =
+          options || {};
+
+
+        var text =
+          String(
+            options.text == null
+              ?
+              ""
+              :
+              options.text
+          ).trim();
+
+
+        if (
+          !text ||
+          isSending
+        ) {
+
+          return;
+
+        }
+
+
+        isSending =
+          true;
+
+
+        sendButton.disabled =
+          true;
+
+
+        userInput.disabled =
+          true;
+
+
+        addMessage(
+          text,
+          "user"
+        );
+
+
+        userInput.value =
+          "";
+
+
+        var typingRow =
+          addMessage(
+            "답변을 찾는 중입니다...",
+            "bot",
+            "SCM봇",
+            "typing"
+          );
+
+
+        try {
+
+          var answer =
+            null;
+
+          var matched =
+            false;
+
+          var category =
+            options.faqCategory ||
+            selectedCategory;
+
+          var contactId =
+            options.directContactId ||
+            "";
+
+          var matchScore =
+            0;
+
+          var matchStatus =
+            "none";
+
+
+          /*
+           * FAQ 버튼 직접 클릭
+           */
+          if (
+            options.isFaqClick &&
+            options.directAnswer
+          ) {
+
+            answer =
+              options.directAnswer;
+
+            matched =
+              true;
+
+            matchScore =
+              100;
+
+            matchStatus =
+              "direct";
+
+          }
+
+
+          /*
+           * 사용자가 직접 질문
+           */
+          else {
+
+            var result =
+              ChatbotStore
+                .findAnswerSmart(
+                  text,
+                  selectedCategory
+                );
+
+
+            matchStatus =
+              result.status;
+
+
+            matchScore =
+              result.score ||
+              0;
+
+
+            if (
+              result.status ===
+              "matched" &&
+              result.item
+            ) {
+
+              answer =
+                result.item.answer;
+
+
+              matched =
+                true;
+
+
+              category =
+                result.item.category;
+
+
+              contactId =
+                result.item.contactId ||
+                "";
+
+            }
+
+
+            await new Promise(
+              function (resolve) {
+
+                setTimeout(
+                  resolve,
+                  200
+                );
+
+              }
+            );
+
+
+            removeRow(
+              typingRow
+            );
+
+
+            typingRow =
+              null;
+
+
+            /*
+             * 애매한 경우 TOP 3
+             */
+            if (
+              result.status ===
+              "suggest"
+            ) {
+
+              addSuggestionCard(
+                text,
+                result.candidates
+              );
+
+            }
+
+
+            /*
+             * 관련 답변 없음
+             */
+            else if (
+              result.status ===
+              "none"
+            ) {
+
+              addMessage(
+                "등록된 답변 중 확실하게 일치하는 내용을 찾지 못했습니다.\n아래 담당자에게 직접 문의해 주세요.",
+                "bot",
+                "SCM봇"
+              );
+
+
+              addContactCardCompact(
+                text,
+                category,
+                null
+              );
+
+            }
+
+          }
+
+
+          /*
+           * FAQ 직접 클릭인 경우에는
+           * typing을 여기서 제거
+           */
+          if (typingRow) {
+
+            await new Promise(
+              function (resolve) {
+
+                setTimeout(
+                  resolve,
+                  200
+                );
+
+              }
+            );
+
+
+            removeRow(
+              typingRow
+            );
+
+
+            typingRow =
+              null;
+
+          }
+
+
+          /*
+           * 확정 답변 출력
+           */
+          if (
+            answer !== null
+          ) {
+
+            addMessage(
+              answer,
+              "bot",
+              "SCM봇"
+            );
+
+
+            var overrideContact =
+              contactId
+                ?
+                findContactById(
+                  contactId
+                )
+                :
+                null;
+
+
+            addContactCardCompact(
+              text,
+              category,
+              overrideContact
+            );
+
+          }
+
+
+          /*
+           * 로그
+           */
+          var payload = {
+
+            question:
+              text,
+
+            answer:
+              answer ||
+              (
+                matchStatus ===
+                "suggest"
+                  ?
+                  "추천질문 표시"
+                  :
+                  "미매칭"
+              ),
+
+            matched:
+              matched,
+
+            category:
+              category,
+
+            matchScore:
+              matchScore,
+
+            matchStatus:
+              matchStatus,
+
+            createdAt:
+              new Date()
+                .toISOString(),
+
+            timestamp:
+              Date.now(),
+
+            page:
+              location.href,
+
+            userAgent:
+              navigator.userAgent,
+
+            source:
+              options.isFaqClick
+                ?
+                "faq-click"
+                :
+                "user"
+
+          };
+
+
+          ChatbotStore.saveHistory(
+            payload
+          );
+
+
+          await sendToServer(
+            payload
+          );
+
+
+        } catch (error) {
+
+          console.error(
+            "메시지 전송 오류:",
+            error
+          );
+
+
+          if (typingRow) {
+
+            removeRow(
+              typingRow
+            );
+
+          }
+
+
+          addMessage(
+            "죄송합니다. 일시적인 오류가 발생했습니다. 다시 시도해 주세요.",
+            "bot",
+            "SCM봇"
+          );
+
+
+        } finally {
+
+          isSending =
+            false;
+
+
+          sendButton.disabled =
+            false;
+
+
+          userInput.disabled =
+            false;
+
+
+          userInput.focus();
+
+        }
+
+      }
+
+
+      /* ===============================================
+         입력 이벤트
+         =============================================== */
+
+      function handleSend() {
+
+        sendMessage({
+          text:
+            userInput.value
+        });
+
+      }
+
+
+      sendButton.addEventListener(
+        "click",
+        handleSend
+      );
+
+
+      userInput.addEventListener(
+        "keydown",
+        function (event) {
+
+          if (
+            event.key ===
+            "Enter" &&
+            !isComposing
+          ) {
+
+            event.preventDefault();
+
+            handleSend();
+
+          }
+
+        }
+      );
+
+
+      /* ===============================================
+         초기화
+         =============================================== */
+
+      addMessage(
+        "안녕하세요.\n문의사항을 입력하거나 아래 FAQ를 선택해주세요.",
+        "bot",
+        "SCM봇"
+      );
+
+
+      async function init() {
+
+        /*
+         * QA
+         */
+        try {
+
+          await ChatbotStore
+            .loadFromServer();
+
+        } catch (error) {
+
+          console.warn(
+            "QA 로드 실패:",
+            error
+          );
+
+        }
+
+
+        /*
+         * 담당자
+         */
+        try {
+
+          await loadContacts();
+
+        } catch (error) {
+
+          console.warn(
+            "담당자 로드 실패:",
+            error
+          );
+
+        }
+
+
+        var categories = (window.CHATBOT_CONFIG.categories || []).slice();
+        if (!categories.length) categories = ChatbotStore.getCategories();
+
+
+        selectedCategory =
+          categories.indexOf("all") >= 0
+            ?
+            "all"
+            :
+            (
+              categories[0] ||
+              "all"
+            );
+
+
+        renderCategoryTabs();
+
+
+        await renderFAQ();
+
+
+        /*
+         * 실패했던 로그 재전송
+         */
+        ChatbotStore.retryPendingLogs(
+          window.CHATBOT_CONFIG
+            .logApiUrl
+        );
+
+      }
+
+
+      init();
+
+
+      /*
+       * Pending Log 주기적 재전송
+       */
+      setInterval(
+        function () {
+
+          ChatbotStore.retryPendingLogs(
+            window.CHATBOT_CONFIG
+              .logApiUrl
+          );
+
+        },
+
+        window.CHATBOT_CONFIG
+          .pendingRetryIntervalMs ||
+          60000
+      );
+
+    })();
+  </script>
+
+</body>
+</html>
