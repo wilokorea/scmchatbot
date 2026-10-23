@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>SCM FAQ</title>
+  <title>SCM FAQ봇</title>
 
   <style>
     :root {
@@ -371,27 +371,6 @@
       color: #fff;
     }
 
-    .faq-toggle {
-      display: none;
-      width: 100%;
-      border: 1px solid var(--line);
-      background: #fff;
-      color: #135f53;
-      padding: 10px 12px;
-      border-radius: 10px;
-      font-weight: 700;
-      cursor: pointer;
-      margin-bottom: 8px;
-    }
-    .compact-contact summary {
-      cursor: pointer;
-      color: #007a66;
-      font-weight: 700;
-      list-style: none;
-    }
-    .compact-contact summary::-webkit-details-marker { display: none; }
-    .compact-contact summary::after { content: " ▾"; }
-    .compact-contact details[open] summary::after { content: " ▴"; }
     @media (max-width: 520px) {
       .wrap {
         margin: 0;
@@ -399,9 +378,6 @@
         border-radius: 0;
         min-height: 100vh;
       }
-      .faq-toggle { display: block; }
-      .faq.collapsed .faq-content { display: none; }
-      .chat { min-height: 42vh; }
     }
   </style>
 </head>
@@ -414,7 +390,7 @@
       <div class="avatar">💬</div>
 
       <div>
-        <h1>SCM FAQ</h1>
+        <h1>SCM봇</h1>
         <p>문의 내용을 입력하시면 등록된 답변을 안내드립니다.</p>
       </div>
     </div>
@@ -428,11 +404,7 @@
       id="chatBox">
     </div>
 
-    <div class="faq" id="faqSection">
-
-      <button type="button" class="faq-toggle" id="faqToggle" aria-expanded="true">자주 묻는 질문 접기</button>
-
-      <div class="faq-content">
+    <div class="faq">
 
       <div class="faq-title">
         카테고리
@@ -452,8 +424,6 @@
       <div
         class="faq-list"
         id="faqList">
-      </div>
-
       </div>
 
     </div>
@@ -505,8 +475,6 @@
 
       faqButtonCount: 4,
 
-      pendingRetryIntervalMs: 60000,
-
       categories: ["all", "product", "logistics", "origin", "production", "cost", "system"],
 
       categoryLabels: {
@@ -517,14 +485,579 @@
         production: "생산/공급계획",
         cost: "비용/결재",
         system: "시스템/조회"
-      }
+      },
+
+      pendingRetryIntervalMs: 60000
 
     }, window.CHATBOT_CONFIG || {});
   </script>
 
 
   <!-- shared.js는 반드시 index.html과 같은 폴더 -->
-  <script src="shared.js"></script>
+  <script>
+
+(function (window) {
+  "use strict";
+
+  var STORAGE_KEYS = {
+    qa: "scmFaqQaCacheV2",
+    history: "scmFaqHistoryV2",
+    pendingLogs: "scmFaqPendingLogsV2"
+  };
+
+  var CATEGORY_ORDER = [
+    "all",
+    "product",
+    "logistics",
+    "origin",
+    "production",
+    "cost",
+    "system"
+  ];
+
+  var CATEGORY_LABELS = {
+    all: "전체",
+    product: "제품 주문/도입",
+    logistics: "배송/통관",
+    origin: "원산지/FTA",
+    production: "생산/공급계획",
+    cost: "비용/결재",
+    system: "시스템/조회"
+  };
+
+  var CATEGORY_ALIASES = {
+    all: "all",
+    전체: "all",
+
+    product: "product",
+    products: "product",
+    order: "product",
+    purchase: "product",
+    purchasing: "product",
+    procurement: "product",
+    "제품 주문/도입": "product",
+    "제품주문/도입": "product",
+    "제품 주문": "product",
+    제품주문: "product",
+    "주문/도입": "product",
+    주문: "product",
+    도입: "product",
+    발주: "product",
+    구매: "product",
+
+    logistics: "logistics",
+    logistic: "logistics",
+    delivery: "logistics",
+    shipping: "logistics",
+    customs: "logistics",
+    "배송/통관": "logistics",
+    배송: "logistics",
+    통관: "logistics",
+    물류: "logistics",
+
+    origin: "origin",
+    fta: "origin",
+    documents: "origin",
+    document: "origin",
+    "원산지/FTA": "origin",
+    "원산지/fta": "origin",
+    원산지: "origin",
+    서류: "origin",
+
+    production: "production",
+    supply: "production",
+    planning: "production",
+    "생산/공급계획": "production",
+    생산: "production",
+    공급계획: "production",
+    "공급 계획": "production",
+
+    cost: "cost",
+    expense: "cost",
+    approval: "cost",
+    "비용/결재": "cost",
+    비용: "cost",
+    결재: "cost",
+    품의: "cost",
+
+    system: "system",
+    lookup: "system",
+    inquiry: "system",
+    "시스템/조회": "system",
+    시스템: "system",
+    조회: "system",
+
+    other: "system",
+    기타: "system",
+    default: "default",
+    기본: "default"
+  };
+
+  var qaCache = [];
+
+  function safeJsonParse(value, fallback) {
+    try {
+      var parsed = JSON.parse(value);
+      return parsed == null ? fallback : parsed;
+    } catch (error) {
+      return fallback;
+    }
+  }
+
+  function storageGet(key, fallback) {
+    try {
+      return safeJsonParse(window.localStorage.getItem(key), fallback);
+    } catch (error) {
+      return fallback;
+    }
+  }
+
+  function storageSet(key, value) {
+    try {
+      window.localStorage.setItem(key, JSON.stringify(value));
+      return true;
+    } catch (error) {
+      console.warn("로컬 저장 실패:", error);
+      return false;
+    }
+  }
+
+  function escapeHtml(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function normalizeCategoryText(value) {
+    return String(value == null ? "" : value).trim();
+  }
+
+  function normalizeCategory(value) {
+    var raw = normalizeCategoryText(value);
+    if (!raw) {
+      return "system";
+    }
+
+    if (CATEGORY_ALIASES[raw] != null) {
+      return CATEGORY_ALIASES[raw];
+    }
+
+    var lower = raw.toLowerCase();
+    if (CATEGORY_ALIASES[lower] != null) {
+      return CATEGORY_ALIASES[lower];
+    }
+
+    if (lower.indexOf("제품") >= 0 || lower.indexOf("주문") >= 0 || lower.indexOf("도입") >= 0 || lower.indexOf("발주") >= 0 || lower.indexOf("구매") >= 0) {
+      return "product";
+    }
+    if (lower.indexOf("배송") >= 0 || lower.indexOf("통관") >= 0 || lower.indexOf("물류") >= 0 || lower.indexOf("운송") >= 0) {
+      return "logistics";
+    }
+    if (lower.indexOf("원산지") >= 0 || lower.indexOf("fta") >= 0 || lower.indexOf("증명서") >= 0) {
+      return "origin";
+    }
+    if (lower.indexOf("생산") >= 0 || lower.indexOf("공급") >= 0 || lower.indexOf("mrp") >= 0) {
+      return "production";
+    }
+    if (lower.indexOf("비용") >= 0 || lower.indexOf("결재") >= 0 || lower.indexOf("품의") >= 0) {
+      return "cost";
+    }
+    if (lower.indexOf("시스템") >= 0 || lower.indexOf("조회") >= 0 || lower.indexOf("sap") >= 0 || lower.indexOf("report") >= 0) {
+      return "system";
+    }
+
+    return lower === "all" ? "all" : "system";
+  }
+
+  function normalizeCategoryDisplay(value) {
+    var category = normalizeCategory(value);
+    return CATEGORY_LABELS[category] || normalizeCategoryText(value) || "미분류";
+  }
+
+  function normalizeKeywords(value) {
+    var values;
+    if (Array.isArray(value)) {
+      values = value;
+    } else {
+      values = String(value == null ? "" : value).split(/[,;|/\n]+/);
+    }
+
+    var seen = {};
+    return values
+      .map(function (item) {
+        return String(item == null ? "" : item).trim();
+      })
+      .filter(function (item) {
+        if (!item) {
+          return false;
+        }
+        var key = item.toLowerCase();
+        if (seen[key]) {
+          return false;
+        }
+        seen[key] = true;
+        return true;
+      });
+  }
+
+  function normalizeBoolean(value) {
+    if (typeof value === "boolean") {
+      return value;
+    }
+    if (typeof value === "number") {
+      return value !== 0;
+    }
+    var normalized = String(value == null ? "" : value).trim().toLowerCase();
+    return ["true", "1", "y", "yes", "o", "on", "예", "사용", "노출"].indexOf(normalized) >= 0;
+  }
+
+  function createQAId() {
+    if (window.crypto && typeof window.crypto.randomUUID === "function") {
+      return window.crypto.randomUUID();
+    }
+    return "qa_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 10);
+  }
+
+  function fetchWithTimeout(url, options, timeoutMs) {
+    var timeout = Number(timeoutMs || 15000);
+    var controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+    var timer = null;
+    var requestOptions = Object.assign({}, options || {});
+
+    if (controller) {
+      requestOptions.signal = controller.signal;
+      timer = window.setTimeout(function () {
+        controller.abort();
+      }, timeout);
+    }
+
+    return window.fetch(url, requestOptions).finally(function () {
+      if (timer) {
+        window.clearTimeout(timer);
+      }
+    });
+  }
+
+  function normalizeSearchText(value) {
+    return String(value == null ? "" : value)
+      .toLowerCase()
+      .replace(/[.,!?()[\]{}'"`~:;|/\\_-]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function compactSearchText(value) {
+    return normalizeSearchText(value).replace(/\s+/g, "");
+  }
+
+  function tokenize(value) {
+    var normalized = normalizeSearchText(value);
+    if (!normalized) {
+      return [];
+    }
+    var seen = {};
+    return normalized.split(" ").filter(function (token) {
+      if (!token || token.length < 2 || seen[token]) {
+        return false;
+      }
+      seen[token] = true;
+      return true;
+    });
+  }
+
+  function scoreItem(question, item) {
+    var input = normalizeSearchText(question);
+    var inputCompact = compactSearchText(question);
+    var itemQuestion = normalizeSearchText(item.question || "");
+    var itemQuestionCompact = compactSearchText(item.question || "");
+    var inputTokens = tokenize(question);
+    var questionTokens = tokenize(item.question || "");
+    var keywords = normalizeKeywords(item.keywords || []);
+    var score = 0;
+    var keywordHits = 0;
+    var tokenHits = 0;
+
+    if (!input) {
+      return 0;
+    }
+
+    if (inputCompact === itemQuestionCompact) {
+      return 100;
+    }
+
+    if (inputCompact.length >= 4 && itemQuestionCompact.indexOf(inputCompact) >= 0) {
+      score += 68;
+    } else if (itemQuestionCompact.length >= 4 && inputCompact.indexOf(itemQuestionCompact) >= 0) {
+      score += 62;
+    }
+
+    keywords.forEach(function (keyword) {
+      var normalizedKeyword = compactSearchText(keyword);
+      if (normalizedKeyword && inputCompact.indexOf(normalizedKeyword) >= 0) {
+        keywordHits += 1;
+        score += normalizedKeyword.length >= 4 ? 18 : 12;
+      }
+    });
+
+    questionTokens.forEach(function (token) {
+      if (inputTokens.indexOf(token) >= 0) {
+        tokenHits += 1;
+      }
+    });
+
+    if (questionTokens.length) {
+      score += Math.round((tokenHits / questionTokens.length) * 30);
+    }
+    if (inputTokens.length) {
+      score += Math.round((tokenHits / inputTokens.length) * 18);
+    }
+
+    if (keywordHits >= 2) {
+      score += 10;
+    }
+
+    return Math.min(100, score);
+  }
+
+  function normalizeQAItem(item) {
+    var normalized = Object.assign({}, item || {});
+    normalized.__id = normalized.__id || normalized.id || createQAId();
+    normalized.category = normalizeCategory(normalized.category);
+    normalized.question = String(normalized.question || "").trim();
+    normalized.answer = String(normalized.answer || "").trim();
+    normalized.keywords = normalizeKeywords(normalized.keywords || []);
+    normalized.top = normalizeBoolean(normalized.top);
+    normalized.contactId = String(normalized.contactId || "");
+    return normalized;
+  }
+
+  function normalizeQAList(items) {
+    if (!Array.isArray(items)) {
+      return [];
+    }
+    return items.map(normalizeQAItem).filter(function (item) {
+      return !!item.question && !!item.answer;
+    });
+  }
+
+  function updateLocalCache(items) {
+    qaCache = normalizeQAList(items);
+    storageSet(STORAGE_KEYS.qa, qaCache);
+    return qaCache.slice();
+  }
+
+  function getQA() {
+    if (!qaCache.length) {
+      qaCache = normalizeQAList(storageGet(STORAGE_KEYS.qa, []));
+    }
+    return qaCache.slice();
+  }
+
+  function getQAByCategory(category) {
+    var normalizedCategory = category === "all" ? "all" : normalizeCategory(category);
+    var items = getQA();
+    if (normalizedCategory === "all") {
+      return items;
+    }
+    return items.filter(function (item) {
+      return normalizeCategory(item.category) === normalizedCategory;
+    });
+  }
+
+  function getCategories() {
+    return CATEGORY_ORDER.slice();
+  }
+
+  function getCategoryLabels() {
+    return Object.assign({}, CATEGORY_LABELS);
+  }
+
+  async function loadFromServer() {
+    var config = window.CHATBOT_CONFIG || {};
+    var base = String(config.qaApiBase || "").replace(/\/$/, "");
+    if (!base) {
+      return getQA();
+    }
+
+    try {
+      var response = await fetchWithTimeout(
+        base + "/getAll",
+        { method: "GET", headers: { Accept: "application/json" } },
+        config.requestTimeoutMs || 15000
+      );
+      if (!response.ok) {
+        throw new Error("QA API " + response.status);
+      }
+      var data = await response.json();
+      var items = Array.isArray(data) ? data : data && Array.isArray(data.items) ? data.items : [];
+      if (!Array.isArray(items)) {
+        throw new Error("FAQ 데이터 형식 오류");
+      }
+      return updateLocalCache(items);
+    } catch (error) {
+      console.warn("서버 FAQ 로드 실패, 로컬 캐시 사용:", error);
+      return getQA();
+    }
+  }
+
+  function findAnswerSmart(question, category) {
+    var text = String(question == null ? "" : question).trim();
+    if (!text) {
+      return { status: "none", score: 0, item: null, candidates: [] };
+    }
+
+    var items = getQAByCategory(category || "all");
+    var ranked = items
+      .map(function (item) {
+        return { item: item, score: scoreItem(text, item) };
+      })
+      .filter(function (entry) {
+        return entry.score > 0;
+      })
+      .sort(function (a, b) {
+        if (b.score !== a.score) {
+          return b.score - a.score;
+        }
+        if (!!b.item.top !== !!a.item.top) {
+          return b.item.top ? 1 : -1;
+        }
+        return String(a.item.question).localeCompare(String(b.item.question), "ko");
+      });
+
+    if (!ranked.length) {
+      return { status: "none", score: 0, item: null, candidates: [] };
+    }
+
+    var best = ranked[0];
+    var secondScore = ranked[1] ? ranked[1].score : 0;
+
+    if (best.score >= 72 || (best.score >= 60 && best.score - secondScore >= 15)) {
+      return {
+        status: "matched",
+        score: best.score,
+        item: best.item,
+        candidates: ranked.slice(0, 3)
+      };
+    }
+
+    if (best.score >= 28) {
+      return {
+        status: "suggest",
+        score: best.score,
+        item: null,
+        candidates: ranked.slice(0, 3)
+      };
+    }
+
+    return { status: "none", score: best.score, item: null, candidates: [] };
+  }
+
+  function saveHistory(payload) {
+    var history = storageGet(STORAGE_KEYS.history, []);
+    if (!Array.isArray(history)) {
+      history = [];
+    }
+    history.unshift(Object.assign({}, payload || {}));
+    if (history.length > 500) {
+      history = history.slice(0, 500);
+    }
+    storageSet(STORAGE_KEYS.history, history);
+  }
+
+  function getHistory() {
+    var history = storageGet(STORAGE_KEYS.history, []);
+    return Array.isArray(history) ? history : [];
+  }
+
+  function clearHistory() {
+    storageSet(STORAGE_KEYS.history, []);
+  }
+
+  function savePendingLog(payload) {
+    var pending = storageGet(STORAGE_KEYS.pendingLogs, []);
+    if (!Array.isArray(pending)) {
+      pending = [];
+    }
+    pending.push(Object.assign({}, payload || {}, {
+      pendingSavedAt: new Date().toISOString()
+    }));
+    if (pending.length > 200) {
+      pending = pending.slice(-200);
+    }
+    storageSet(STORAGE_KEYS.pendingLogs, pending);
+  }
+
+  async function retryPendingLogs(logApiUrl) {
+    var url = String(logApiUrl || "").trim();
+    if (!url) {
+      return { sent: 0, remaining: 0 };
+    }
+
+    var pending = storageGet(STORAGE_KEYS.pendingLogs, []);
+    if (!Array.isArray(pending) || !pending.length) {
+      return { sent: 0, remaining: 0 };
+    }
+
+    var remaining = [];
+    var sent = 0;
+
+    for (var i = 0; i < pending.length; i += 1) {
+      try {
+        var response = await fetchWithTimeout(
+          url,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(pending[i])
+          },
+          10000
+        );
+        if (!response.ok) {
+          throw new Error("log API " + response.status);
+        }
+        sent += 1;
+      } catch (error) {
+        remaining.push(pending[i]);
+      }
+    }
+
+    storageSet(STORAGE_KEYS.pendingLogs, remaining);
+    return { sent: sent, remaining: remaining.length };
+  }
+
+  qaCache = normalizeQAList(storageGet(STORAGE_KEYS.qa, []));
+
+  window.ChatbotUtils = {
+    escapeHtml: escapeHtml,
+    normalizeCategory: normalizeCategory,
+    normalizeCategoryDisplay: normalizeCategoryDisplay,
+    normalizeKeywords: normalizeKeywords,
+    normalizeBoolean: normalizeBoolean,
+    createQAId: createQAId,
+    fetchWithTimeout: fetchWithTimeout
+  };
+
+  window.ChatbotStore = {
+    loadFromServer: loadFromServer,
+    updateLocalCache: updateLocalCache,
+    getQA: getQA,
+    getQAByCategory: getQAByCategory,
+    getCategories: getCategories,
+    getCategoryLabels: getCategoryLabels,
+    findAnswerSmart: findAnswerSmart,
+    saveHistory: saveHistory,
+    getHistory: getHistory,
+    clearHistory: clearHistory,
+    savePendingLog: savePendingLog,
+    retryPendingLogs: retryPendingLogs
+  };
+})(window);
+
+  
+  </script>
 
 
   <script>
@@ -549,15 +1082,6 @@
 
       var sendButton =
         document.getElementById("sendButton");
-      var faqSection = document.getElementById("faqSection");
-      var faqToggle = document.getElementById("faqToggle");
-      if (faqToggle && faqSection) {
-        faqToggle.addEventListener("click", function () {
-          var collapsed = faqSection.classList.toggle("collapsed");
-          faqToggle.setAttribute("aria-expanded", String(!collapsed));
-          faqToggle.textContent = collapsed ? "자주 묻는 질문 펼치기" : "자주 묻는 질문 접기";
-        });
-      }
 
 
       /* ===============================================
@@ -747,24 +1271,52 @@
         var contact;
 
 
-        /* 키워드 담당자: 단순 선착순이 아니라 일치 개수와 표시 순서로 결정 */
-        var bestContact = null;
-        var bestScore = 0;
-        for (i = 0; i < CONTACT_MAP.length; i++) {
-          contact = CONTACT_MAP[i];
-          if (!contact.isDefault && Array.isArray(contact.keywords)) {
-            var score = contact.keywords.reduce(function (sum, keyword) {
-              return sum + (keyword && text.indexOf(String(keyword).toLowerCase()) >= 0 ? 1 : 0);
-            }, 0);
-            if (score > bestScore || (score === bestScore && score > 0 && Number(contact.order || 99) < Number((bestContact || {}).order || 99))) {
-              bestContact = contact;
-              bestScore = score;
+        /* 키워드 담당자 */
+
+        for (
+          i = 0;
+          i < CONTACT_MAP.length;
+          i++
+        ) {
+
+          contact =
+            CONTACT_MAP[i];
+
+
+          if (
+            !contact.isDefault &&
+            Array.isArray(
+              contact.keywords
+            )
+          ) {
+
+            var matched =
+              contact.keywords.some(
+                function (keyword) {
+
+                  return (
+                    keyword &&
+                    text.indexOf(
+                      String(keyword)
+                        .toLowerCase()
+                    ) >= 0
+                  );
+
+                }
+              );
+
+
+            if (matched) {
+
+              return contact;
+
             }
+
           }
+
         }
-        if (bestContact) {
-          return bestContact;
-        }
+
+
         /* 카테고리 담당자 */
 
         for (
@@ -949,7 +1501,7 @@
 
               '<div class="sender">' +
                 escapeHtml(
-                  name || "SCM FAQ"
+                  name || "SCM봇"
                 ) +
               '</div>' +
 
@@ -1023,8 +1575,7 @@
       function addContactCardCompact(
         questionText,
         category,
-        overrideContact,
-        collapsed
+        overrideContact
       ) {
 
         var contact =
@@ -1050,7 +1601,7 @@
 
         var subject =
           encodeURIComponent(
-            "[SCM FAQ 문의] " +
+            "[FAQ봇 문의] " +
             String(
               questionText
             ).slice(
@@ -1073,7 +1624,7 @@
 
             "\n\n───────────────\n" +
 
-            "* 본 메일은 SCM FAQ에서 자동 생성되었습니다."
+            "* 본 메일은 SCM FAQ봇에서 자동 생성되었습니다."
 
           );
 
@@ -1160,9 +1711,12 @@
                 emailHtml +
 
               '</div>' +
-              (collapsed
-                ? '<details><summary>추가 문의가 필요한가요?</summary><div class="cc-compact-desc">담당자에게 직접 문의할 수 있습니다.</div>' + buttonHtml + '</details>'
-                : '<div class="cc-compact-desc">원하는 답변을 찾지 못하셨다면 아래 버튼으로 문의해 주세요.</div>' + buttonHtml) +
+
+              '<div class="cc-compact-desc">' +
+                '원하는 답변을 찾지 못하셨다면 아래 버튼으로 문의해 주세요.' +
+              '</div>' +
+
+              buttonHtml +
 
             '</div>' +
 
@@ -1261,7 +1815,6 @@
         if (!categories.length) {
           categories = ChatbotStore.getCategories();
         }
-
 
         var labels = Object.assign(
           {},
@@ -1469,7 +2022,7 @@
                       selectedCategory !==
                       "all" &&
 
-                      matched.category !==
+                      ChatbotUtils.normalizeCategory(matched.category) !==
                       selectedCategory
                     ) {
 
@@ -1526,11 +2079,12 @@
           maxCount
         ) {
 
-          var localQA =
-            ChatbotStore
-              .getQAByCategory(
-                selectedCategory
-              );
+          var allLocalQA = ChatbotStore.getQA();
+          var localQA = selectedCategory === "all"
+            ? allLocalQA
+            : allLocalQA.filter(function (item) {
+                return ChatbotUtils.normalizeCategory(item.category) === selectedCategory;
+              });
 
 
           var extras =
@@ -1756,7 +2310,7 @@
 
 
         sender.textContent =
-          "SCM FAQ";
+          "SCM봇";
 
 
         var bubble =
@@ -2026,7 +2580,7 @@
           addMessage(
             "답변을 찾는 중입니다...",
             "bot",
-            "SCM FAQ",
+            "SCM봇",
             "typing"
           );
 
@@ -2082,16 +2636,12 @@
            */
           else {
 
-            var result = ChatbotStore.findAnswerSmart(text, selectedCategory);
-            /* 선택 카테고리에서 확실한 결과가 없으면 전체 FAQ를 다시 검색 */
-            if (selectedCategory !== "all" && (!result || result.status !== "matched")) {
-              var globalResult = ChatbotStore.findAnswerSmart(text, "all");
-              if (globalResult && (globalResult.status === "matched" ||
-                  (globalResult.status === "suggest" && result.status === "none") ||
-                  Number(globalResult.score || 0) > Number(result.score || 0))) {
-                result = globalResult;
-              }
-            }
+            var result =
+              ChatbotStore
+                .findAnswerSmart(
+                  text,
+                  selectedCategory
+                );
 
 
             matchStatus =
@@ -2176,15 +2726,14 @@
               addMessage(
                 "등록된 답변 중 확실하게 일치하는 내용을 찾지 못했습니다.\n아래 담당자에게 직접 문의해 주세요.",
                 "bot",
-                "SCM FAQ"
+                "SCM봇"
               );
 
 
               addContactCardCompact(
                 text,
                 category,
-                null,
-                false
+                null
               );
 
             }
@@ -2231,7 +2780,7 @@
             addMessage(
               answer,
               "bot",
-              "SCM FAQ"
+              "SCM봇"
             );
 
 
@@ -2248,8 +2797,7 @@
             addContactCardCompact(
               text,
               category,
-              overrideContact,
-              true
+              overrideContact
             );
 
           }
@@ -2339,7 +2887,7 @@
           addMessage(
             "죄송합니다. 일시적인 오류가 발생했습니다. 다시 시도해 주세요.",
             "bot",
-            "SCM FAQ"
+            "SCM봇"
           );
 
 
@@ -2411,7 +2959,7 @@
       addMessage(
         "안녕하세요.\n문의사항을 입력하거나 아래 FAQ를 선택해주세요.",
         "bot",
-        "SCM FAQ"
+        "SCM봇"
       );
 
 
@@ -2452,9 +3000,8 @@
         }
 
 
-        var categories =
-          ChatbotStore
-            .getCategories();
+        var categories = (window.CHATBOT_CONFIG.categories || []).slice();
+        if (!categories.length) categories = ChatbotStore.getCategories();
 
 
         selectedCategory =
