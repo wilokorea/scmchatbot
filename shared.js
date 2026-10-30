@@ -256,13 +256,11 @@
     });
   }
 
-function getQAApiBase() {
-  var config = window.CHATBOT_CONFIG || window.ADMIN_CONFIG || {};
-  return String(
-    config.qaApiBase ||
-    "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/qa"
-  ).replace(/\/$/, "");
-}
+  function getQAApiBase() {
+    var config = window.CHATBOT_CONFIG || window.ADMIN_CONFIG || {};
+    return String(config.qaApiBase || "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/qa")
+      .replace(/\/$/, "");
+  }
 
   function detectIntents(text) {
     var value = normalizeText(text);
