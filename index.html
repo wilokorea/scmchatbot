@@ -318,9 +318,6 @@
       background: #d0f0e8;
     }
 
-
-    /* Phase 1 */
-    .feedback-wrap{margin:8px 0 4px 42px;max-width:82%;font-size:12px}.feedback-actions,.feedback-reasons{display:flex;gap:6px;flex-wrap:wrap}.feedback-btn,.feedback-reason,.feedback-submit{border:1px solid var(--line);background:#fff;color:#135f53;border-radius:999px;padding:7px 10px;cursor:pointer}.feedback-reason.selected,.feedback-submit{background:var(--main);color:#fff;border-color:var(--main)}.feedback-detail{margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:12px;background:#fff}.feedback-detail textarea{width:100%;min-height:58px;margin-top:8px;border:1px solid var(--line);border-radius:8px;padding:8px}.feedback-msg{color:#64748b;margin-top:6px}.answer-attachments{display:flex;flex-direction:column;gap:6px;margin-top:10px}.answer-attachment{display:block;background:#f0faf7;border:1px solid #b2ddd5!important;color:#007a66!important;border-radius:8px;padding:9px 10px;text-decoration:none!important;font-size:12.5px;font-weight:700}
     /* 입력 영역 */
 
     .input-area {
@@ -473,26 +470,10 @@
 
       qaApiBase:
         "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/qa",
-      feedbackApiUrl:
-        "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/feedback/save",
-      unresolvedApiUrl:
-        "https://scmchatbot-api-e9bdbzbgeae3ecgj.koreasouth-01.azurewebsites.net/api/unresolved/save",
 
       requestTimeoutMs: 30000,
 
       faqButtonCount: 4,
-
-      categories: ["all", "product", "logistics", "origin", "production", "cost", "system"],
-
-      categoryLabels: {
-        all: "전체",
-        product: "제품 주문/도입",
-        logistics: "배송/통관",
-        origin: "원산지/FTA",
-        production: "생산/공급계획",
-        cost: "비용/결재",
-        system: "시스템/조회"
-      },
 
       pendingRetryIntervalMs: 60000
 
@@ -502,6 +483,8 @@
 
   <!-- shared.js는 반드시 index.html과 같은 폴더 -->
   <script src="shared.js"></script>
+
+
   <script>
     (function () {
       "use strict";
@@ -1175,23 +1158,6 @@
       }
 
 
-      function appendAttachments(row, item) {
-        if (!row || !item) return;
-        var raw = item.attachments || item.files || item.downloads || [];
-        if (!Array.isArray(raw)) raw = raw ? [raw] : [];
-        var files = raw.map(function(f){ return typeof f === "string" ? {name:"첨부파일 다운로드",url:f} : {name:String((f&&(f.name||f.title))||"첨부파일 다운로드"),url:String((f&&(f.url||f.href||f.link))||"")}; }).filter(function(f){return /^https?:\/\//i.test(f.url);});
-        if (!files.length) return;
-        var bubble=row.querySelector(".bubble"), wrap=document.createElement("div"); wrap.className="answer-attachments";
-        files.forEach(function(f){var a=document.createElement("a");a.className="answer-attachment";a.href=f.url;a.target="_blank";a.rel="noopener noreferrer";a.textContent="📎 "+f.name;wrap.appendChild(a);}); bubble.appendChild(wrap);
-      }
-      function appendFeedback(row, ctx) {
-        if(!row||!ctx.logId||!ctx.faqId||!ChatbotStore.saveFeedback)return;
-        var w=document.createElement("div");w.className="feedback-wrap";w.innerHTML='<div style="margin-bottom:6px;color:#6b7280">이 답변이 도움이 되었나요?</div><div class="feedback-actions"><button type="button" class="feedback-btn up">👍 도움됐어요</button><button type="button" class="feedback-btn down">👎 도움 안 됐어요</button></div>';
-        function done(t){w.innerHTML='<div class="feedback-msg">'+escapeHtml(t)+'</div>';}
-        w.querySelector(".up").onclick=async function(){try{await ChatbotStore.saveFeedback({logId:ctx.logId,faqId:ctx.faqId,category:ctx.category,question:ctx.question,rating:"up"});done("의견 감사합니다.");}catch(e){done(e.status===409?"이미 평가한 답변입니다.":"전송 실패로 자동 재시도됩니다.");}};
-        w.querySelector(".down").onclick=function(){w.querySelector(".feedback-actions").remove();var d=document.createElement("div");d.className="feedback-detail";d.innerHTML='<div class="feedback-reasons"></div><textarea maxlength="300" placeholder="추가 의견 (선택)"></textarea><br><button type="button" class="feedback-submit">의견 보내기</button><div class="feedback-msg"></div>';var selected="",rs=[["not_relevant","원하는 답변이 아니에요"],["outdated","정보가 오래됐어요"],["insufficient","설명이 부족해요"],["incorrect","내용이 틀린 것 같아요"],["link_problem","링크/파일 문제"],["other","기타"]],list=d.querySelector(".feedback-reasons");rs.forEach(function(r){var b=document.createElement("button");b.type="button";b.className="feedback-reason";b.textContent=r[1];b.onclick=function(){selected=r[0];list.querySelectorAll("button").forEach(function(x){x.classList.remove("selected")});b.classList.add("selected")};list.appendChild(b)});d.querySelector(".feedback-submit").onclick=async function(){var msg=d.querySelector(".feedback-msg");if(!selected){msg.textContent="사유를 선택해 주세요.";return;}try{await ChatbotStore.saveFeedback({logId:ctx.logId,faqId:ctx.faqId,category:ctx.category,question:ctx.question,rating:"down",reasonCode:selected,reasonText:d.querySelector("textarea").value});done("의견 감사합니다.");}catch(e){done(e.status===409?"이미 평가한 답변입니다.":"전송 실패로 자동 재시도됩니다.");}};w.appendChild(d)};
-        row.insertAdjacentElement("afterend",w);scrollToBottom();
-      }
       /* ===============================================
          서버 로그
          =============================================== */
@@ -1270,16 +1236,14 @@
 
       function renderCategoryTabs() {
 
-        var categories = (window.CHATBOT_CONFIG.categories || []).slice();
-        if (!categories.length) {
-          categories = ChatbotStore.getCategories();
-        }
+        var categories =
+          ChatbotStore
+            .getCategories();
 
-        var labels = Object.assign(
-          {},
-          ChatbotStore.getCategoryLabels ? ChatbotStore.getCategoryLabels() : {},
-          window.CHATBOT_CONFIG.categoryLabels || {}
-        );
+
+        var labels =
+          ChatbotStore
+            .getCategoryLabels();
 
 
         if (
@@ -1481,7 +1445,7 @@
                       selectedCategory !==
                       "all" &&
 
-                      ChatbotUtils.normalizeCategory(matched.category) !==
+                      matched.category !==
                       selectedCategory
                     ) {
 
@@ -1538,12 +1502,11 @@
           maxCount
         ) {
 
-          var allLocalQA = ChatbotStore.getQA();
-          var localQA = selectedCategory === "all"
-            ? allLocalQA
-            : allLocalQA.filter(function (item) {
-                return ChatbotUtils.normalizeCategory(item.category) === selectedCategory;
-              });
+          var localQA =
+            ChatbotStore
+              .getQAByCategory(
+                selectedCategory
+              );
 
 
           var extras =
@@ -1892,7 +1855,11 @@
 
                     directContactId:
                       candidate.item
-                        .contactId
+                        .contactId,
+                    directFaqId:
+                      candidate.item.__id,
+                    directItem:
+                      candidate.item
 
                   });
 
@@ -2171,6 +2138,13 @@
                 result.candidates
               );
 
+              /* 관련 FAQ에 원하는 내용이 없을 때 바로 담당자 문의 */
+              addContactCardCompact(
+                text,
+                category,
+                null
+              );
+
             }
 
 
@@ -2236,8 +2210,11 @@
             answer !== null
           ) {
 
-            var answerRow = addMessage(answer, "bot", "SCM봇");
-            appendAttachments(answerRow, matchedItem);
+            addMessage(
+              answer,
+              "bot",
+              "SCM봇"
+            );
 
 
             var overrideContact =
@@ -2311,12 +2288,16 @@
                 "user"
 
           };
-          ChatbotStore.saveHistory(payload);
-          var logResponse = null;
-          try { logResponse = await ChatbotStore.logQuestion({question:text,answer:answer||"",matched:matched,category:category,matchStatus:matchStatus,matchedFaqId:matchedFaqId,matchScore:matchScore,answerSource:options.isFaqClick?"faq_button":"direct_match",candidates:matchCandidates}); } catch(logError){ console.warn("질문 로그 실패:",logError); }
-          var logId=logResponse&&(logResponse.logId||logResponse.id||(logResponse.item&&logResponse.item.id))||"";
-          if(matchStatus==="none"){try{await ChatbotStore.saveUnresolved({logId:logId,question:text,category:category,score:matchScore,candidates:matchCandidates});}catch(uerr){console.warn("미해결 저장 실패:",uerr);}}
-          if(typeof answerRow!=="undefined"&&answerRow&&matchedFaqId)appendFeedback(answerRow,{logId:logId,faqId:matchedFaqId,category:category,question:text});
+
+
+          ChatbotStore.saveHistory(
+            payload
+          );
+
+
+          await sendToServer(
+            payload
+          );
 
 
         } catch (error) {
@@ -2452,8 +2433,9 @@
         }
 
 
-        var categories = (window.CHATBOT_CONFIG.categories || []).slice();
-        if (!categories.length) categories = ChatbotStore.getCategories();
+        var categories =
+          ChatbotStore
+            .getCategories();
 
 
         selectedCategory =
@@ -2476,7 +2458,10 @@
         /*
          * 실패했던 로그 재전송
          */
-        ChatbotStore.retryPendingLogs();
+        ChatbotStore.retryPendingLogs(
+          window.CHATBOT_CONFIG
+            .logApiUrl
+        );
 
       }
 
@@ -2490,7 +2475,10 @@
       setInterval(
         function () {
 
-          ChatbotStore.retryPendingLogs();
+          ChatbotStore.retryPendingLogs(
+            window.CHATBOT_CONFIG
+              .logApiUrl
+          );
 
         },
 
