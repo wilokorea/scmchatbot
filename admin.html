@@ -323,6 +323,8 @@
           <label for="qaAnswerInput">답변 *</label>
           <textarea id="qaAnswerInput" required placeholder="질문에 대한 답변을 입력하세요"></textarea>
         </div>
+        <div class="form-group"><label for="qaAttachmentNameInput">첨부파일 표시명 (선택사항)</label><input type="text" id="qaAttachmentNameInput" placeholder="예: PO 변경 요청서.xlsx" /></div>
+        <div class="form-group"><label for="qaAttachmentUrlInput">SharePoint 파일 URL (선택사항)</label><input type="url" id="qaAttachmentUrlInput" placeholder="https://...sharepoint.com/..." /><small style="color:#888;font-size:0.85em;margin-top:4px;display:block;">회사 내부 사용자가 접근 가능한 SharePoint 공유 링크를 입력하세요. 파일명과 URL은 함께 입력해야 합니다.</small></div>
         <div class="form-group">
           <label for="qaCategoryInput">카테고리 *</label>
           <select id="qaCategoryInput" required>
@@ -744,6 +746,7 @@
     normalized.keywords = normalizeKeywords(normalized.keywords || []);
     normalized.top = normalizeBoolean(normalized.top);
     normalized.contactId = String(normalized.contactId || "");
+    normalized.attachments=(Array.isArray(normalized.attachments)?normalized.attachments:[]).map(function(file){file=file||{};return{name:String(file.name||"").trim(),url:String(file.url||"").trim()};}).filter(function(file){return file.name&&/^https:\/\//i.test(file.url);});
     return normalized;
   }
 
@@ -1194,6 +1197,9 @@
       document.getElementById('qaAnswerInput').value = item.answer || '';
       document.getElementById('qaCategoryInput').value = normalizeCategory(item.category);
       document.getElementById('qaTopInput').checked = !!item.top;
+      var attachments=Array.isArray(item.attachments)?item.attachments:[];
+      document.getElementById('qaAttachmentNameInput').value=attachments[0]?(attachments[0].name||''):'';
+      document.getElementById('qaAttachmentUrlInput').value=attachments[0]?(attachments[0].url||''):'';
 
       refreshContactSelectOptions();
       document.getElementById('qaContactSelect').value = item.contactId || '';
@@ -1218,8 +1224,13 @@
       var category = document.getElementById('qaCategoryInput').value;
       var top = document.getElementById('qaTopInput').checked;
       var contactId = document.getElementById('qaContactSelect').value || '';
+      var attachmentName=document.getElementById('qaAttachmentNameInput').value.trim();
+      var attachmentUrl=document.getElementById('qaAttachmentUrlInput').value.trim();
 
       if (!question || !answer || !category) { alert('필수 항목을 모두 입력해주세요.'); return; }
+      if((attachmentName&&!attachmentUrl)||(!attachmentName&&attachmentUrl)){alert('첨부파일 표시명과 SharePoint URL을 함께 입력해주세요.');return;}
+      if(attachmentUrl&&!/^https:\/\//i.test(attachmentUrl)){alert('SharePoint URL은 https:// 로 시작해야 합니다.');return;}
+      var attachments=attachmentName&&attachmentUrl?[{name:attachmentName,url:attachmentUrl}]:[];
 
       var payload = {
         __id: id,
@@ -1228,7 +1239,8 @@
         keywords: normalizeKeywords(keywords),
         answer: answer,
         top: top,
-        contactId: contactId
+        contactId: contactId,
+        attachments: attachments
       };
 
       try {
@@ -1324,7 +1336,8 @@
               keywords: normalizeKeywords(row.keywords || row['키워드'] || ''),
               answer: row.answer || row['답변'] || '',
               top: normalizeBoolean(row.top || row['중요'] || false),
-              contactId: row.contactId || row['담당자ID'] || ''
+              contactId: row.contactId || row['담당자ID'] || '',
+            attachments:(row.attachmentName||row['첨부파일명'])&&(row.attachmentUrl||row['첨부파일URL'])?[{name:row.attachmentName||row['첨부파일명'],url:row.attachmentUrl||row['첨부파일URL']}]:[]
             };
           }).filter(function(item) { return item.question && item.answer; });
 
@@ -1371,7 +1384,9 @@
           answer: item.answer,
           top: item.top ? 'O' : 'X',
           contactId: item.contactId || '',
-          '담당자명': getContactNameById(item.contactId) || '자동 매칭'
+          '담당자명': getContactNameById(item.contactId) || '자동 매칭',
+          attachmentName:Array.isArray(item.attachments)&&item.attachments[0]?item.attachments[0].name:'',
+          attachmentUrl:Array.isArray(item.attachments)&&item.attachments[0]?item.attachments[0].url:'' 
         };
       }));
 

@@ -107,9 +107,16 @@
   function createId(prefix) { return (prefix || "id") + "_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 10); }
   function escapeHtml(v) { return String(v == null ? "" : v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;"); }
 
+  function normalizeAttachments(value) {
+    var items = Array.isArray(value) ? value : [];
+    return items.map(function (file) {
+      file = file || {};
+      return { name: String(file.name || "").trim(), url: String(file.url || "").trim() };
+    }).filter(function (file) { return file.name && /^https:\/\//i.test(file.url); });
+  }
   function normalizeItem(item) {
     item = item || {};
-    return { __id: item.__id || item.id || createId("qa"), category: normalizeCategory(item.category), question: String(item.question || "").trim(), keywords: normalizeKeywords(item.keywords), aliases: normalizeKeywords(item.aliases), answer: String(item.answer || "").trim(), top: normalizeBoolean(item.top), contactId: String(item.contactId || "") };
+    return { __id:item.__id||item.id||createId("qa"), category:normalizeCategory(item.category), question:String(item.question||"").trim(), keywords:normalizeKeywords(item.keywords), aliases:normalizeKeywords(item.aliases), answer:String(item.answer||"").trim(), top:normalizeBoolean(item.top), contactId:String(item.contactId||""), attachments:normalizeAttachments(item.attachments) };
   }
   function normalizeList(items) { return Array.isArray(items) ? items.map(normalizeItem).filter(function (x) { return x.question && x.answer; }) : []; }
 

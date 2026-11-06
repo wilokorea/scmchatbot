@@ -317,6 +317,12 @@
     .cc-compact-mail-btn:hover {
       background: #d0f0e8;
     }
+      /* SharePoint 첨부파일 카드 */
+      .attachment-card { background:#f6fbfa !important; border:1px solid #b2ddd5 !important; padding:12px !important; }
+      .attachment-title { font-weight:700; color:#334155; margin-bottom:8px; }
+      .attachment-download { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:11px 12px; margin-top:7px; background:#fff; border:1px solid #d4e8e3; border-radius:10px; color:#334155 !important; text-decoration:none !important; font-size:13px; }
+      .attachment-download:hover { background:#e7f7f3; border-color:var(--main); }
+      .attachment-download span:last-child { color:var(--main-dark); font-weight:700; flex-shrink:0; }
 
     /* 입력 영역 */
 
@@ -991,6 +997,22 @@
         }
 
       }
+      function isAllowedSharePointUrl(url) {
+        try { var parsed=new URL(String(url||""),location.href); return parsed.protocol==="https:" && (parsed.hostname.endsWith(".sharepoint.com")||parsed.hostname.endsWith(".sharepoint-df.com")||parsed.hostname.endsWith("1drv.ms")); }
+        catch(error){ return false; }
+      }
+      function addAttachments(attachments) {
+        if(!Array.isArray(attachments)||!attachments.length)return;
+        var files=attachments.filter(function(file){return file&&file.name&&isAllowedSharePointUrl(file.url);}); if(!files.length)return;
+        var row=document.createElement("div"); row.className="row bot";
+        var icon=document.createElement("div"); icon.className="bot-icon"; icon.textContent="Q";
+        var group=document.createElement("div"); group.className="bubble-group bot";
+        var bubble=document.createElement("div"); bubble.className="bubble attachment-card";
+        var title=document.createElement("div"); title.className="attachment-title"; title.textContent="📎 첨부파일"; bubble.appendChild(title);
+        files.forEach(function(file){ var link=document.createElement("a"); link.className="attachment-download"; link.href=file.url; link.target="_blank"; link.rel="noopener noreferrer"; var name=document.createElement("span"); name.textContent="📄 "+file.name; var action=document.createElement("span"); action.textContent="열기 / 다운로드"; link.appendChild(name); link.appendChild(action); bubble.appendChild(link); });
+        group.appendChild(bubble); row.appendChild(icon); row.appendChild(group); chatBox.appendChild(row); scrollToBottom();
+      }
+
 
 
       /* ===============================================
@@ -1648,7 +1670,9 @@
                         item.answer,
 
                       directContactId:
-                        item.contactId
+                        item.contactId,
+                  directAttachments:
+                    item.attachments || []
                     });
 
 
@@ -2026,6 +2050,7 @@
           var contactId =
             options.directContactId ||
             "";
+          var attachments = Array.isArray(options.directAttachments) ? options.directAttachments : [];
 
           var matchScore =
             0;
@@ -2100,6 +2125,7 @@
               contactId =
                 result.item.contactId ||
                 "";
+              attachments = Array.isArray(result.item.attachments) ? result.item.attachments : [];
 
             }
 
@@ -2215,6 +2241,7 @@
               "bot",
               "SCM봇"
             );
+          addAttachments(attachments);
 
 
             var overrideContact =
