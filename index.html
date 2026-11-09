@@ -687,121 +687,256 @@
       }
 
 
-      function findContact(
-        questionText,
-        category
-      ) {
+      var GENERIC_CONTACT_KEYWORDS = [
+        "담당자", "담당", "문의", "구매", "생산", "제품", "부품",
+        "업체", "공급업체", "모터", "펌프", "일정", "납기", "서류",
+        "발급", "확인", "재고", "개발"
+      ];
 
-        var text =
-          String(
-            questionText || ""
-          ).toLowerCase();
+      var CONTACT_INTENTS = [
+        {
+          id: "origin",
+          patterns: [/원산지/, /fta/i, /c\/?o/i, /포괄확인서/, /원산지확인서/, /원산지소명서/, /소급발급/, /대한상공회의소/]
+        },
+        {
+          id: "production_planning",
+          patterns: [/생산계획/, /생산일정/, /생산물량/, /생산납기/, /언제\s*생산/, /생산\s*가능/]
+        },
+        {
+          id: "purchasing",
+          patterns: [/구매/, /발주/, /\bpo\b/i, /단가/, /공급업체/, /vendor/i, /supplier/i, /moq/i]
+        },
+        {
+          id: "logistics",
+          patterns: [/물류/, /출하/, /출고/, /운송/, /배송/, /선적/, /패킹리스트/, /packing\s*list/i, /\bb\/?l\b/i, /\bawb\b/i, /포워더/]
+        },
+        {
+          id: "process_engineering",
+          patterns: [/제조공정도/, /제조공법/, /공정기술/, /작업표준/, /\b4m\b/i, /치공구/, /\bjig\b/i]
+        },
+        {
+          id: "product_development",
+          patterns: [/제품개발/, /신제품/, /제품설계/, /개발담당/, /도면/, /사양검토/, /기술검토/]
+        }
+      ];
 
+      function normalizeContactText(value) {
+        return String(value || "")
+          .toLowerCase()
+          .replace(/[.,!?()[\]{}'"`~:;|/_-]+/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+      }
 
-        var i;
-        var contact;
+      function compactContactText(value) {
+        return normalizeContactText(value).replace(/\s+/g, "");
+      }
 
+      function contactTokens(value) {
+        var seen = {};
+        return normalizeContactText(value)
+          .split(" ")
+          .filter(function (token) {
+            if (!token || token.length < 2 || seen[token]) return false;
+            seen[token] = true;
+            return true;
+          });
+      }
 
-        /* 키워드 담당자 */
+      function normalizeContactKeywords(value) {
+        if (Array.isArray(value)) {
+          return value.map(function (item) { return String(item || "").trim(); }).filter(Boolean);
+        }
+        return String(value || "")
+          .split(/[,;\n]+/)
+          .map(function (item) { return item.trim(); })
+          .filter(Boolean);
+      }
 
-        for (
-          i = 0;
-          i < CONTACT_MAP.length;
-          i++
-        ) {
+      function isDefaultContact(contact) {
+        var value = contact && contact.isDefault;
+        return value === true || value === 1 || String(value || "").toLowerCase() === "true" || String(value || "").toUpperCase() === "O";
+      }
 
-          contact =
-            CONTACT_MAP[i];
+      function isGenericContactKeyword(keyword) {
+        var normalized = compactContactText(keyword);
+        return GENERIC_CONTACT_KEYWORDS.some(function (generic) {
+          return normalized === compactContactText(generic);
+        });
+      }
 
+      function keywordBaseScore(keyword) {
+        var length = compactContactText(keyword).length;
+        if (length >= 8) return 80;
+        if (length >= 5) return 70;
+        if (length >= 3) return 55;
+        return 35;
+      }
 
-          if (
-            !contact.isDefault &&
-            Array.isArray(
-              contact.keywords
-            )
-          ) {
+      function keywordMatchScore(question, keyword) {
+        var questionText = normalizeContactText(question);
+        var questionCompact = compactContactText(question);
+        var keywordText = normalizeContactText(keyword);
+        var keywordCompact = compactContactText(keyword);
+        if (!keywordCompact) return 0;
 
-            var matched =
-              contact.keywords.some(
-                function (keyword) {
-
-                  return (
-                    keyword &&
-                    text.indexOf(
-                      String(keyword)
-                        .toLowerCase()
-                    ) >= 0
-                  );
-
-                }
-              );
-
-
-            if (matched) {
-
-              return contact;
-
-            }
-
-          }
-
+        var score = 0;
+        if (questionCompact.indexOf(keywordCompact) >= 0) {
+          score = keywordBaseScore(keyword);
+        } else {
+          var keywordTokens = contactTokens(keywordText);
+          var questionTokens = contactTokens(questionText);
+          if (!keywordTokens.length) return 0;
+          var hitCount = keywordTokens.filter(function (token) {
+            return questionTokens.some(function (questionToken) {
+              return questionToken === token || questionToken.indexOf(token) >= 0 || token.indexOf(questionToken) >= 0;
+            });
+          }).length;
+          var ratio = hitCount / keywordTokens.length;
+          if (ratio === 1) score = 35;
+          else if (ratio >= 0.7) score = 20;
         }
 
+        if (isGenericContactKeyword(keyword)) score = Math.min(score, 8);
+        return score;
+      }
 
-        /* 카테고리 담당자 */
+      function detectContactIntents(text) {
+        var normalized = normalizeContactText(text);
+        return CONTACT_INTENTS.filter(function (intent) {
+          return intent.patterns.some(function (pattern) { return pattern.test(normalized); });
+        }).map(function (intent) { return intent.id; });
+      }
 
-        for (
-          i = 0;
-          i < CONTACT_MAP.length;
-          i++
-        ) {
+      function inferContactIntents(contact) {
+        return detectContactIntents([
+          contact.category || "",
+          normalizeContactKeywords(contact.keywords).join(" ")
+        ].join(" "));
+      }
 
-          contact =
-            CONTACT_MAP[i];
+      function scoreContact(questionText, category, contact) {
+        var score = 0;
+        var matchedKeywords = [];
+        var excludedKeywords = [];
+        var questionCompact = compactContactText(questionText);
+        var nameCompact = compactContactText(contact.name);
 
+        if (nameCompact && questionCompact.indexOf(nameCompact) >= 0) score += 120;
 
-          if (
-            !contact.isDefault &&
-            contact.category === category
-          ) {
-
-            return contact;
-
+        normalizeContactKeywords(contact.keywords).forEach(function (keyword) {
+          var keywordScore = keywordMatchScore(questionText, keyword);
+          if (keywordScore > 0) {
+            score += keywordScore;
+            matchedKeywords.push({ keyword: keyword, score: keywordScore });
           }
+        });
 
+        if (matchedKeywords.length >= 2) score += 15;
+        if (matchedKeywords.length >= 3) score += 10;
+
+        if (category && category !== "all" && String(contact.category || "") === String(category)) {
+          score += 12;
         }
 
+        var questionIntents = detectContactIntents(questionText);
+        var contactIntents = inferContactIntents(contact);
+        var intentHits = questionIntents.filter(function (intent) {
+          return contactIntents.indexOf(intent) >= 0;
+        }).length;
+        if (intentHits > 0) score += Math.min(30, intentHits * 15);
 
-        /* 기본 담당자 */
-
-        for (
-          i = 0;
-          i < CONTACT_MAP.length;
-          i++
-        ) {
-
-          if (
-            CONTACT_MAP[i].isDefault
-          ) {
-
-            return CONTACT_MAP[i];
-
+        normalizeContactKeywords(contact.excludeKeywords).forEach(function (keyword) {
+          if (keywordMatchScore(questionText, keyword) > 0) {
+            score -= 45;
+            excludedKeywords.push(keyword);
           }
+        });
 
+        var specificMatches = matchedKeywords.filter(function (match) {
+          return !isGenericContactKeyword(match.keyword);
+        });
+        if (matchedKeywords.length && !specificMatches.length && questionCompact.indexOf(nameCompact) < 0) {
+          score = Math.min(score, 15);
         }
 
+        return {
+          contact: contact,
+          score: Math.max(0, score),
+          matchedKeywords: matchedKeywords,
+          excludedKeywords: excludedKeywords
+        };
+      }
 
-        return (
-          CONTACT_MAP[
-            CONTACT_MAP.length - 1
-          ] ||
-          {
-            name: "차현정",
-            phone: "",
-            email: "hyeonjung.cha@wilo.com"
-          }
-        );
+      function getDefaultContact() {
+        for (var i = 0; i < CONTACT_MAP.length; i++) {
+          if (isDefaultContact(CONTACT_MAP[i])) return CONTACT_MAP[i];
+        }
+        return CONTACT_MAP[CONTACT_MAP.length - 1] || {
+          name: "차현정",
+          phone: "",
+          email: "hyeonjung.cha@wilo.com"
+        };
+      }
 
+      function findContactSmart(questionText, category) {
+        var ranked = CONTACT_MAP
+          .filter(function (contact) { return !isDefaultContact(contact); })
+          .map(function (contact) { return scoreContact(questionText, category, contact); })
+          .sort(function (a, b) {
+            if (b.score !== a.score) return b.score - a.score;
+            return Number(a.contact.order || 99) - Number(b.contact.order || 99);
+          });
+
+        if (!ranked.length) {
+          return { status: "default", contact: getDefaultContact(), score: 0, gap: 0, candidates: [] };
+        }
+
+        var first = ranked[0];
+        var second = ranked[1] || { score: 0 };
+        var gap = first.score - second.score;
+        var status = "default";
+        var contact = getDefaultContact();
+
+        if (first.score >= 85 || (first.score >= 60 && gap >= 15)) {
+          status = "matched";
+          contact = first.contact;
+        } else if (first.score >= 55 && second.score >= 55 && gap < 10) {
+          status = "multiple";
+          contact = first.contact;
+        } else if (first.score >= 35) {
+          status = "ambiguous";
+          contact = first.contact;
+        }
+
+        var result = {
+          status: status,
+          contact: contact,
+          score: first.score,
+          gap: gap,
+          candidates: ranked.slice(0, 3)
+        };
+
+        console.log("담당자 매칭:", {
+          question: questionText,
+          status: status,
+          selected: contact && contact.name,
+          score: first.score,
+          gap: gap,
+          candidates: result.candidates.map(function (item) {
+            return {
+              name: item.contact.name,
+              score: item.score,
+              keywords: item.matchedKeywords.map(function (match) { return match.keyword; })
+            };
+          })
+        });
+
+        return result;
+      }
+
+      function findContact(questionText, category) {
+        return findContactSmart(questionText, category).contact;
       }
 
 
