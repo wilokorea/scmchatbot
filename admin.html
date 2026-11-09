@@ -287,8 +287,17 @@
       <section class="content-section">
         <h2>담당자 관리</h2>
         <p class="section-description">챗봇에서 질문 시 표시되는 담당자 정보를 관리합니다.</p>
-
-        <div style="margin-bottom:15px; display:flex; gap:10px; flex-wrap:wrap;">
+        <div class="csv-upload">
+          <div class="file-input-wrapper">
+            <input type="file" id="contactsCsvFile" accept=".csv" />
+            <label for="contactsCsvFile">CSV 파일 선택</label>
+          </div>
+          <select id="contactsCsvUploadMode" aria-label="담당자 CSV 업로드 방식" style="padding:10px;border:2px solid #e1e8ed;border-radius:6px;">
+            <option value="merge">기존 담당자 유지 + 신규/수정 반영</option>
+            <option value="replace">기존 담당자 전체 교체</option>
+          </select>
+          <button class="btn" onclick="uploadContactsCSV()">업로드</button>
+          <button class="btn" onclick="downloadContactsCSV()">다운로드</button>
           <button class="btn" onclick="showAddContactModal()">새 담당자 추가</button>
           <button class="btn" onclick="loadContacts()">새로고침</button>
         </div>
@@ -1655,6 +1664,86 @@
         row.querySelector('.delete-btn').addEventListener('click', function() { deleteContact(contact.id, contact.category); });
 
         tbody.appendChild(row);
+      });
+    }
+
+    function downloadContactsCSV() {
+      if (!contactsCache || contactsCache.length === 0) { alert('다운로드할 담당자 데이터가 없습니다.'); return; }
+      var csv = Papa.unparse(contactsCache.map(function(contact) {
+        return {
+          id: contact.id || '', name: contact.name || '', phone: contact.phone || '', email: contact.email || '',
+          category: contact.category || '',
+          keywords: (Array.isArray(contact.keywords) ? contact.keywords : []).join(', '),
+          isDefault: contact.isDefault ? 'O' : 'X', order: contact.order || 99
+        };
+      }));
+      var blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+      var link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'contacts_data_' + new Date().getTime() + '.csv';
+      link.click();
+      URL.revokeObjectURL(link.href);
+    }
+
+    async function uploadContactsCSV() {
+      var fileInput = document.getElementById('contactsCsvFile');
+      var file = fileInput && fileInput.files[0];
+      if (!file) { alert('CSV 파일을 선택해주세요.'); return; }
+      Papa.parse(file, {
+        header: true, skipEmptyLines: true,
+        complete: async function(results) {
+          var items = results.data.map(function(row) {
+            return {
+              id: String(row.id || row['ID'] || '').trim(),
+              name: String(row.name || row['이름'] || '').trim(),
+              phone: String(row.phone || row['전화번호'] || '').trim(),
+              email: String(row.email || row['이메일'] || '').trim(),
+              category: String(row.category || row['카테고리'] || '').trim(),
+              keywords: normalizeKeywords(row.keywords || row['키워드'] || ''),
+              isDefault: normalizeBoolean(row.isDefault || row['기본'] || false),
+              order: parseInt(row.order || row['순서'], 10) || 99
+            };
+          }).filter(function(item) { return item.name && item.email && item.category; });
+          if (!items.length) { alert('유효한 담당자 데이터가 없습니다. 이름, 이메일, 카테고리를 확인해주세요.'); return; }
+          var mode = (document.getElementById('contactsCsvUploadMode') || {}).value || 'merge';
+          if (mode === 'replace' && !confirm('기존 담당자를 CSV 내용으로 전체 교체합니다. 계속하시겠습니까?')) return;
+          try {
+            if (mode === 'replace') {
+              for (var d = 0; d < contactsCache.length; d += 1) {
+                var oldContact = contactsCache[d];
+                var delRes = await adminFetch(ADMIN_CONFIG.contactsApiBase + '/deleteContact', {
+                  method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ id: oldContact.id, category: oldContact.category })
+                }, ADMIN_CONFIG.requestTimeoutMs);
+                if (!delRes.ok) throw new Error('기존 담당자 삭제 실패 (' + delRes.status + ')');
+              }
+            }
+            var saved = 0, failed = [];
+            for (var i = 0; i < items.length; i += 1) {
+              var item = items[i];
+              if (mode === 'merge' && !item.id) {
+                var matched = contactsCache.find(function(c) {
+                  return String(c.email || '').toLowerCase() === item.email.toLowerCase() && String(c.category || '') === item.category;
+                });
+                if (matched) item.id = matched.id;
+              }
+              try {
+                var res = await adminFetch(ADMIN_CONFIG.contactsApiBase + '/saveContact', {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(item)
+                }, ADMIN_CONFIG.requestTimeoutMs);
+                if (!res.ok) throw new Error('서버 응답 오류 (' + res.status + ')');
+                var data = await res.json();
+                if (data.success === false) throw new Error(data.error || '저장 실패');
+                saved += 1;
+              } catch (err) { failed.push(item.name + ': ' + err.message); }
+            }
+            await loadContacts();
+            displaySavedQA(savedQACache);
+            fileInput.value = '';
+            alert(saved + '명의 담당자 정보가 업로드되었습니다.' + (failed.length ? '\n실패 ' + failed.length + '건\n' + failed.slice(0, 5).join('\n') : ''));
+          } catch (err) { alert('담당자 업로드 실패: ' + err.message); }
+        },
+        error: function(error) { alert('CSV 파일 읽기 실패: ' + error.message); }
       });
     }
 
